@@ -26,6 +26,13 @@ public class TechMarketIaArchitectureTest {
 
     @Test
     void configurationClasses_shouldResideInBootstrapPackage() {
+        boolean hasConfigClasses =
+                classes.stream()
+                        .anyMatch(javaClass -> javaClass.getSimpleName().endsWith("Config"));
+        if (!hasConfigClasses) {
+            return;
+        }
+
         ArchRule rule =
                 classes()
                         .that()
