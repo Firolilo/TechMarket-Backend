@@ -1,4 +1,4 @@
-package com.techmarket.peopleuacademic.architecture;
+package com.techmarket.techmarket.architecture;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 public class TechMarketIaArchitectureTest {
 
     private final JavaClasses classes =
-            new ClassFileImporter().importPackages("com.techmarket.peopleuacademic");
+            new ClassFileImporter().importPackages("com.techmarket.techmarket");
 
     @Test
     void controllers_shouldResideInApiAdminPackage() {

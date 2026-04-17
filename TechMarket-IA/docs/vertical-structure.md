@@ -53,9 +53,8 @@ TECHMARKET-ia
 |   |       |-- application.yml
 |   |       \-- db
 |   |           \-- migration
-|   |               |-- V1__global_parameters_placeholder.sql
-|   |               |-- V2001__academic_regulations_initial.sql
-|   |               \-- V2002__academic_regulations_enterprise_schema.sql
+|   |               |-- .gitkeep
+|   |               \-- V1__global_parameters_placeholder.sql
 |   \-- test
 |       |-- java
 |       |   \-- com
