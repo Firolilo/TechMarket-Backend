@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${TECHMARKET_IA_DB_URL:jdbc:postgresql://localhost:5434/TECHMARKET_ia}
+    username: ${TECHMARKET_IA_DB_USERNAME:TECHMARKET_ia_user}
+    password: ${TECHMARKET_IA_DB_PASSWORD:TECHMARKET_ia_password}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

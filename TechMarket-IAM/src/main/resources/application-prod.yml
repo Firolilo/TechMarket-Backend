@@ -1,0 +1,52 @@
+# JWT Security Configuration (PROD: enabled)
+security:
+  jwt:
+    enabled: true
+  token:
+    issuer: ${IAM_JWT_ISSUER:iam-service}
+    secret: ${IAM_JWT_SECRET}
+    access-token-minutes: ${IAM_ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${IAM_REFRESH_TOKEN_DAYS:7}
+
+spring:
+  datasource:
+    url: ${IAM_DB_URL:jdbc:postgresql://localhost:5432/iam_service}
+    username: ${IAM_DB_USERNAME:iam_user}
+    password: ${IAM_DB_PASSWORD:iam_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${IAM_REDIS_HOST:localhost}
+      port: ${IAM_REDIS_PORT:6379}
+
+# Actuator Configuration (PROD: limited exposure)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+# CORS Configuration (PROD: restricted origins)
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://app.example.com}
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: Authorization,Content-Type,X-Tenant-Id,X-Correlation-Id
+  exposed-headers: X-Total-Count,X-Page-Number,X-Page-Size
+  allow-credentials: true
+  max-age: 3600
+
+# Logging Configuration (PROD: production levels)
+logging:
+  level:
+    root: INFO
+    com.techmarket: INFO
+    org.springframework.security: WARN

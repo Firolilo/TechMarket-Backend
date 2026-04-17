@@ -1,0 +1,49 @@
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  datasource:
+    url: jdbc:h2:mem:iam_dev;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# JWT Security Configuration
+security:
+  jwt:
+    enabled: true
+
+# Actuator Configuration (DEV: expose more endpoints)
+management:
+  health:
+    mongo:
+      enabled: false
+    redis:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Logging Configuration (DEV: more verbose)
+logging:
+  level:
+    root: INFO
+    com.techmarket: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

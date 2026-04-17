@@ -1,0 +1,38 @@
+services:
+  TECHMARKET-ia-postgres:
+    image: postgres:16-alpine
+    container_name: TECHMARKET-ia-postgres
+    environment:
+      POSTGRES_DB: TECHMARKET_ia
+      POSTGRES_USER: TECHMARKET_ia_user
+      POSTGRES_PASSWORD: TECHMARKET_ia_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - TECHMARKET-ia-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U TECHMARKET_ia_user -d TECHMARKET_ia"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  TECHMARKET-ia:
+    build:
+      context: ..
+      dockerfile: TechMarket-IA/Dockerfile
+    image: techmarket-ia:1.0.0-SNAPSHOT
+    pull_policy: never
+    container_name: TECHMARKET-ia
+    depends_on:
+      TECHMARKET-ia-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      TECHMARKET_IA_DB_URL: jdbc:postgresql://TECHMARKET-ia-postgres:5432/TECHMARKET_ia
+      TECHMARKET_IA_DB_USERNAME: TECHMARKET_ia_user
+      TECHMARKET_IA_DB_PASSWORD: TECHMARKET_ia_password
+    ports:
+      - "8092:8082"
+
+volumes:
+  TECHMARKET-ia-postgres-data:

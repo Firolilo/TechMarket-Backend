@@ -1,0 +1,162 @@
+Listado de rutas de carpetas
+El número de serie del volumen es 76EE-FD80
+C:.
+│   iam_service.txt
+│   pom.xml
+│   
+├───docs
+│   │   README.md
+│   │   
+│   ├───adr
+│   │       .gitkeep
+│   │       
+│   ├───api
+│   │       .gitkeep
+│   │       
+│   ├───prompts
+│   │       000-conventions.md
+│   │       010-bootstrap-iam-service.md
+│   │       020-create-role.md
+│   │       030-assign-permissions-to-role.md
+│   │       040-global-exception-handler.md
+│   │       050-openapi-api-maturity.md
+│   │       060-contract-testing-mockmvc.md
+│   │       070-pact-provider.md
+│   │       
+│   └───runbooks
+│           DEV-CHECKLIST.md
+│           MASTER-RUNBOOK.md
+│           RELEASE-CHECKLIST.md
+│           
+├───src
+│   ├───main
+│   │   ├───java
+│   │   │   └───com
+│   │   │       └───TechMarket
+│   │   │           └───iamservice
+│   │   │               │   IamServiceApplication.java
+│   │   │               │   
+│   │   │               ├───api
+│   │   │               │   ├───exception
+│   │   │               │   │   │   ErrorCodes.java
+│   │   │               │   │   │   GlobalExceptionHandler.java
+│   │   │               │   │   │   
+│   │   │               │   │   └───dto
+│   │   │               │   │           ApiErrorResponse.java
+│   │   │               │   │           
+│   │   │               │   └───rest
+│   │   │               │       │   AssignPermissionsToRoleController.java
+│   │   │               │       │   GlobalRestExceptionHandler.java
+│   │   │               │       │   RoleController.java
+│   │   │               │       │   
+│   │   │               │       └───dto
+│   │   │               │               ErrorResponse.java
+│   │   │               │               
+│   │   │               ├───application
+│   │   │               │   ├───dto
+│   │   │               │   │       AssignPermissionsToRoleRequest.java
+│   │   │               │   │       AssignPermissionsToRoleResponse.java
+│   │   │               │   │       CreateRoleRequest.java
+│   │   │               │   │       PermissionIdsRequest.java
+│   │   │               │   │       
+│   │   │               │   ├───exception
+│   │   │               │   │       IamServiceException.java
+│   │   │               │   │       
+│   │   │               │   └───orchestration
+│   │   │               │           AssignPermissionsToRoleOrchestrator.java
+│   │   │               │           CreateRoleOrchestrator.java
+│   │   │               │           
+│   │   │               └───config
+│   │   │                       I18nConfig.java
+│   │   │                       OpenApiConfig.java
+│   │   │                       UseCaseConfig.java
+│   │   │                       
+│   │   └───resources
+│   │       │   application-dev.yml
+│   │       │   application-prod.yml
+│   │       │   application.yml
+│   │       │   
+│   │       └───i18n
+│   │               messages_en.properties
+│   │               messages_es.properties
+│   │               messages_pt.properties
+│   │               
+│   └───test
+│       ├───java
+│       │   └───com
+│       │       └───TechMarket
+│       │           └───iamservice
+│       │               ├───contract
+│       │               │       AssignPermissionsToRoleContractTest.java
+│       │               │       
+│       │               └───pact
+│       │                       AssignPermissionsToRoleProviderPactTest.java
+│       │                       
+│       └───resources
+│           └───pacts
+│                   iam-service-consumer-iam-service.json
+│                   
+└───target
+    ├───classes
+    │   │   application-dev.yml
+    │   │   application-prod.yml
+    │   │   application.yml
+    │   │   
+    │   ├───com
+    │   │   └───TechMarket
+    │   │       └───iamservice
+    │   │           │   IamServiceApplication.class
+    │   │           │   
+    │   │           ├───api
+    │   │           │   ├───exception
+    │   │           │   │   │   ErrorCodes.class
+    │   │           │   │   │   GlobalExceptionHandler.class
+    │   │           │   │   │   
+    │   │           │   │   └───dto
+    │   │           │   │           ApiErrorResponse.class
+    │   │           │   │           
+    │   │           │   └───rest
+    │   │           │       │   AssignPermissionsToRoleController.class
+    │   │           │       │   GlobalRestExceptionHandler.class
+    │   │           │       │   RoleController.class
+    │   │           │       │   
+    │   │           │       └───dto
+    │   │           │               ErrorResponse.class
+    │   │           │               
+    │   │           ├───application
+    │   │           │   ├───dto
+    │   │           │   │       AssignPermissionsToRoleRequest.class
+    │   │           │   │       AssignPermissionsToRoleResponse.class
+    │   │           │   │       CreateRoleRequest.class
+    │   │           │   │       PermissionIdsRequest.class
+    │   │           │   │       
+    │   │           │   ├───exception
+    │   │           │   │       IamServiceException.class
+    │   │           │   │       
+    │   │           │   └───orchestration
+    │   │           │           AssignPermissionsToRoleOrchestrator.class
+    │   │           │           CreateRoleOrchestrator.class
+    │   │           │           
+    │   │           └───config
+    │   │                   I18nConfig.class
+    │   │                   OpenApiConfig.class
+    │   │                   UseCaseConfig.class
+    │   │                   
+    │   └───i18n
+    │           messages_en.properties
+    │           messages_es.properties
+    │           messages_pt.properties
+    │           
+    └───test-classes
+        ├───com
+        │   └───TechMarket
+        │       └───iamservice
+        │           ├───contract
+        │           │       AssignPermissionsToRoleContractTest.class
+        │           │       
+        │           └───pact
+        │                   AssignPermissionsToRoleProviderPactTest.class
+        │                   
+        └───pacts
+                iam-service-consumer-iam-service.json
+                

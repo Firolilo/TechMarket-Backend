@@ -1,0 +1,410 @@
+Listado de rutas de carpetas
+El número de serie del volumen es 76EE-FD80
+C:.
+│   .gitignore
+│   ai_service.txt
+│   mvnw.cmd
+│   pom.xml
+│   README.md
+│   
+├───.mvn
+│   └───wrapper
+│           maven-wrapper.jar
+│           maven-wrapper.properties
+│           
+└───modules
+    ├───ai-api
+    │   │   pom.xml
+    │   │   
+    │   ├───src
+    │   │   ├───main
+    │   │   │   └───java
+    │   │   │       └───com
+    │   │   │           └───TechMarket
+    │   │   │               └───ai
+    │   │   │                   └───api
+    │   │   │                       ├───config
+    │   │   │                       │       OpenApiConfig.java
+    │   │   │                       │       
+    │   │   │                       ├───controller
+    │   │   │                       │       CompleteController.java
+    │   │   │                       │       
+    │   │   │                       ├───error
+    │   │   │                       │       ApiErrorResponse.java
+    │   │   │                       │       GlobalExceptionHandler.java
+    │   │   │                       │       
+    │   │   │                       ├───request
+    │   │   │                       │       CompleteRequest.java
+    │   │   │                       │       
+    │   │   │                       └───response
+    │   │   │                               CompleteResponse.java
+    │   │   │                               
+    │   │   └───test
+    │   │       └───java
+    │   │           └───com
+    │   │               └───TechMarket
+    │   │                   └───ai
+    │   │                       └───api
+    │   │                           └───controller
+    │   │                                   CompleteControllerTest.java
+    │   │                                   
+    │   └───target
+    │       ├───classes
+    │       │   └───com
+    │       │       └───TechMarket
+    │       │           └───ai
+    │       │               └───api
+    │       │                   ├───config
+    │       │                   │       OpenApiConfig.class
+    │       │                   │       
+    │       │                   ├───controller
+    │       │                   │       CompleteController.class
+    │       │                   │       
+    │       │                   ├───error
+    │       │                   │       ApiErrorResponse.class
+    │       │                   │       GlobalExceptionHandler.class
+    │       │                   │       
+    │       │                   ├───request
+    │       │                   │       CompleteRequest.class
+    │       │                   │       
+    │       │                   └───response
+    │       │                           CompleteResponse.class
+    │       │                           
+    │       ├───generated-sources
+    │       │   └───annotations
+    │       ├───generated-test-sources
+    │       │   └───test-annotations
+    │       ├───maven-status
+    │       │   └───maven-compiler-plugin
+    │       │       ├───compile
+    │       │       │   └───default-compile
+    │       │       │           createdFiles.lst
+    │       │       │           inputFiles.lst
+    │       │       │           
+    │       │       └───testCompile
+    │       │           └───default-testCompile
+    │       │                   createdFiles.lst
+    │       │                   inputFiles.lst
+    │       │                   
+    │       ├───surefire-reports
+    │       │       com.techmarket.ai.api.controller.CompleteControllerTest.txt
+    │       │       TEST-com.techmarket.ai.api.controller.CompleteControllerTest.xml
+    │       │       
+    │       └───test-classes
+    │           └───com
+    │               └───TechMarket
+    │                   └───ai
+    │                       └───api
+    │                           └───controller
+    │                                   CompleteControllerTest.class
+    │                                   
+    ├───ai-application
+    │   │   pom.xml
+    │   │   
+    │   ├───src
+    │   │   ├───main
+    │   │   │   └───java
+    │   │   │       └───com
+    │   │   │           └───TechMarket
+    │   │   │               └───ai
+    │   │   │                   └───application
+    │   │   │                       ├───dto
+    │   │   │                       │       CompleteRequestDto.java
+    │   │   │                       │       CompleteResponseDto.java
+    │   │   │                       │       
+    │   │   │                       ├───port
+    │   │   │                       │   ├───in
+    │   │   │                       │   │       CompletePromptUseCase.java
+    │   │   │                       │   │       
+    │   │   │                       │   └───out
+    │   │   │                       │           LlmPort.java
+    │   │   │                       │           VectorStorePort.java
+    │   │   │                       │           
+    │   │   │                       └───service
+    │   │   │                               CompletePromptService.java
+    │   │   │                               
+    │   │   └───test
+    │   │       └───java
+    │   │           └───com
+    │   │               └───TechMarket
+    │   │                   └───ai
+    │   │                       └───application
+    │   │                           └───service
+    │   │                                   CompletePromptServiceTest.java
+    │   │                                   
+    │   └───target
+    │       ├───classes
+    │       │   └───com
+    │       │       └───TechMarket
+    │       │           └───ai
+    │       │               └───application
+    │       │                   ├───dto
+    │       │                   │       CompleteRequestDto.class
+    │       │                   │       CompleteResponseDto.class
+    │       │                   │       
+    │       │                   ├───port
+    │       │                   │   ├───in
+    │       │                   │   │       CompletePromptUseCase.class
+    │       │                   │   │       
+    │       │                   │   └───out
+    │       │                   │           LlmPort.class
+    │       │                   │           VectorStorePort.class
+    │       │                   │           
+    │       │                   └───service
+    │       │                           CompletePromptService.class
+    │       │                           
+    │       ├───generated-sources
+    │       │   └───annotations
+    │       ├───generated-test-sources
+    │       │   └───test-annotations
+    │       ├───maven-status
+    │       │   └───maven-compiler-plugin
+    │       │       ├───compile
+    │       │       │   └───default-compile
+    │       │       │           createdFiles.lst
+    │       │       │           inputFiles.lst
+    │       │       │           
+    │       │       └───testCompile
+    │       │           └───default-testCompile
+    │       │                   createdFiles.lst
+    │       │                   inputFiles.lst
+    │       │                   
+    │       ├───surefire-reports
+    │       │       com.techmarket.ai.application.service.CompletePromptServiceTest.txt
+    │       │       TEST-com.techmarket.ai.application.service.CompletePromptServiceTest.xml
+    │       │       
+    │       └───test-classes
+    │           └───com
+    │               └───TechMarket
+    │                   └───ai
+    │                       └───application
+    │                           └───service
+    │                                   CompletePromptServiceTest.class
+    │                                   
+    ├───ai-bootstrap
+    │   │   pom.xml
+    │   │   
+    │   ├───src
+    │   │   ├───main
+    │   │   │   ├───java
+    │   │   │   │   └───com
+    │   │   │   │       └───TechMarket
+    │   │   │   │           └───ai
+    │   │   │   │               └───bootstrap
+    │   │   │   │                   │   AiServiceApplication.java
+    │   │   │   │                   │   
+    │   │   │   │                   └───config
+    │   │   │   │                           SecurityConfig.java
+    │   │   │   │                           UseCaseConfig.java
+    │   │   │   │                           
+    │   │   │   └───resources
+    │   │   │           application-dev.yml
+    │   │   │           application.yml
+    │   │   │           
+    │   │   └───test
+    │   │       ├───java
+    │   │       │   └───com
+    │   │       │       └───TechMarket
+    │   │       │           └───ai
+    │   │       │               └───bootstrap
+    │   │       │                       AiServiceApplicationTest.java
+    │   │       │                       
+    │   │       └───resources
+    │   │               application-test.yml
+    │   │               
+    │   └───target
+    │       ├───classes
+    │       │   │   application-dev.yml
+    │       │   │   application.yml
+    │       │   │   
+    │       │   └───com
+    │       │       └───TechMarket
+    │       │           └───ai
+    │       │               └───bootstrap
+    │       │                   │   AiServiceApplication.class
+    │       │                   │   
+    │       │                   └───config
+    │       │                           SecurityConfig.class
+    │       │                           UseCaseConfig.class
+    │       │                           
+    │       ├───generated-sources
+    │       │   └───annotations
+    │       ├───generated-test-sources
+    │       │   └───test-annotations
+    │       ├───maven-status
+    │       │   └───maven-compiler-plugin
+    │       │       ├───compile
+    │       │       │   └───default-compile
+    │       │       │           createdFiles.lst
+    │       │       │           inputFiles.lst
+    │       │       │           
+    │       │       └───testCompile
+    │       │           └───default-testCompile
+    │       │                   createdFiles.lst
+    │       │                   inputFiles.lst
+    │       │                   
+    │       ├───surefire-reports
+    │       │       com.techmarket.ai.bootstrap.AiServiceApplicationTest.txt
+    │       │       TEST-com.techmarket.ai.bootstrap.AiServiceApplicationTest.xml
+    │       │       
+    │       └───test-classes
+    │           │   application-test.yml
+    │           │   
+    │           └───com
+    │               └───TechMarket
+    │                   └───ai
+    │                       └───bootstrap
+    │                               AiServiceApplicationTest.class
+    │                               
+    ├───ai-domain
+    │   │   pom.xml
+    │   │   
+    │   ├───src
+    │   │   ├───main
+    │   │   │   └───java
+    │   │   │       └───com
+    │   │   │           └───TechMarket
+    │   │   │               └───ai
+    │   │   │                   └───domain
+    │   │   │                       ├───model
+    │   │   │                       │       Completion.java
+    │   │   │                       │       Prompt.java
+    │   │   │                       │       
+    │   │   │                       └───policy
+    │   │   │                               ContentPolicy.java
+    │   │   │                               
+    │   │   └───test
+    │   │       └───java
+    │   │           └───com
+    │   │               └───TechMarket
+    │   │                   └───ai
+    │   │                       └───domain
+    │   │                           └───model
+    │   │                                   PromptTest.java
+    │   │                                   
+    │   └───target
+    │       ├───classes
+    │       │   └───com
+    │       │       └───TechMarket
+    │       │           └───ai
+    │       │               └───domain
+    │       │                   ├───model
+    │       │                   │       Completion.class
+    │       │                   │       Prompt.class
+    │       │                   │       
+    │       │                   └───policy
+    │       │                           ContentPolicy.class
+    │       │                           
+    │       ├───generated-sources
+    │       │   └───annotations
+    │       ├───generated-test-sources
+    │       │   └───test-annotations
+    │       ├───maven-status
+    │       │   └───maven-compiler-plugin
+    │       │       ├───compile
+    │       │       │   └───default-compile
+    │       │       │           createdFiles.lst
+    │       │       │           inputFiles.lst
+    │       │       │           
+    │       │       └───testCompile
+    │       │           └───default-testCompile
+    │       │                   createdFiles.lst
+    │       │                   inputFiles.lst
+    │       │                   
+    │       ├───surefire-reports
+    │       │       com.techmarket.ai.domain.model.PromptTest.txt
+    │       │       TEST-com.techmarket.ai.domain.model.PromptTest.xml
+    │       │       
+    │       └───test-classes
+    │           └───com
+    │               └───TechMarket
+    │                   └───ai
+    │                       └───domain
+    │                           └───model
+    │                                   PromptTest.class
+    │                                   
+    └───ai-infrastructure
+        │   pom.xml
+        │   
+        ├───src
+        │   ├───main
+        │   │   └───java
+        │   │       └───com
+        │   │           └───TechMarket
+        │   │               └───ai
+        │   │                   └───infrastructure
+        │   │                       ├───cache
+        │   │                       │   └───redis
+        │   │                       │           RedisCacheAdapter.java
+        │   │                       │           
+        │   │                       ├───llm
+        │   │                       │   └───springai
+        │   │                       │           SpringAiLlmAdapter.java
+        │   │                       │           
+        │   │                       └───vector
+        │   │                           ├───mongodb_atlas
+        │   │                           │       MongoAtlasVectorStoreAdapter.java
+        │   │                           │       
+        │   │                           └───pgvector
+        │   │                                   PgVectorStoreAdapter.java
+        │   │                                   
+        │   └───test
+        │       └───java
+        │           └───com
+        │               └───TechMarket
+        │                   └───ai
+        │                       └───infrastructure
+        │                           └───llm
+        │                               └───springai
+        │                                       SpringAiLlmAdapterTest.java
+        │                                       
+        └───target
+            ├───classes
+            │   └───com
+            │       └───TechMarket
+            │           └───ai
+            │               └───infrastructure
+            │                   ├───cache
+            │                   │   └───redis
+            │                   │           RedisCacheAdapter.class
+            │                   │           
+            │                   ├───llm
+            │                   │   └───springai
+            │                   │           SpringAiLlmAdapter.class
+            │                   │           
+            │                   └───vector
+            │                       ├───mongodb_atlas
+            │                       │       MongoAtlasVectorStoreAdapter.class
+            │                       │       
+            │                       └───pgvector
+            │                               PgVectorStoreAdapter.class
+            │                               
+            ├───generated-sources
+            │   └───annotations
+            ├───generated-test-sources
+            │   └───test-annotations
+            ├───maven-status
+            │   └───maven-compiler-plugin
+            │       ├───compile
+            │       │   └───default-compile
+            │       │           createdFiles.lst
+            │       │           inputFiles.lst
+            │       │           
+            │       └───testCompile
+            │           └───default-testCompile
+            │                   createdFiles.lst
+            │                   inputFiles.lst
+            │                   
+            ├───surefire-reports
+            │       com.techmarket.ai.infrastructure.llm.springai.SpringAiLlmAdapterTest.txt
+            │       TEST-com.techmarket.ai.infrastructure.llm.springai.SpringAiLlmAdapterTest.xml
+            │       
+            └───test-classes
+                └───com
+                    └───TechMarket
+                        └───ai
+                            └───infrastructure
+                                └───llm
+                                    └───springai
+                                            SpringAiLlmAdapterTest.class
+                                            

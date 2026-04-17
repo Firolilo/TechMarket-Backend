@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${IAM_DB_URL:jdbc:postgresql://iam-postgres:5432/iam_service}
+    username: ${IAM_DB_USERNAME:iam_user}
+    password: ${IAM_DB_PASSWORD:iam_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${IAM_REDIS_HOST:iam-redis}
+      port: ${IAM_REDIS_PORT:6379}
+
+security:
+  jwt:
+    enabled: true
+  token:
+    issuer: ${IAM_JWT_ISSUER:iam-service}
+    secret: ${IAM_JWT_SECRET:replace-with-strong-32-byte-secret-value}
+    access-token-minutes: ${IAM_ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${IAM_REFRESH_TOKEN_DAYS:7}

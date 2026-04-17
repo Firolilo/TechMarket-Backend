@@ -1,0 +1,604 @@
+Listado de rutas de carpetas
+El n·mero de serie del volumen es 30C0-EA3B
+C:.
+ª   .gitignore
+ª   core.txt
+ª   core_plataform.txt
+ª   pom.xml
+ª   
++---.idea
+ª       .gitignore
+ª       compiler.xml
+ª       encodings.xml
+ª       jarRepositories.xml
+ª       misc.xml
+ª       vcs.xml
+ª       workspace.xml
+ª       
++---.mvn
++---.vscode
+ª       settings.json
+ª       
++---adr
+ª       ADR-001-Core-Pragmatic-JPA.md
+ª       
++---core-platform
+ª   ª   core_plataform.txt
+ª   ª   pom.xml
+ª   ª   
+ª   +---src
+ª   ª   +---main
+ª   ª   ª   +---java
+ª   ª   ª   ª   +---com
+ª   ª   ª   ª       +---TechMarket
+ª   ª   ª   ª           +---core
+ª   ª   ª   ª               +---ai
+ª   ª   ª   ª               ª   +---agents
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               ª   +---orchestration
+ª   ª   ª   ª               ª   +---prompts
+ª   ª   ª   ª               +---audit
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   ª       AuditQueryService.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   ª   +---event
+ª   ª   ª   ª               ª   ª   ª       AuditEvent.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---model
+ª   ª   ª   ª               ª   ª           AuditLog.java
+ª   ª   ª   ª               ª   ª           
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               ª       +---listener
+ª   ª   ª   ª               ª       ª       AuditEventListener.java
+ª   ª   ª   ª               ª       ª       
+ª   ª   ª   ª               ª       +---repository
+ª   ª   ª   ª               ª               AuditLogRepository.java
+ª   ª   ª   ª               ª               
+ª   ª   ª   ª               +---config
+ª   ª   ª   ª               ª   +---ai
+ª   ª   ª   ª               ª   +---app
+ª   ª   ª   ª               ª   +---cache
+ª   ª   ª   ª               ª   +---datasource
+ª   ª   ª   ª               +---governance
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   +---featureflags
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               ª   +---licensing
+ª   ª   ª   ª               +---iam
+ª   ª   ª   ª               ª   ª   iam_plataform.txt
+ª   ª   ª   ª               ª   ª   
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   ª   +---command
+ª   ª   ª   ª               ª   ª   ª       AssignPermissionsToRoleCommand.java
+ª   ª   ª   ª               ª   ª   ª       AssignRolesToUserCommand.java
+ª   ª   ª   ª               ª   ª   ª       CreateRoleCommand.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---port
+ª   ª   ª   ª               ª   ª   ª       ActionRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       FieldRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       ModuleRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       PermissionRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       ResourceRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       RoleRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       UserRepositoryPort.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---query
+ª   ª   ª   ª               ª   ª   ª       GetRoleByIdQuery.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---service
+ª   ª   ª   ª               ª   ª   +---usecase
+ª   ª   ª   ª               ª   ª           AssignPermissionsToRoleUseCase.java
+ª   ª   ª   ª               ª   ª           AssignRolesToUserUseCase.java
+ª   ª   ª   ª               ª   ª           CreateRoleUseCase.java
+ª   ª   ª   ª               ª   ª           
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   ª   +---exception
+ª   ª   ª   ª               ª   ª   ª       PermissionNotFoundException.java
+ª   ª   ª   ª               ª   ª   ª       RoleNotFoundException.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---model
+ª   ª   ª   ª               ª   ª   ª       Action.java
+ª   ª   ª   ª               ª   ª   ª       Field.java
+ª   ª   ª   ª               ª   ª   ª       Module.java
+ª   ª   ª   ª               ª   ª   ª       Permission.java
+ª   ª   ª   ª               ª   ª   ª       Resource.java
+ª   ª   ª   ª               ª   ª   ª       Role.java
+ª   ª   ª   ª               ª   ª   ª       User.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---service
+ª   ª   ª   ª               ª   ª   ª       PermissionEvaluatorService.java
+ª   ª   ª   ª               ª   ª   ª       
+ª   ª   ª   ª               ª   ª   +---valueobject
+ª   ª   ª   ª               ª   ª           PermissionDefinition.java
+ª   ª   ª   ª               ª   ª           
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               ª       +---persistence
+ª   ª   ª   ª               ª           +---adapter
+ª   ª   ª   ª               ª           ª       ActionRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       FieldRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       ModuleRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       PermissionRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       ResourceRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       RoleRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       UserRepositoryAdapter.java
+ª   ª   ª   ª               ª           ª       
+ª   ª   ª   ª               ª           +---entity
+ª   ª   ª   ª               ª           +---repository
+ª   ª   ª   ª               ª           ª       ActionJpaRepository.java
+ª   ª   ª   ª               ª           ª       FieldJpaRepository.java
+ª   ª   ª   ª               ª           ª       ModuleJpaRepository.java
+ª   ª   ª   ª               ª           ª       PermissionJpaRepository.java
+ª   ª   ª   ª               ª           ª       ResourceJpaRepository.java
+ª   ª   ª   ª               ª           ª       RoleJpaRepository.java
+ª   ª   ª   ª               ª           ª       UserJpaRepository.java
+ª   ª   ª   ª               ª           ª       
+ª   ª   ª   ª               ª           +---specification
+ª   ª   ª   ª               ª                   IamSpecifications.java
+ª   ª   ª   ª               ª                   
+ª   ª   ª   ª               +---integrations
+ª   ª   ª   ª               ª   +---external
+ª   ª   ª   ª               ª   +---oracle
+ª   ª   ª   ª               ª   +---payment
+ª   ª   ª   ª               ª   +---sap
+ª   ª   ª   ª               ª   +---webhooks
+ª   ª   ª   ª               +---notifications
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               +---observability
+ª   ª   ª   ª               ª   +---context
+ª   ª   ª   ª               ª   ª       CorrelationIdContext.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---filter
+ª   ª   ª   ª               ª   ª       CorrelationIdFilter.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---logging
+ª   ª   ª   ª               ª   ª       LoggingContext.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---metrics
+ª   ª   ª   ª               ª           UseCaseMetricsService.java
+ª   ª   ª   ª               ª           
+ª   ª   ª   ª               +---scheduler
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               +---security
+ª   ª   ª   ª               ª   +---context
+ª   ª   ª   ª               ª   ª       SecurityTenantContext.java
+ª   ª   ª   ª               ª   ª       SecurityUserContext.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---filter
+ª   ª   ª   ª               ª   ª       SecurityContextFilter.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---policy
+ª   ª   ª   ª               +---shared
+ª   ª   ª   ª               ª   +---base
+ª   ª   ª   ª               ª   ª       BaseEntity.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---constants
+ª   ª   ª   ª               ª   +---contracts
+ª   ª   ª   ª               ª   +---enums
+ª   ª   ª   ª               ª   +---events
+ª   ª   ª   ª               ª   ª       DomainEvent.java
+ª   ª   ª   ª               ª   ª       DomainEventListener.java
+ª   ª   ª   ª               ª   ª       DomainEventPublisher.java
+ª   ª   ª   ª               ª   ª       SpringDomainEventPublisher.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---exceptions
+ª   ª   ª   ª               ª   ª       ApplicationException.java
+ª   ª   ª   ª               ª   ª       BusinessRuleViolationException.java
+ª   ª   ª   ª               ª   ª       DomainException.java
+ª   ª   ª   ª               ª   ª       EntityNotFoundException.java
+ª   ª   ª   ª               ª   ª       PermissionDeniedException.java
+ª   ª   ª   ª               ª   ª       SolverException.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---specifications
+ª   ª   ª   ª               ª   ª       TenantSpecifications.java
+ª   ª   ª   ª               ª   ª       
+ª   ª   ª   ª               ª   +---utils
+ª   ª   ª   ª               ª   +---validation
+ª   ª   ª   ª               +---tenant
+ª   ª   ª   ª               ª   +---api
+ª   ª   ª   ª               ª   +---application
+ª   ª   ª   ª               ª   +---domain
+ª   ª   ª   ª               ª   +---infrastructure
+ª   ª   ª   ª               +---verticals
+ª   ª   ª   ª               ª   +---globalsem
+ª   ª   ª   ª               +---workflow
+ª   ª   ª   ª                   +---application
+ª   ª   ª   ª                   +---domain
+ª   ª   ª   ª                   +---infrastructure
+ª   ª   ª   +---resources
+ª   ª   ª       +---ai
+ª   ª   ª       ª   ª   models.yml
+ª   ª   ª       ª   ª   providers.yml
+ª   ª   ª       ª   ª   
+ª   ª   ª       ª   +---prompts
+ª   ª   ª       +---application
+ª   ª   ª       ª       application-dev.yml
+ª   ª   ª       ª       application-prod.yml
+ª   ª   ª       ª       application.yml
+ª   ª   ª       ª       
+ª   ª   ª       +---cache
+ª   ª   ª       ª       redis.yml
+ª   ª   ª       ª       
+ª   ª   ª       +---db
+ª   ª   ª       ª   +---migrations
+ª   ª   ª       ª   +---seed
+ª   ª   ª       +---i18n
+ª   ª   ª       ª       messages_en.properties
+ª   ª   ª       ª       messages_es.properties
+ª   ª   ª       ª       messages_pt.properties
+ª   ª   ª       ª       
+ª   ª   ª       +---multitenancy
+ª   ª   ª       ª       strategies.yml
+ª   ª   ª       ª       tenants.yml
+ª   ª   ª       ª       
+ª   ª   ª       +---observability
+ª   ª   ª       ª       metrics.yml
+ª   ª   ª       ª       tracing.yml
+ª   ª   ª       ª       
+ª   ª   ª       +---security
+ª   ª   ª               permissions.yml
+ª   ª   ª               policies.yml
+ª   ª   ª               roles.yml
+ª   ª   ª               
+ª   ª   +---test
+ª   ª       +---java
+ª   ª           +---com
+ª   ª               +---TechMarket
+ª   ª                   +---core
+ª   ª                       +---architecture
+ª   ª                               CoreArchitectureTest.java
+ª   ª                               
+ª   +---target
+ª       +---classes
+ª       ª   +---ai
+ª       ª   ª       models.yml
+ª       ª   ª       providers.yml
+ª       ª   ª       
+ª       ª   +---application
+ª       ª   ª       application-dev.yml
+ª       ª   ª       application-prod.yml
+ª       ª   ª       application.yml
+ª       ª   ª       
+ª       ª   +---cache
+ª       ª   ª       redis.yml
+ª       ª   ª       
+ª       ª   +---com
+ª       ª   ª   +---TechMarket
+ª       ª   ª       +---core
+ª       ª   ª           +---ai
+ª       ª   ª           ª   +---agents
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           ª   +---orchestration
+ª       ª   ª           ª   +---prompts
+ª       ª   ª           +---audit
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   ª       AuditQueryService.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   ª   +---event
+ª       ª   ª           ª   ª   ª       AuditEvent.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---model
+ª       ª   ª           ª   ª           AuditLog.class
+ª       ª   ª           ª   ª           
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           ª       +---listener
+ª       ª   ª           ª       ª       AuditEventListener.class
+ª       ª   ª           ª       ª       
+ª       ª   ª           ª       +---repository
+ª       ª   ª           ª               AuditLogRepository.class
+ª       ª   ª           ª               
+ª       ª   ª           +---config
+ª       ª   ª           ª   +---ai
+ª       ª   ª           ª   +---app
+ª       ª   ª           ª   +---cache
+ª       ª   ª           ª   +---datasource
+ª       ª   ª           +---governance
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   +---featureflags
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           ª   +---licensing
+ª       ª   ª           +---iam
+ª       ª   ª           ª   ª   iam_plataform.txt
+ª       ª   ª           ª   ª   
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   ª   +---command
+ª       ª   ª           ª   ª   ª       AssignPermissionsToRoleCommand.class
+ª       ª   ª           ª   ª   ª       AssignRolesToUserCommand.class
+ª       ª   ª           ª   ª   ª       CreateRoleCommand.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---port
+ª       ª   ª           ª   ª   ª       ActionRepositoryPort.class
+ª       ª   ª           ª   ª   ª       FieldRepositoryPort.class
+ª       ª   ª           ª   ª   ª       ModuleRepositoryPort.class
+ª       ª   ª           ª   ª   ª       PermissionRepositoryPort.class
+ª       ª   ª           ª   ª   ª       ResourceRepositoryPort.class
+ª       ª   ª           ª   ª   ª       RoleRepositoryPort.class
+ª       ª   ª           ª   ª   ª       UserRepositoryPort.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---query
+ª       ª   ª           ª   ª   ª       GetRoleByIdQuery.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---service
+ª       ª   ª           ª   ª   +---usecase
+ª       ª   ª           ª   ª           AssignPermissionsToRoleUseCase.class
+ª       ª   ª           ª   ª           AssignRolesToUserUseCase.class
+ª       ª   ª           ª   ª           CreateRoleUseCase.class
+ª       ª   ª           ª   ª           
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   ª   +---exception
+ª       ª   ª           ª   ª   ª       PermissionNotFoundException.class
+ª       ª   ª           ª   ª   ª       RoleNotFoundException.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---model
+ª       ª   ª           ª   ª   ª       Action.class
+ª       ª   ª           ª   ª   ª       Field.class
+ª       ª   ª           ª   ª   ª       Module.class
+ª       ª   ª           ª   ª   ª       Permission.class
+ª       ª   ª           ª   ª   ª       Resource.class
+ª       ª   ª           ª   ª   ª       Role.class
+ª       ª   ª           ª   ª   ª       User.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---service
+ª       ª   ª           ª   ª   ª       PermissionEvaluatorService.class
+ª       ª   ª           ª   ª   ª       
+ª       ª   ª           ª   ª   +---valueobject
+ª       ª   ª           ª   ª           PermissionDefinition.class
+ª       ª   ª           ª   ª           
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           ª       +---persistence
+ª       ª   ª           ª           +---adapter
+ª       ª   ª           ª           ª       ActionRepositoryAdapter.class
+ª       ª   ª           ª           ª       FieldRepositoryAdapter.class
+ª       ª   ª           ª           ª       ModuleRepositoryAdapter.class
+ª       ª   ª           ª           ª       PermissionRepositoryAdapter.class
+ª       ª   ª           ª           ª       ResourceRepositoryAdapter.class
+ª       ª   ª           ª           ª       RoleRepositoryAdapter.class
+ª       ª   ª           ª           ª       UserRepositoryAdapter.class
+ª       ª   ª           ª           ª       
+ª       ª   ª           ª           +---entity
+ª       ª   ª           ª           +---repository
+ª       ª   ª           ª           ª       ActionJpaRepository.class
+ª       ª   ª           ª           ª       FieldJpaRepository.class
+ª       ª   ª           ª           ª       ModuleJpaRepository.class
+ª       ª   ª           ª           ª       PermissionJpaRepository.class
+ª       ª   ª           ª           ª       ResourceJpaRepository.class
+ª       ª   ª           ª           ª       RoleJpaRepository.class
+ª       ª   ª           ª           ª       UserJpaRepository.class
+ª       ª   ª           ª           ª       
+ª       ª   ª           ª           +---specification
+ª       ª   ª           ª                   IamSpecifications.class
+ª       ª   ª           ª                   
+ª       ª   ª           +---integrations
+ª       ª   ª           ª   +---external
+ª       ª   ª           ª   +---oracle
+ª       ª   ª           ª   +---payment
+ª       ª   ª           ª   +---sap
+ª       ª   ª           ª   +---webhooks
+ª       ª   ª           +---notifications
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           +---observability
+ª       ª   ª           ª   +---context
+ª       ª   ª           ª   ª       CorrelationIdContext.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---filter
+ª       ª   ª           ª   ª       CorrelationIdFilter.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---logging
+ª       ª   ª           ª   ª       LoggingContext.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---metrics
+ª       ª   ª           ª           UseCaseMetricsService.class
+ª       ª   ª           ª           
+ª       ª   ª           +---scheduler
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           +---security
+ª       ª   ª           ª   +---context
+ª       ª   ª           ª   ª       SecurityTenantContext.class
+ª       ª   ª           ª   ª       SecurityUserContext.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---filter
+ª       ª   ª           ª   ª       SecurityContextFilter.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---policy
+ª       ª   ª           +---shared
+ª       ª   ª           ª   +---base
+ª       ª   ª           ª   ª       BaseEntity.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---constants
+ª       ª   ª           ª   +---contracts
+ª       ª   ª           ª   +---enums
+ª       ª   ª           ª   +---events
+ª       ª   ª           ª   ª       DomainEvent.class
+ª       ª   ª           ª   ª       DomainEventListener.class
+ª       ª   ª           ª   ª       DomainEventPublisher.class
+ª       ª   ª           ª   ª       SpringDomainEventPublisher.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---exceptions
+ª       ª   ª           ª   ª       ApplicationException.class
+ª       ª   ª           ª   ª       BusinessRuleViolationException.class
+ª       ª   ª           ª   ª       DomainException.class
+ª       ª   ª           ª   ª       EntityNotFoundException.class
+ª       ª   ª           ª   ª       PermissionDeniedException.class
+ª       ª   ª           ª   ª       SolverException.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---specifications
+ª       ª   ª           ª   ª       TenantSpecifications.class
+ª       ª   ª           ª   ª       
+ª       ª   ª           ª   +---utils
+ª       ª   ª           ª   +---validation
+ª       ª   ª           +---tenant
+ª       ª   ª           ª   +---api
+ª       ª   ª           ª   +---application
+ª       ª   ª           ª   +---domain
+ª       ª   ª           ª   +---infrastructure
+ª       ª   ª           +---verticals
+ª       ª   ª           ª   +---globalsem
+ª       ª   ª           +---workflow
+ª       ª   ª               +---application
+ª       ª   ª               +---domain
+ª       ª   ª               +---infrastructure
+ª       ª   +---i18n
+ª       ª   ª       messages_en.properties
+ª       ª   ª       messages_es.properties
+ª       ª   ª       messages_pt.properties
+ª       ª   ª       
+ª       ª   +---multitenancy
+ª       ª   ª       strategies.yml
+ª       ª   ª       tenants.yml
+ª       ª   ª       
+ª       ª   +---observability
+ª       ª   ª       metrics.yml
+ª       ª   ª       tracing.yml
+ª       ª   ª       
+ª       ª   +---security
+ª       ª           permissions.yml
+ª       ª           policies.yml
+ª       ª           roles.yml
+ª       ª           
+ª       +---generated-sources
+ª       ª   +---annotations
+ª       +---generated-test-sources
+ª       ª   +---test-annotations
+ª       +---test-classes
+ª           +---com
+ª               +---TechMarket
+ª                   +---core
+ª                       +---architecture
+ª                               CoreArchitectureTest.class
+ª                               
++---iam-service
+    +---.mvn
+    +---src
+    ª   +---main
+    ª   ª   +---java
+    ª   ª   ª   +---com
+    ª   ª   ª       +---TechMarket
+    ª   ª   ª           +---iamservice
+    ª   ª   ª               +---api
+    ª   ª   ª               ª   +---mapper
+    ª   ª   ª               ª   +---rest
+    ª   ª   ª               ª       ª   GlobalRestExceptionHandler.java
+    ª   ª   ª               ª       ª   RoleController.java
+    ª   ª   ª               ª       ª   
+    ª   ª   ª               ª       +---dto
+    ª   ª   ª               ª               ErrorResponse.java
+    ª   ª   ª               ª               
+    ª   ª   ª               +---application
+    ª   ª   ª               ª   +---dto
+    ª   ª   ª               ª   ª       CreateRoleRequest.java
+    ª   ª   ª               ª   ª       
+    ª   ª   ª               ª   +---exception
+    ª   ª   ª               ª   ª       IamServiceException.java
+    ª   ª   ª               ª   ª       
+    ª   ª   ª               ª   +---orchestration
+    ª   ª   ª               ª   ª       CreateRoleOrchestrator.java
+    ª   ª   ª               ª   ª       
+    ª   ª   ª               ª   +---port
+    ª   ª   ª               ª   +---service
+    ª   ª   ª               +---config
+    ª   ª   ª               ª   ª   I18nConfig.java
+    ª   ª   ª               ª   ª   
+    ª   ª   ª               ª   +---multitenancy
+    ª   ª   ª               ª   +---observability
+    ª   ª   ª               ª   +---security
+    ª   ª   ª               +---infrastructure
+    ª   ª   ª               ª   +---client
+    ª   ª   ª               ª   +---config
+    ª   ª   ª               ª   +---messaging
+    ª   ª   ª               ª   +---persistence
+    ª   ª   ª               ª   ª   +---adapter
+    ª   ª   ª               ª   ª   +---entity
+    ª   ª   ª               ª   ª   +---repository
+    ª   ª   ª               ª   +---security
+    ª   ª   ª               +---observability
+    ª   ª   ª               ª   +---logging
+    ª   ª   ª               ª   +---metrics
+    ª   ª   ª               ª   +---tracing
+    ª   ª   ª               +---shared
+    ª   ª   ª                   +---exception
+    ª   ª   ª                   +---mapper
+    ª   ª   ª                   +---util
+    ª   ª   +---resources
+    ª   ª       ª   application-dev.yml
+    ª   ª       ª   application-prod.yml
+    ª   ª       ª   application.yml
+    ª   ª       ª   
+    ª   ª       +---db
+    ª   ª       ª   +---migrations
+    ª   ª       +---i18n
+    ª   ª       ª       messages_en.properties
+    ª   ª       ª       messages_es.properties
+    ª   ª       ª       messages_pt.properties
+    ª   ª       ª       
+    ª   ª       +---security
+    ª   +---test
+    ª       +---java
+    ª       ª   +---com
+    ª       ª       +---TechMarket
+    ª       ª           +---iamservice
+    ª       ª               +---architecture
+    ª       +---resources
+    +---target
+        +---classes
+        ª   +---com
+        ª       +---TechMarket
+        ª           +---iamservice
+        ª               +---api
+        ª               ª   +---dto
+        ª               ª   +---graphql
+        ª               ª   +---mapper
+        ª               ª   +---rest
+        ª               +---application
+        ª               ª   +---dto
+        ª               ª   +---exception
+        ª               ª   +---orchestration
+        ª               ª   ª       CreateRoleOrchestrator.class
+        ª               ª   ª       
+        ª               ª   +---port
+        ª               ª   +---service
+        ª               +---config
+        ª               ª   +---multitenancy
+        ª               ª   +---observability
+        ª               ª   +---security
+        ª               +---infrastructure
+        ª               ª   +---client
+        ª               ª   +---config
+        ª               ª   +---messaging
+        ª               ª   +---persistence
+        ª               ª   ª   +---adapter
+        ª               ª   ª   +---entity
+        ª               ª   ª   +---repository
+        ª               ª   +---security
+        ª               +---observability
+        ª               ª   +---logging
+        ª               ª   +---metrics
+        ª               ª   +---tracing
+        ª               +---orchestration
+        ª               +---shared
+        ª                   +---exception
+        ª                   +---mapper
+        ª                   +---util
+        +---generated-sources
+        ª   +---annotations
+        +---generated-test-sources
+        ª   +---test-annotations
+        +---test-classes
+            +---com
+                +---TechMarket
+                    +---iamservice
+                        +---architecture

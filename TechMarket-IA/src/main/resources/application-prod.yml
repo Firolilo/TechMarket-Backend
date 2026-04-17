@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${TECHMARKET_IA_DB_URL}
+    username: ${TECHMARKET_IA_DB_USERNAME}
+    password: ${TECHMARKET_IA_DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

@@ -1,0 +1,1 @@
+-- Reserved for future database migrations of the global parameters module.

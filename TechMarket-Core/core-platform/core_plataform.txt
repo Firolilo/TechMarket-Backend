@@ -1,0 +1,299 @@
+Listado de rutas de carpetas
+El número de serie del volumen es 76EE-FD80
+C:.
+│   core-plataform.txt
+│   core_plataform.txt
+│   pom.xml
+│   
+├───src
+│   ├───main
+│   │   ├───java
+│   │   │   └───com
+│   │   │       └───TechMarket
+│   │   │           └───core
+│   │   │               ├───ai
+│   │   │               │   ├───agents
+│   │   │               │   ├───application
+│   │   │               │   ├───domain
+│   │   │               │   ├───infrastructure
+│   │   │               │   ├───orchestration
+│   │   │               │   └───prompts
+│   │   │               ├───api
+│   │   │               │   ├───graphql
+│   │   │               │   │       GraphQLExceptionResolver.java
+│   │   │               │   │       
+│   │   │               │   └───rest
+│   │   │               │           ErrorResponse.java
+│   │   │               │           GlobalRestExceptionHandler.java
+│   │   │               │           
+│   │   │               ├───audit
+│   │   │               │   ├───application
+│   │   │               │   │       AuditQueryService.java
+│   │   │               │   │       
+│   │   │               │   ├───domain
+│   │   │               │   │   ├───event
+│   │   │               │   │   │       AuditEvent.java
+│   │   │               │   │   │       
+│   │   │               │   │   └───model
+│   │   │               │   │           AuditLog.java
+│   │   │               │   │           
+│   │   │               │   └───infrastructure
+│   │   │               │       ├───listener
+│   │   │               │       │       AuditEventListener.java
+│   │   │               │       │       
+│   │   │               │       └───repository
+│   │   │               │               AuditLogRepository.java
+│   │   │               │               
+│   │   │               ├───config
+│   │   │               │   ├───ai
+│   │   │               │   ├───app
+│   │   │               │   ├───cache
+│   │   │               │   ├───datasource
+│   │   │               │   ├───graphql
+│   │   │               │   ├───i18n
+│   │   │               │   │       I18nConfig.java
+│   │   │               │   │       messages_en.properties
+│   │   │               │   │       messages_es.properties
+│   │   │               │   │       messages_pt.properties
+│   │   │               │   │       
+│   │   │               │   ├───multitenancy
+│   │   │               │   │       HibernateTenantFilterEnabler.java
+│   │   │               │   │       TenantContext.java
+│   │   │               │   │       
+│   │   │               │   ├───observability
+│   │   │               │   │       ObservabilityConfig.java
+│   │   │               │   │       
+│   │   │               │   ├───rest
+│   │   │               │   └───security
+│   │   │               │           JpaAuditingConfig.java
+│   │   │               │           SpringSecurityAuditorAware.java
+│   │   │               │           
+│   │   │               ├───governance
+│   │   │               │   ├───application
+│   │   │               │   ├───domain
+│   │   │               │   ├───featureflags
+│   │   │               │   ├───infrastructure
+│   │   │               │   └───licensing
+│   │   │               ├───iam
+│   │   │               │   ├───api
+│   │   │               │   │   ├───graphql
+│   │   │               │   │   │       RoleGraphQLController.java
+│   │   │               │   │   │       schema.graphqls
+│   │   │               │   │   │       
+│   │   │               │   │   └───rest
+│   │   │               │   │           RoleController.java
+│   │   │               │   │           UserController.java
+│   │   │               │   │           
+│   │   │               │   ├───application
+│   │   │               │   │   ├───command
+│   │   │               │   │   │       AssignPermissionsToRoleCommand.java
+│   │   │               │   │   │       AssignRolesToUserCommand.java
+│   │   │               │   │   │       CreateRoleCommand.java
+│   │   │               │   │   │       PermissionDefinition.java
+│   │   │               │   │   │       
+│   │   │               │   │   ├───port
+│   │   │               │   │   │       ActionRepositoryPort.java
+│   │   │               │   │   │       FieldRepositoryPort.java
+│   │   │               │   │   │       ModuleRepositoryPort.java
+│   │   │               │   │   │       PermissionRepositoryPort.java
+│   │   │               │   │   │       ResourceRepositoryPort.java
+│   │   │               │   │   │       RoleRepositoryPort.java
+│   │   │               │   │   │       UserRepositoryPort.java
+│   │   │               │   │   │       
+│   │   │               │   │   ├───query
+│   │   │               │   │   │       GetRoleByIdQuery.java
+│   │   │               │   │   │       
+│   │   │               │   │   ├───service
+│   │   │               │   │   │       PermissionEvaluatorService.java
+│   │   │               │   │   │       
+│   │   │               │   │   └───usecase
+│   │   │               │   │           AssignPermissionsToRoleUseCase.java
+│   │   │               │   │           AssignRolesToUserUseCase.java
+│   │   │               │   │           CreateRoleUseCase.java
+│   │   │               │   │           
+│   │   │               │   ├───domain
+│   │   │               │   │   └───model
+│   │   │               │   │           Action.java
+│   │   │               │   │           Field.java
+│   │   │               │   │           Module.java
+│   │   │               │   │           Permission.java
+│   │   │               │   │           Resource.java
+│   │   │               │   │           Role.java
+│   │   │               │   │           User.java
+│   │   │               │   │           
+│   │   │               │   └───infrastructure
+│   │   │               │       └───persistence
+│   │   │               │           ├───adapter
+│   │   │               │           │       ActionRepositoryAdapter.java
+│   │   │               │           │       FieldRepositoryAdapter.java
+│   │   │               │           │       ModuleRepositoryAdapter.java
+│   │   │               │           │       PermissionRepositoryAdapter.java
+│   │   │               │           │       ResourceRepositoryAdapter.java
+│   │   │               │           │       RoleRepositoryAdapter.java
+│   │   │               │           │       UserRepositoryAdapter.java
+│   │   │               │           │       
+│   │   │               │           ├───entity
+│   │   │               │           ├───repository
+│   │   │               │           │       ActionJpaRepository.java
+│   │   │               │           │       FieldJpaRepository.java
+│   │   │               │           │       ModuleJpaRepository.java
+│   │   │               │           │       PermissionJpaRepository.java
+│   │   │               │           │       ResourceJpaRepository.java
+│   │   │               │           │       RoleJpaRepository.java
+│   │   │               │           │       UserJpaRepository.java
+│   │   │               │           │       
+│   │   │               │           └───specification
+│   │   │               │                   IamSpecifications.java
+│   │   │               │                   
+│   │   │               ├───integrations
+│   │   │               │   ├───external
+│   │   │               │   ├───oracle
+│   │   │               │   ├───payment
+│   │   │               │   ├───sap
+│   │   │               │   └───webhooks
+│   │   │               ├───notifications
+│   │   │               │   ├───application
+│   │   │               │   ├───domain
+│   │   │               │   └───infrastructure
+│   │   │               ├───observability
+│   │   │               │   ├───context
+│   │   │               │   │       CorrelationIdContext.java
+│   │   │               │   │       
+│   │   │               │   ├───filter
+│   │   │               │   │       CorrelationIdFilter.java
+│   │   │               │   │       
+│   │   │               │   ├───logging
+│   │   │               │   │       LoggingContext.java
+│   │   │               │   │       
+│   │   │               │   └───metrics
+│   │   │               │           UseCaseMetricsService.java
+│   │   │               │           
+│   │   │               ├───scheduler
+│   │   │               │   ├───application
+│   │   │               │   ├───domain
+│   │   │               │   └───infrastructure
+│   │   │               ├───security
+│   │   │               │   ├───context
+│   │   │               │   │       SecurityTenantContext.java
+│   │   │               │   │       SecurityUserContext.java
+│   │   │               │   │       
+│   │   │               │   ├───filter
+│   │   │               │   │       SecurityContextFilter.java
+│   │   │               │   │       
+│   │   │               │   └───policy
+│   │   │               ├───shared
+│   │   │               │   ├───base
+│   │   │               │   │       BaseEntity.java
+│   │   │               │   │       
+│   │   │               │   ├───constants
+│   │   │               │   ├───contracts
+│   │   │               │   ├───enums
+│   │   │               │   ├───events
+│   │   │               │   │       DomainEvent.java
+│   │   │               │   │       DomainEventListener.java
+│   │   │               │   │       DomainEventPublisher.java
+│   │   │               │   │       SpringDomainEventPublisher.java
+│   │   │               │   │       
+│   │   │               │   ├───exceptions
+│   │   │               │   │       ApplicationException.java
+│   │   │               │   │       BusinessRuleViolationException.java
+│   │   │               │   │       DomainException.java
+│   │   │               │   │       EntityNotFoundException.java
+│   │   │               │   │       PermissionDeniedException.java
+│   │   │               │   │       SolverException.java
+│   │   │               │   │       
+│   │   │               │   ├───specifications
+│   │   │               │   │       TenantSpecifications.java
+│   │   │               │   │       
+│   │   │               │   ├───utils
+│   │   │               │   └───validation
+│   │   │               ├───tenant
+│   │   │               │   ├───api
+│   │   │               │   ├───application
+│   │   │               │   ├───domain
+│   │   │               │   └───infrastructure
+│   │   │               ├───verticals
+│   │   │               │   └───globalsem
+│   │   │               └───workflow
+│   │   │                   ├───application
+│   │   │                   ├───domain
+│   │   │                   └───infrastructure
+│   │   └───resources
+│   │       ├───ai
+│   │       │   │   models.yml
+│   │       │   │   providers.yml
+│   │       │   │   
+│   │       │   └───prompts
+│   │       ├───application
+│   │       │       application-dev.yml
+│   │       │       application-prod.yml
+│   │       │       application.yml
+│   │       │       
+│   │       ├───cache
+│   │       │       redis.yml
+│   │       │       
+│   │       ├───db
+│   │       │   ├───migrations
+│   │       │   └───seed
+│   │       ├───graphql
+│   │       │   └───schema
+│   │       ├───i18n
+│   │       │       messages_en.properties
+│   │       │       messages_es.properties
+│   │       │       messages_pt.properties
+│   │       │       
+│   │       ├───multitenancy
+│   │       │       strategies.yml
+│   │       │       tenants.yml
+│   │       │       
+│   │       ├───observability
+│   │       │       metrics.yml
+│   │       │       tracing.yml
+│   │       │       
+│   │       └───security
+│   │               permissions.yml
+│   │               policies.yml
+│   │               roles.yml
+│   │               
+│   └───test
+│       └───java
+│           └───com
+│               └───TechMarket
+│                   └───core
+│                       └───architecture
+│                               CoreArchitectureTest.java
+│                               
+└───target
+    ├───classes
+    │   ├───ai
+    │   │       models.yml
+    │   │       providers.yml
+    │   │       
+    │   ├───application
+    │   │       application-dev.yml
+    │   │       application-prod.yml
+    │   │       application.yml
+    │   │       
+    │   ├───cache
+    │   │       redis.yml
+    │   │       
+    │   ├───i18n
+    │   │       messages_en.properties
+    │   │       messages_es.properties
+    │   │       messages_pt.properties
+    │   │       
+    │   ├───multitenancy
+    │   │       strategies.yml
+    │   │       tenants.yml
+    │   │       
+    │   ├───observability
+    │   │       metrics.yml
+    │   │       tracing.yml
+    │   │       
+    │   └───security
+    │           permissions.yml
+    │           policies.yml
+    │           roles.yml
+    │           
+    └───generated-sources
+        └───annotations

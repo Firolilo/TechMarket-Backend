@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: iam-service
+  profiles:
+    default: dev
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
+  data:
+    mongodb:
+      repositories:
+        enabled: false
+    redis:
+      repositories:
+        enabled: false
+
+# JWT Security Configuration
+security:
+  jwt:
+    enabled: true
+  token:
+    issuer: ${IAM_JWT_ISSUER:iam-service}
+    secret: ${IAM_JWT_SECRET:dev-secret-key-change-me-please-32-bytes-minimum}
+    access-token-minutes: ${IAM_ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${IAM_REFRESH_TOKEN_DAYS:7}
+
+iam:
+  tenant-header: X-Tenant-Id
+  rate-limit:
+    enabled: true
+    max-requests: 5
+    window-seconds: 60
+    paths:
+      - /auth/login
+      - /auth/refresh
+
+server:
+  port: 8080
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
