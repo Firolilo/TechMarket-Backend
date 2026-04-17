@@ -1,10 +1,10 @@
 # TECHMARKET-ia
 
-Vertical backend de negocio construido con Spring Boot para PeopleU Academic.
+Vertical backend de negocio construido con Spring Boot para TechMarket.
 
-Este repositorio contiene la base tecnica del vertical `academic-governance/global-parameters`
-del dominio academico. El objetivo del proyecto es alojar la logica de negocio, APIs,
-integraciones y configuracion tecnica del vertical sin mezclarla con otros modulos.
+Este repositorio contiene la base tecnica del vertical `tech-networks/feed-management`
+del dominio de red social centralizada. El objetivo del proyecto es alojar la logica de negocio, APIs,
+integraciones y configuracion tecnica del vertical de gestión de contenido y conexiones tecnológicas sin mezclarla con otros modulos.
 
 ## Tecnologias base
 
