@@ -2,6 +2,8 @@
 
 Esta guía explica cómo arrancar el servicio en modo desarrollo local.
 
+Si estás en Fedora/Linux usando `bash` o `zsh`, usa [README-DEV-FEDORA.md](/home/francojta/Projects/University/TechMarket-Backend/TechMarket-AI/README-DEV-FEDORA.md).
+
 ## Requisitos Previos
 
 - Java 21

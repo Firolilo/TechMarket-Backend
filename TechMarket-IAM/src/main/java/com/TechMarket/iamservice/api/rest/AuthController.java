@@ -4,6 +4,8 @@ import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.LogoutRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
+import com.techmarket.iamservice.application.dto.RegisterRequest;
+import com.techmarket.iamservice.application.dto.VerifyOtpRequest;
 import com.techmarket.iamservice.application.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,6 +34,20 @@ public class AuthController {
             @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(tenantId, request));
+    }
+
+    @PostMapping("/auth/register")
+    public ResponseEntity<AuthTokenResponse> register(
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(tenantId, request));
+    }
+
+    @PostMapping("/auth/verify-otp")
+    public ResponseEntity<AuthTokenResponse> verifyOtp(
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @Valid @RequestBody VerifyOtpRequest request) {
+        return ResponseEntity.ok(authService.verifyOtp(tenantId, request));
     }
 
     @PostMapping("/auth/refresh")

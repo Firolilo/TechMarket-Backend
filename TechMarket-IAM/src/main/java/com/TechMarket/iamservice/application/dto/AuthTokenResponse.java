@@ -12,4 +12,7 @@ public record AuthTokenResponse(
         Long userId,
         String username,
         List<String> roles,
-        List<String> scopes) {}
+        List<String> scopes,
+        boolean otpRequired,
+        String otpChallengeId,
+        long otpExpiresIn) {}

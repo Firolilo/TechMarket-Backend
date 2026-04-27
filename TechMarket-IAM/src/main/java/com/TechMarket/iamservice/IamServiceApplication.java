@@ -1,6 +1,7 @@
 package com.techmarket.iamservice;
 
 import com.techmarket.iamservice.config.security.JwtProperties;
+import com.techmarket.iamservice.config.security.OtpProperties;
 import com.techmarket.iamservice.config.security.TokenProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -19,7 +20,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
             "com.techmarket.core.iam.infrastructure.persistence.repository",
             "com.techmarket.iamservice.infrastructure.persistence.repository"
         })
-@EnableConfigurationProperties({JwtProperties.class, TokenProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, TokenProperties.class, OtpProperties.class})
 public class IamServiceApplication {
 
     public static void main(String[] args) {
