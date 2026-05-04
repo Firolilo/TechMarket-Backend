@@ -3,8 +3,10 @@ package com.techmarket.iamservice.application.service;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
+import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.model.IamConstants;
+import com.techmarket.iamservice.application.model.UserScopeType;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
@@ -106,6 +108,59 @@ public class AuthService {
                 normalizedTenantId,
                 user.getId().toString());
         return response;
+    }
+
+    @Transactional
+    public AuthTokenResponse register(RegisterUserRequest request) {
+        String normalizedEmail = normalizeEmail(request.email());
+        if (tenantUserRepository.existsByTenantIdAndEmail(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)
+                || tenantUserRepository.existsByTenantIdAndUsername(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)) {
+            throw new AuthServiceException(
+                    "IAM_USER_ALREADY_EXISTS",
+                    HttpStatus.CONFLICT,
+                    "User already exists for the public tenant");
+        }
+
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("password and confirmPassword must match");
+        }
+
+        UserEntity user = new UserEntity(normalizedEmail, normalizedEmail, true);
+        user.setTenantId(IamConstants.GLOBAL_TENANT_ID);
+        user.setFirstName(trimToNull(request.nombre()));
+        user.setLastName(trimToNull(request.apellido()));
+        user.setPhone(trimToNull(request.telefono()));
+        user.setCountry(trimToNull(request.pais()));
+        user.setCity(trimToNull(request.ciudad()));
+        user.setUserType(trimToNull(request.tipo()));
+        user.setTermsAccepted(request.terminos());
+        user.assignRoles(Set.of());
+
+        UserEntity savedUser = tenantUserRepository.save(user);
+
+        userCredentialRepository.save(
+                new UserCredentialEntity(
+                        savedUser.getId(),
+                        IamConstants.GLOBAL_TENANT_ID,
+                        passwordEncoder.encode(request.password())));
+
+        userScopeRepository.save(
+                new UserScopeEntity(
+                        IamConstants.GLOBAL_TENANT_ID,
+                        savedUser,
+                        null,
+                        UserScopeType.GLOBAL.name()));
+
+        auditTrailService.record(
+                "AUTH_REGISTER",
+                "User",
+                savedUser.getId().toString(),
+                IamConstants.GLOBAL_TENANT_ID,
+                savedUser.getId().toString());
+
+        return issueTokenPair(savedUser, IamConstants.GLOBAL_TENANT_ID);
     }
 
     @Transactional
@@ -335,6 +390,21 @@ public class AuthService {
                     HttpStatus.BAD_REQUEST,
                     "X-Tenant-Id must be a valid UUID");
         }
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 
     private String extractBearerToken(String authorizationHeader) {

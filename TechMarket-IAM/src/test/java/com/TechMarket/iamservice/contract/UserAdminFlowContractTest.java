@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
 import com.techmarket.iamservice.application.service.PrincipalAccessService;
 import com.techmarket.iamservice.infrastructure.persistence.entity.BranchEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.BranchRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ class UserAdminFlowContractTest {
 
     @Test
     void shouldCreateUserWithGlobalScope() throws Exception {
-        RoleJpaEntity role = tenantRoleRepository.save(role("DOCENTE"));
+        RoleEntity role = tenantRoleRepository.save(role("DOCENTE"));
 
         String requestBody =
                 objectMapper.writeValueAsString(
@@ -70,7 +70,7 @@ class UserAdminFlowContractTest {
 
     @Test
     void shouldRejectBranchScopeWithUnknownBranch() throws Exception {
-        RoleJpaEntity role = tenantRoleRepository.save(role("AUXILIAR"));
+        RoleEntity role = tenantRoleRepository.save(role("AUXILIAR"));
         branchRepository.save(new BranchEntity(TENANT_ID, "SEDE_A", "Sede A", true));
 
         String requestBody =
@@ -93,8 +93,8 @@ class UserAdminFlowContractTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private RoleJpaEntity role(String name) {
-        RoleJpaEntity role = new RoleJpaEntity(name, name + " role");
+    private RoleEntity role(String name) {
+        RoleEntity role = new RoleEntity(name, name + " role");
         role.setTenantId(TENANT_ID);
         return role;
     }

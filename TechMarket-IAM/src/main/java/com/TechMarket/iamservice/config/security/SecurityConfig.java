@@ -101,6 +101,7 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(
                                                 new AntPathRequestMatcher("/auth/login"),
+                                                new AntPathRequestMatcher("/auth/register"),
                                                 new AntPathRequestMatcher("/auth/refresh"))
                                         .permitAll()
                                         .requestMatchers(new AntPathRequestMatcher("/auth/logout"))
