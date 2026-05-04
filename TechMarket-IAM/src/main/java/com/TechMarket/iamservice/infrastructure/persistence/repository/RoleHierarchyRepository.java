@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface RoleHierarchyRepository
         extends JpaRepository<
-                com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity, Long> {
+                com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity, Long> {
 
     @Query(
             value =

@@ -1,14 +1,14 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.model.IamConstants;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserScopeEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
@@ -64,7 +64,7 @@ public class AuthService {
     public AuthTokenResponse login(String tenantId, LoginRequest request) {
         String normalizedTenantId = normalizeTenantId(tenantId);
 
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByTenantIdAndUsername(normalizedTenantId, request.username())
                         .orElseThrow(
@@ -134,7 +134,7 @@ public class AuthService {
         persistedToken.revoke();
         refreshTokenRepository.save(persistedToken);
 
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByIdAndTenantId(refreshClaims.userId(), refreshClaims.tenantId())
                         .orElseThrow(
@@ -195,8 +195,8 @@ public class AuthService {
         }
     }
 
-    private AuthTokenResponse issueTokenPair(UserJpaEntity user, String tenantId) {
-        List<String> roles = user.getRoles().stream().map(RoleJpaEntity::getName).sorted().toList();
+    private AuthTokenResponse issueTokenPair(UserEntity user, String tenantId) {
+        List<String> roles = user.getRoles().stream().map(RoleEntity::getName).sorted().toList();
         List<String> userScopes = resolveUserScopes(user.getId(), tenantId);
         List<String> authorizationScopes = resolveAuthorizationScopes(user.getRoles());
 
@@ -268,10 +268,10 @@ public class AuthService {
         return new ArrayList<>(values);
     }
 
-    private List<String> resolveAuthorizationScopes(Collection<RoleJpaEntity> roles) {
+    private List<String> resolveAuthorizationScopes(Collection<RoleEntity> roles) {
         Set<String> scopes = new TreeSet<>();
         if (roles != null) {
-            for (RoleJpaEntity role : roles) {
+            for (RoleEntity role : roles) {
                 if (role == null) {
                     continue;
                 }
