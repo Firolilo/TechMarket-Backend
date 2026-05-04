@@ -5,6 +5,7 @@ import com.techmarket.core.iam.application.usecase.AssignPermissionsToRoleUseCas
 import com.techmarket.core.iam.domain.model.Role;
 import com.techmarket.core.shared.exceptions.EntityNotFoundException;
 import com.techmarket.core.shared.exceptions.TechMarketException;
+import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.dto.AssignPermissionsToRoleRequest;
 import com.techmarket.iamservice.application.dto.AssignPermissionsToRoleResponse;
 import com.techmarket.iamservice.application.exception.IamServiceException;
@@ -87,7 +88,7 @@ public class AssignPermissionsToRoleOrchestrator {
             throw e;
         } catch (Exception e) {
             log.error("event=IAM_ASSIGN_PERMISSIONS_ERROR roleId={}", request.roleId(), e);
-            throw new IamServiceException("IAM_ASSIGN_PERMISSIONS_FAILED", null, e);
+            throw new IamServiceException(ErrorCodes.IAM_ASSIGN_PERMISSIONS_FAILED, null, e);
         }
     }
 

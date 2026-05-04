@@ -6,10 +6,13 @@ import com.techmarket.core.shared.exceptions.DomainException;
 import com.techmarket.core.shared.exceptions.EntityNotFoundException;
 import com.techmarket.core.shared.exceptions.PermissionDeniedException;
 import com.techmarket.core.shared.exceptions.TechMarketException;
+import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.api.rest.dto.ErrorResponse;
+import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.exception.IamServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -19,6 +22,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,7 +33,7 @@ import org.springframework.web.context.request.WebRequest;
 public class GlobalRestExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalRestExceptionHandler.class);
-    private static final String DEFAULT_ERROR_CODE = "IAM_INTERNAL_ERROR";
+    private static final String DEFAULT_ERROR_CODE = ErrorCodes.IAM_INTERNAL_ERROR;
 
     private final MessageSource messageSource;
 
@@ -113,19 +117,85 @@ public class GlobalRestExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
+    @ExceptionHandler(AuthServiceException.class)
+    public ResponseEntity<ErrorResponse> handleAuthServiceException(
+            AuthServiceException ex, HttpServletRequest request, WebRequest webRequest) {
+        Locale locale = webRequest.getLocale();
+        String message = resolveMessage(ex.getErrorCode(), Map.of(), locale);
+
+        log.warn(
+                "event=IAM_AUTH_ERROR errorCode={} status={} path={}",
+                ex.getErrorCode(),
+                ex.getStatus().value(),
+                request.getRequestURI(),
+                ex);
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        ex.getErrorCode(), message, Instant.now(), request.getRequestURI());
+
+        return ResponseEntity.status(ex.getStatus()).body(errorResponse);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException ex, HttpServletRequest request, WebRequest webRequest) {
         Locale locale = webRequest.getLocale();
         String message = resolveMessage("validation.error.generic", Map.of(), locale);
 
-        log.error("event=IAM_VALIDATION_ERROR path={}", request.getRequestURI(), ex);
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
+
+        log.warn("event=IAM_VALIDATION_ERROR path={}", request.getRequestURI(), ex);
 
         ErrorResponse errorResponse =
                 new ErrorResponse(
-                        "VALIDATION_ERROR", message, Instant.now(), request.getRequestURI());
+                        ErrorCodes.VALIDATION_ERROR,
+                        message,
+                        Instant.now(),
+                        request.getRequestURI(),
+                        fieldErrors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex, HttpServletRequest request, WebRequest webRequest) {
+        Locale locale = webRequest.getLocale();
+        String message = resolveMessage(ErrorCodes.VALIDATION_ERROR, Map.of(), locale);
+
+        log.warn(
+                "event=IAM_ILLEGAL_ARGUMENT path={} reason={}",
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex);
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        ErrorCodes.VALIDATION_ERROR,
+                        message,
+                        Instant.now(),
+                        request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex, HttpServletRequest request, WebRequest webRequest) {
+        Locale locale = webRequest.getLocale();
+        String message = resolveMessage(ErrorCodes.FORBIDDEN, Map.of(), locale);
+
+        log.warn("event=IAM_ACCESS_DENIED path={}", request.getRequestURI(), ex);
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        ErrorCodes.FORBIDDEN, message, Instant.now(), request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)

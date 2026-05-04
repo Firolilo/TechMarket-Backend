@@ -2,6 +2,7 @@ package com.techmarket.iamservice.application.service;
 
 import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
 import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
+import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
@@ -70,7 +71,7 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_INVALID_CREDENTIALS",
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "Invalid username or password"));
 
@@ -80,20 +81,20 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_INVALID_CREDENTIALS",
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "Invalid username or password"));
 
         if (!passwordEncoder.matches(request.password(), credential.getPasswordHash())) {
             throw new AuthServiceException(
-                    "IAM_INVALID_CREDENTIALS",
+                    ErrorCodes.IAM_INVALID_CREDENTIALS,
                     HttpStatus.UNAUTHORIZED,
                     "Invalid username or password");
         }
 
         if (!user.isActive()) {
             throw new AuthServiceException(
-                    "IAM_USER_INACTIVE",
+                    ErrorCodes.IAM_USER_INACTIVE,
                     HttpStatus.UNAUTHORIZED,
                     "User is inactive for this tenant");
         }
@@ -120,7 +121,7 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_INVALID_REFRESH_TOKEN",
+                                                ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "Refresh token is invalid or revoked"));
 
@@ -128,7 +129,9 @@ public class AuthService {
             persistedToken.revoke();
             refreshTokenRepository.save(persistedToken);
             throw new AuthServiceException(
-                    "IAM_REFRESH_TOKEN_EXPIRED", HttpStatus.UNAUTHORIZED, "Refresh token expired");
+                    ErrorCodes.IAM_REFRESH_TOKEN_EXPIRED,
+                    HttpStatus.UNAUTHORIZED,
+                    "Refresh token expired");
         }
 
         persistedToken.revoke();
@@ -140,7 +143,7 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_USER_NOT_FOUND",
+                                                ErrorCodes.IAM_USER_NOT_FOUND,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "User not found for refresh token"));
 
@@ -321,7 +324,7 @@ public class AuthService {
     private String normalizeTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new AuthServiceException(
-                    "IAM_TENANT_REQUIRED",
+                    ErrorCodes.IAM_TENANT_REQUIRED,
                     HttpStatus.BAD_REQUEST,
                     "X-Tenant-Id header is required");
         }
@@ -331,7 +334,7 @@ public class AuthService {
             return UUID.fromString(normalized).toString();
         } catch (IllegalArgumentException ex) {
             throw new AuthServiceException(
-                    "IAM_TENANT_INVALID",
+                    ErrorCodes.IAM_TENANT_INVALID,
                     HttpStatus.BAD_REQUEST,
                     "X-Tenant-Id must be a valid UUID");
         }
