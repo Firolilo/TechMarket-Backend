@@ -3,6 +3,7 @@ package com.techmarket.iamservice.application.service;
 import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
 import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
+import com.techmarket.iamservice.application.dto.ForgotPasswordRequest;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
 import com.techmarket.iamservice.application.dto.RegisterRequest;
@@ -75,7 +76,7 @@ public class AuthService {
     @Transactional
     public AuthTokenResponse login(String tenantId, LoginRequest request) {
         String normalizedTenantId = normalizeTenantId(tenantId);
-        UserJpaEntity user = findUser(normalizedTenantId, request.username());
+        UserJpaEntity user = findUser(normalizedTenantId, request.loginIdentifier());
         UserCredentialEntity credential = findCredential(user.getId(), normalizedTenantId);
         validatePasswordAndStatus(request.password(), user, credential);
 
@@ -96,7 +97,8 @@ public class AuthService {
     @Transactional
     public AuthTokenResponse register(String tenantId, RegisterRequest request) {
         String normalizedTenantId = normalizeTenantId(tenantId);
-        String username = normalizeUsername(request.username());
+        validateRegistrationRequest(request);
+        String username = normalizeUsername(request.effectiveUsername());
         String email = normalizeEmail(request.email());
 
         if (tenantUserRepository.existsByTenantIdAndUsername(normalizedTenantId, username)) {
@@ -122,7 +124,9 @@ public class AuthService {
                         normalizedTenantId,
                         passwordEncoder.encode(request.password()));
         credential.setOtpEnabled(
-                request.otpEnabled() != null ? request.otpEnabled() : otpProperties.enabledByDefault());
+                request.otpEnabled() != null
+                        ? request.otpEnabled()
+                        : !request.endpointContract() && otpProperties.enabledByDefault());
         userCredentialRepository.save(credential);
         userScopeRepository.save(
                 new UserScopeEntity(
@@ -210,6 +214,11 @@ public class AuthService {
         return response;
     }
 
+    @Transactional(readOnly = true)
+    public void forgotPassword(ForgotPasswordRequest request) {
+        normalizeEmail(request.email());
+    }
+
     @Transactional
     public AuthTokenResponse refresh(RefreshTokenRequest request) {
         JwtTokenService.RefreshTokenClaims refreshClaims =
@@ -261,17 +270,19 @@ public class AuthService {
             RefreshTokenRequest request,
             Authentication authentication,
             String authorizationHeader) {
-        JwtTokenService.RefreshTokenClaims refreshClaims =
-                jwtTokenService.parseRefreshToken(request.refreshToken());
+        if (request != null && request.refreshToken() != null && !request.refreshToken().isBlank()) {
+            JwtTokenService.RefreshTokenClaims refreshClaims =
+                    jwtTokenService.parseRefreshToken(request.refreshToken());
 
-        refreshTokenRepository
-                .findByTokenIdAndTenantIdAndRevokedFalse(
-                        refreshClaims.tokenId(), refreshClaims.tenantId())
-                .ifPresent(
-                        token -> {
-                            token.revoke();
-                            refreshTokenRepository.save(token);
-                        });
+            refreshTokenRepository
+                    .findByTokenIdAndTenantIdAndRevokedFalse(
+                            refreshClaims.tokenId(), refreshClaims.tenantId())
+                    .ifPresent(
+                            token -> {
+                                token.revoke();
+                                refreshTokenRepository.save(token);
+                            });
+        }
 
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
             String tokenId = jwtAuthenticationToken.getToken().getId();
@@ -532,6 +543,34 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void validateRegistrationRequest(RegisterRequest request) {
+        if (request.effectiveUsername() == null || request.effectiveUsername().isBlank()) {
+            throw new AuthServiceException(
+                    "IAM_USERNAME_REQUIRED", HttpStatus.BAD_REQUEST, "Username is required");
+        }
+        if (request.email() == null || request.email().isBlank()) {
+            throw new AuthServiceException(
+                    "IAM_EMAIL_REQUIRED", HttpStatus.BAD_REQUEST, "Email is required");
+        }
+        if (request.password() == null || request.password().isBlank()) {
+            throw new AuthServiceException(
+                    "IAM_PASSWORD_REQUIRED", HttpStatus.BAD_REQUEST, "Password is required");
+        }
+        if (request.confirmPassword() != null
+                && !request.confirmPassword().equals(request.password())) {
+            throw new AuthServiceException(
+                    "IAM_PASSWORD_CONFIRMATION_MISMATCH",
+                    HttpStatus.BAD_REQUEST,
+                    "Password confirmation does not match");
+        }
+        if (Boolean.FALSE.equals(request.terminos())) {
+            throw new AuthServiceException(
+                    "IAM_TERMS_REQUIRED",
+                    HttpStatus.BAD_REQUEST,
+                    "Terms must be accepted");
+        }
     }
 
     private String extractBearerToken(String authorizationHeader) {

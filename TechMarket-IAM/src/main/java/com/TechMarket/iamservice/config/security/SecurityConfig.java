@@ -103,9 +103,15 @@ public class SecurityConfig {
                                                 new AntPathRequestMatcher("/auth/login"),
                                                 new AntPathRequestMatcher("/auth/register"),
                                                 new AntPathRequestMatcher("/auth/verify-otp"),
-                                                new AntPathRequestMatcher("/auth/refresh"))
+                                                new AntPathRequestMatcher("/auth/refresh"),
+                                                new AntPathRequestMatcher("/auth/refresh-token"),
+                                                new AntPathRequestMatcher("/auth/forgot-password"),
+                                                new AntPathRequestMatcher("/users/public/**"))
                                         .permitAll()
                                         .requestMatchers(new AntPathRequestMatcher("/auth/logout"))
+                                        .authenticated()
+                                        .requestMatchers(
+                                                new AntPathRequestMatcher("/users/profile"))
                                         .authenticated()
 
                                         // Public endpoint: Error handling

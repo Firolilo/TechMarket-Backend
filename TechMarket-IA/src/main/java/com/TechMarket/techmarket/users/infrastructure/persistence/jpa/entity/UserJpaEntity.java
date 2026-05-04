@@ -22,6 +22,9 @@ public class UserJpaEntity {
     @Column(name = "email")
     private String email;
 
+    @Column(name = "phone")
+    private String phone;
+
     @Column(name = "status")
     private String status;
 
@@ -61,6 +64,14 @@ public class UserJpaEntity {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getStatus() {
