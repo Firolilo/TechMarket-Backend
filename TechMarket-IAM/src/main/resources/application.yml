@@ -36,6 +36,7 @@ iam:
       - /auth/login
       - /auth/register
       - /auth/refresh
+      - /auth/logout-all
 
 server:
   port: 8080

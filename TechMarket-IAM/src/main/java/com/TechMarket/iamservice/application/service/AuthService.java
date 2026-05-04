@@ -250,6 +250,28 @@ public class AuthService {
         }
     }
 
+    @Transactional
+    public void logoutAll(Authentication authentication, String authorizationHeader) {
+        JwtTokenService.AccessTokenClaims accessClaims =
+                resolveAccessClaims(authentication, authorizationHeader);
+
+        List<RefreshTokenEntity> refreshTokens =
+                refreshTokenRepository.findAllByUserIdAndTenantIdAndRevokedFalse(
+                        accessClaims.userId(), accessClaims.tenantId());
+        if (!refreshTokens.isEmpty()) {
+            refreshTokens.forEach(RefreshTokenEntity::revoke);
+            refreshTokenRepository.saveAll(refreshTokens);
+        }
+
+        accessTokenRevocationService.revoke(accessClaims.tokenId(), accessClaims.expiresAt());
+        auditTrailService.record(
+                "AUTH_LOGOUT_ALL",
+                "User",
+                accessClaims.userId().toString(),
+                accessClaims.tenantId(),
+                accessClaims.userId().toString());
+    }
+
     private AuthTokenResponse issueTokenPair(UserEntity user, String tenantId) {
         List<String> roles = user.getRoles().stream().map(RoleEntity::getName).sorted().toList();
         List<String> userScopes = resolveUserScopes(user.getId(), tenantId);
@@ -418,5 +440,34 @@ public class AuthService {
         }
 
         return token.isBlank() ? null : token;
+    }
+
+    private JwtTokenService.AccessTokenClaims resolveAccessClaims(
+            Authentication authentication, String authorizationHeader) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            String tokenId = jwtAuthenticationToken.getToken().getId();
+            java.time.Instant expiresAt = jwtAuthenticationToken.getToken().getExpiresAt();
+            String tenantId = jwtAuthenticationToken.getToken().getClaimAsString("tenant_id");
+            Long userId = Long.valueOf(jwtAuthenticationToken.getToken().getSubject());
+
+            if (tokenId == null || expiresAt == null || tenantId == null || userId == null) {
+                throw new AuthServiceException(
+                        "IAM_INVALID_ACCESS_TOKEN",
+                        HttpStatus.UNAUTHORIZED,
+                        "Access token does not contain required claims");
+            }
+
+            return new JwtTokenService.AccessTokenClaims(tokenId, userId, tenantId, expiresAt);
+        }
+
+        String accessToken = extractBearerToken(authorizationHeader);
+        if (accessToken == null) {
+            throw new AuthServiceException(
+                    "IAM_INVALID_ACCESS_TOKEN",
+                    HttpStatus.UNAUTHORIZED,
+                    "Access token is required for logout-all");
+        }
+
+        return jwtTokenService.parseAccessToken(accessToken);
     }
 }

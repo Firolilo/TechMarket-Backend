@@ -106,6 +106,9 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(new AntPathRequestMatcher("/auth/logout"))
                                         .authenticated()
+                                        .requestMatchers(
+                                                new AntPathRequestMatcher("/auth/logout-all"))
+                                        .authenticated()
 
                                         // Public endpoint: Error handling
                                         .requestMatchers(new AntPathRequestMatcher("/error"))

@@ -60,4 +60,14 @@ public class AuthController {
                 authorizationHeader);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/auth/logout-all")
+    @Operation(security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<Void> logoutAll(
+            Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false)
+                    String authorizationHeader) {
+        authService.logoutAll(authentication, authorizationHeader);
+        return ResponseEntity.noContent().build();
+    }
 }
