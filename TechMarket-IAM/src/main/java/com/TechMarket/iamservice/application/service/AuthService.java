@@ -1,15 +1,17 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
+import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.model.IamConstants;
+import com.techmarket.iamservice.application.model.UserScopeType;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserScopeEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
@@ -65,7 +67,7 @@ public class AuthService {
     public AuthTokenResponse login(String tenantId, LoginRequest request) {
         String normalizedTenantId = normalizeTenantId(tenantId);
 
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByTenantIdAndUsername(normalizedTenantId, request.username())
                         .orElseThrow(
@@ -110,6 +112,59 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthTokenResponse register(RegisterUserRequest request) {
+        String normalizedEmail = normalizeEmail(request.email());
+        if (tenantUserRepository.existsByTenantIdAndEmail(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)
+                || tenantUserRepository.existsByTenantIdAndUsername(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)) {
+            throw new AuthServiceException(
+                    "IAM_USER_ALREADY_EXISTS",
+                    HttpStatus.CONFLICT,
+                    "User already exists for the public tenant");
+        }
+
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("password and confirmPassword must match");
+        }
+
+        UserEntity user = new UserEntity(normalizedEmail, normalizedEmail, true);
+        user.setTenantId(IamConstants.GLOBAL_TENANT_ID);
+        user.setFirstName(trimToNull(request.nombre()));
+        user.setLastName(trimToNull(request.apellido()));
+        user.setPhone(trimToNull(request.telefono()));
+        user.setCountry(trimToNull(request.pais()));
+        user.setCity(trimToNull(request.ciudad()));
+        user.setUserType(trimToNull(request.tipo()));
+        user.setTermsAccepted(request.terminos());
+        user.assignRoles(Set.of());
+
+        UserEntity savedUser = tenantUserRepository.save(user);
+
+        userCredentialRepository.save(
+                new UserCredentialEntity(
+                        savedUser.getId(),
+                        IamConstants.GLOBAL_TENANT_ID,
+                        passwordEncoder.encode(request.password())));
+
+        userScopeRepository.save(
+                new UserScopeEntity(
+                        IamConstants.GLOBAL_TENANT_ID,
+                        savedUser,
+                        null,
+                        UserScopeType.GLOBAL.name()));
+
+        auditTrailService.record(
+                "AUTH_REGISTER",
+                "User",
+                savedUser.getId().toString(),
+                IamConstants.GLOBAL_TENANT_ID,
+                savedUser.getId().toString());
+
+        return issueTokenPair(savedUser, IamConstants.GLOBAL_TENANT_ID);
+    }
+
+    @Transactional
     public AuthTokenResponse refresh(RefreshTokenRequest request) {
         JwtTokenService.RefreshTokenClaims refreshClaims =
                 jwtTokenService.parseRefreshToken(request.refreshToken());
@@ -137,7 +192,7 @@ public class AuthService {
         persistedToken.revoke();
         refreshTokenRepository.save(persistedToken);
 
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByIdAndTenantId(refreshClaims.userId(), refreshClaims.tenantId())
                         .orElseThrow(
@@ -198,8 +253,30 @@ public class AuthService {
         }
     }
 
-    private AuthTokenResponse issueTokenPair(UserJpaEntity user, String tenantId) {
-        List<String> roles = user.getRoles().stream().map(RoleJpaEntity::getName).sorted().toList();
+    @Transactional
+    public void logoutAll(Authentication authentication, String authorizationHeader) {
+        JwtTokenService.AccessTokenClaims accessClaims =
+                resolveAccessClaims(authentication, authorizationHeader);
+
+        List<RefreshTokenEntity> refreshTokens =
+                refreshTokenRepository.findAllByUserIdAndTenantIdAndRevokedFalse(
+                        accessClaims.userId(), accessClaims.tenantId());
+        if (!refreshTokens.isEmpty()) {
+            refreshTokens.forEach(RefreshTokenEntity::revoke);
+            refreshTokenRepository.saveAll(refreshTokens);
+        }
+
+        accessTokenRevocationService.revoke(accessClaims.tokenId(), accessClaims.expiresAt());
+        auditTrailService.record(
+                "AUTH_LOGOUT_ALL",
+                "User",
+                accessClaims.userId().toString(),
+                accessClaims.tenantId(),
+                accessClaims.userId().toString());
+    }
+
+    private AuthTokenResponse issueTokenPair(UserEntity user, String tenantId) {
+        List<String> roles = user.getRoles().stream().map(RoleEntity::getName).sorted().toList();
         List<String> userScopes = resolveUserScopes(user.getId(), tenantId);
         List<String> authorizationScopes = resolveAuthorizationScopes(user.getRoles());
 
@@ -271,10 +348,10 @@ public class AuthService {
         return new ArrayList<>(values);
     }
 
-    private List<String> resolveAuthorizationScopes(Collection<RoleJpaEntity> roles) {
+    private List<String> resolveAuthorizationScopes(Collection<RoleEntity> roles) {
         Set<String> scopes = new TreeSet<>();
         if (roles != null) {
-            for (RoleJpaEntity role : roles) {
+            for (RoleEntity role : roles) {
                 if (role == null) {
                     continue;
                 }
@@ -340,6 +417,21 @@ public class AuthService {
         }
     }
 
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
+    }
+
     private String extractBearerToken(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             return null;
@@ -351,5 +443,34 @@ public class AuthService {
         }
 
         return token.isBlank() ? null : token;
+    }
+
+    private JwtTokenService.AccessTokenClaims resolveAccessClaims(
+            Authentication authentication, String authorizationHeader) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            String tokenId = jwtAuthenticationToken.getToken().getId();
+            java.time.Instant expiresAt = jwtAuthenticationToken.getToken().getExpiresAt();
+            String tenantId = jwtAuthenticationToken.getToken().getClaimAsString("tenant_id");
+            Long userId = Long.valueOf(jwtAuthenticationToken.getToken().getSubject());
+
+            if (tokenId == null || expiresAt == null || tenantId == null || userId == null) {
+                throw new AuthServiceException(
+                        "IAM_INVALID_ACCESS_TOKEN",
+                        HttpStatus.UNAUTHORIZED,
+                        "Access token does not contain required claims");
+            }
+
+            return new JwtTokenService.AccessTokenClaims(tokenId, userId, tenantId, expiresAt);
+        }
+
+        String accessToken = extractBearerToken(authorizationHeader);
+        if (accessToken == null) {
+            throw new AuthServiceException(
+                    "IAM_INVALID_ACCESS_TOKEN",
+                    HttpStatus.UNAUTHORIZED,
+                    "Access token is required for logout-all");
+        }
+
+        return jwtTokenService.parseAccessToken(accessToken);
     }
 }

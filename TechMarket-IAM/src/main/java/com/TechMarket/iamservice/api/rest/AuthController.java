@@ -5,6 +5,7 @@ import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.LogoutRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
+import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -74,6 +75,12 @@ public class AuthController {
             @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(tenantId, request));
+    }
+
+    @PostMapping("/auth/register")
+    public ResponseEntity<AuthTokenResponse> register(
+            @Valid @RequestBody RegisterUserRequest request) {
+        return ResponseEntity.status(201).body(authService.register(request));
     }
 
     @Operation(
@@ -151,6 +158,16 @@ public class AuthController {
                 new RefreshTokenRequest(request.refreshToken()),
                 authentication,
                 authorizationHeader);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/auth/logout-all")
+    @Operation(security = {@SecurityRequirement(name = "bearer-jwt")})
+    public ResponseEntity<Void> logoutAll(
+            Authentication authentication,
+            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false)
+                    String authorizationHeader) {
+        authService.logoutAll(authentication, authorizationHeader);
         return ResponseEntity.noContent().build();
     }
 }

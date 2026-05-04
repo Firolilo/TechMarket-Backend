@@ -1,7 +1,7 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.PermissionJpaEntity;
 import com.techmarket.iamservice.application.dto.PermissionResponse;
+import com.techmarket.iamservice.infrastructure.persistence.entity.PermissionEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantPermissionRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class PermissionQueryService {
                 .toList();
     }
 
-    private PermissionResponse toResponse(PermissionJpaEntity permission) {
+    private PermissionResponse toResponse(PermissionEntity permission) {
         return new PermissionResponse(
                 permission.getId(),
                 permission.getRole() != null ? permission.getRole().getId() : null,

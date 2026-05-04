@@ -1,12 +1,12 @@
 package com.techmarket.iamservice.infrastructure.persistence.repository;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.PermissionJpaEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.PermissionEntity;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface TenantPermissionRepository extends JpaRepository<PermissionJpaEntity, Long> {
-    List<PermissionJpaEntity> findAllByTenantId(String tenantId);
+public interface TenantPermissionRepository extends JpaRepository<PermissionEntity, Long> {
+    List<PermissionEntity> findAllByTenantId(String tenantId);
 
-    Set<PermissionJpaEntity> findByIdInAndTenantId(Set<Long> ids, String tenantId);
+    Set<PermissionEntity> findByIdInAndTenantId(Set<Long> ids, String tenantId);
 }

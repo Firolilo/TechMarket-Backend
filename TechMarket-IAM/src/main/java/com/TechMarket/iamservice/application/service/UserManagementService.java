@@ -1,7 +1,5 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import com.techmarket.core.shared.exceptions.EntityNotFoundException;
 import com.techmarket.iamservice.application.dto.CreateUserRequest;
 import com.techmarket.iamservice.application.dto.UpdateUserRequest;
@@ -10,7 +8,9 @@ import com.techmarket.iamservice.application.dto.UserScopeResponse;
 import com.techmarket.iamservice.application.model.IamConstants;
 import com.techmarket.iamservice.application.model.UserScopeType;
 import com.techmarket.iamservice.infrastructure.persistence.entity.BranchEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserScopeEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.BranchRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RoleHierarchyRepository;
@@ -71,7 +71,7 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> findAll(Authentication authentication) {
-        List<UserJpaEntity> users = tenantUserRepository.findAll();
+        List<UserEntity> users = tenantUserRepository.findAll();
         Map<Long, List<UserScopeEntity>> scopesByUserId = loadScopesByUser(users);
 
         if (!principalAccessService.isGlobalAdmin(authentication)
@@ -86,7 +86,7 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> findAllByTenant(String tenantId, Authentication authentication) {
-        List<UserJpaEntity> users = tenantUserRepository.findAllByTenantId(tenantId);
+        List<UserEntity> users = tenantUserRepository.findAllByTenantId(tenantId);
         Map<Long, List<UserScopeEntity>> scopesByUserId = loadScopesByUser(users);
 
         if (!principalAccessService.isGlobalAdmin(authentication)
@@ -101,7 +101,7 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public UserResponse findById(Long userId, Authentication authentication) {
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findById(userId)
                         .orElseThrow(() -> new EntityNotFoundException("User", userId.toString()));
@@ -112,7 +112,7 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public UserResponse findById(String tenantId, Long userId, Authentication authentication) {
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByIdAndTenantId(userId, tenantId)
                         .orElseThrow(() -> new EntityNotFoundException("User", userId.toString()));
@@ -136,14 +136,14 @@ public class UserManagementService {
             throw new IllegalArgumentException("email already exists for tenant");
         }
 
-        Set<RoleJpaEntity> roles = resolveAssignableRoles(tenantId, request.roleIds());
+        Set<RoleEntity> roles = resolveAssignableRoles(tenantId, request.roleIds());
         validateRoleHierarchy(tenantId, roles, authentication);
 
-        UserJpaEntity user =
-                new UserJpaEntity(username, email, request.active() == null || request.active());
+        UserEntity user =
+                new UserEntity(username, email, request.active() == null || request.active());
         user.setTenantId(tenantId);
         user.assignRoles(roles);
-        UserJpaEntity savedUser = tenantUserRepository.save(user);
+        UserEntity savedUser = tenantUserRepository.save(user);
 
         userCredentialRepository.save(
                 new UserCredentialEntity(
@@ -174,7 +174,7 @@ public class UserManagementService {
             Long userId,
             UpdateUserRequest request,
             Authentication authentication) {
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByIdAndTenantId(userId, tenantId)
                         .orElseThrow(() -> new EntityNotFoundException("User", userId.toString()));
@@ -184,7 +184,7 @@ public class UserManagementService {
     @Transactional
     public UserResponse update(
             Long userId, UpdateUserRequest request, Authentication authentication) {
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findById(userId)
                         .orElseThrow(() -> new EntityNotFoundException("User", userId.toString()));
@@ -192,7 +192,7 @@ public class UserManagementService {
     }
 
     private UserResponse updateInternal(
-            UserJpaEntity user, UpdateUserRequest request, Authentication authentication) {
+            UserEntity user, UpdateUserRequest request, Authentication authentication) {
         requireAuthenticatedActor(authentication);
         validateVisibility(user, authentication);
         String tenantId = user.getTenantId();
@@ -206,7 +206,7 @@ public class UserManagementService {
         }
 
         if (request.roleIds() != null) {
-            Set<RoleJpaEntity> roles = resolveAssignableRoles(tenantId, request.roleIds());
+            Set<RoleEntity> roles = resolveAssignableRoles(tenantId, request.roleIds());
             validateRoleHierarchy(tenantId, roles, authentication);
             user.assignRoles(roles);
         }
@@ -236,7 +236,7 @@ public class UserManagementService {
             assignScopes(user, tenantId, scopeType, branchIds, authentication, false);
         }
 
-        UserJpaEntity updated = tenantUserRepository.save(user);
+        UserEntity updated = tenantUserRepository.save(user);
         List<UserScopeEntity> scopes =
                 userScopeRepository.findAllByUserIdAndTenantId(user.getId(), tenantId);
         auditTrailService.record(
@@ -248,13 +248,13 @@ public class UserManagementService {
         return toResponse(updated, scopes);
     }
 
-    private Map<Long, List<UserScopeEntity>> loadScopesByUser(List<UserJpaEntity> users) {
+    private Map<Long, List<UserScopeEntity>> loadScopesByUser(List<UserEntity> users) {
         Map<Long, List<UserScopeEntity>> scopesByUserId = new HashMap<>();
         if (users.isEmpty()) {
             return scopesByUserId;
         }
 
-        List<Long> ids = users.stream().map(UserJpaEntity::getId).toList();
+        List<Long> ids = users.stream().map(UserEntity::getId).toList();
         for (UserScopeEntity scope : userScopeRepository.findAllByUserIdIn(ids)) {
             scopesByUserId
                     .computeIfAbsent(scope.getUser().getId(), ignored -> new ArrayList<>())
@@ -263,8 +263,8 @@ public class UserManagementService {
         return scopesByUserId;
     }
 
-    private List<UserJpaEntity> filterUsersByScope(
-            List<UserJpaEntity> users,
+    private List<UserEntity> filterUsersByScope(
+            List<UserEntity> users,
             Map<Long, List<UserScopeEntity>> scopesByUserId,
             Authentication authentication) {
         Long actorUserId = principalAccessService.currentUserId(authentication);
@@ -272,7 +272,7 @@ public class UserManagementService {
             return users;
         }
 
-        UserJpaEntity actor =
+        UserEntity actor =
                 users.stream()
                         .filter(user -> actorUserId.equals(user.getId()))
                         .findFirst()
@@ -327,7 +327,7 @@ public class UserManagementService {
                 .toList();
     }
 
-    private void validateVisibility(UserJpaEntity user, Authentication authentication) {
+    private void validateVisibility(UserEntity user, Authentication authentication) {
         if (principalAccessService.isGlobalAdmin(authentication)) {
             return;
         }
@@ -397,15 +397,15 @@ public class UserManagementService {
         return new ScopeVisibility(globalScope, branchIds);
     }
 
-    private Set<RoleJpaEntity> resolveAssignableRoles(String tenantId, Set<Long> roleIds) {
+    private Set<RoleEntity> resolveAssignableRoles(String tenantId, Set<Long> roleIds) {
         Set<Long> requestedRoleIds = roleIds == null ? Set.of() : roleIds;
         if (requestedRoleIds.isEmpty()) {
             return Set.of();
         }
 
-        List<RoleJpaEntity> foundRoles = tenantRoleRepository.findAllById(requestedRoleIds);
-        Set<RoleJpaEntity> validRoles = new HashSet<>();
-        for (RoleJpaEntity role : foundRoles) {
+        List<RoleEntity> foundRoles = tenantRoleRepository.findAllById(requestedRoleIds);
+        Set<RoleEntity> validRoles = new HashSet<>();
+        for (RoleEntity role : foundRoles) {
             if (tenantId.equals(role.getTenantId())) {
                 validRoles.add(role);
                 continue;
@@ -422,7 +422,7 @@ public class UserManagementService {
     }
 
     private void validateRoleHierarchy(
-            String tenantId, Set<RoleJpaEntity> targetRoles, Authentication authentication) {
+            String tenantId, Set<RoleEntity> targetRoles, Authentication authentication) {
         if (targetRoles == null || targetRoles.isEmpty()) {
             return;
         }
@@ -450,7 +450,7 @@ public class UserManagementService {
                         .orElse(IamConstants.DEFAULT_HIERARCHY_LEVEL);
 
         Set<Long> targetRoleIds =
-                targetRoles.stream().map(RoleJpaEntity::getId).collect(Collectors.toSet());
+                targetRoles.stream().map(RoleEntity::getId).collect(Collectors.toSet());
         List<RoleHierarchyView> targetHierarchy =
                 roleHierarchyRepository.findHierarchyByRoleIds(targetRoleIds);
 
@@ -478,7 +478,7 @@ public class UserManagementService {
     }
 
     private void assignScopes(
-            UserJpaEntity user,
+            UserEntity user,
             String tenantId,
             String requestedScopeType,
             Set<Long> requestedBranchIds,
@@ -529,9 +529,9 @@ public class UserManagementService {
         }
     }
 
-    private UserResponse toResponse(UserJpaEntity user, List<UserScopeEntity> scopes) {
+    private UserResponse toResponse(UserEntity user, List<UserScopeEntity> scopes) {
         Set<Long> roleIds =
-                user.getRoles().stream().map(RoleJpaEntity::getId).collect(Collectors.toSet());
+                user.getRoles().stream().map(RoleEntity::getId).collect(Collectors.toSet());
 
         Set<UserScopeResponse> scopeResponses = new LinkedHashSet<>();
         if (scopes != null) {
@@ -554,7 +554,7 @@ public class UserManagementService {
                 scopeResponses);
     }
 
-    private boolean isGlobalAdminRole(RoleJpaEntity role) {
+    private boolean isGlobalAdminRole(RoleEntity role) {
         return role != null
                 && role.getName() != null
                 && IamConstants.GLOBAL_ADMIN_ROLE.equalsIgnoreCase(role.getName());

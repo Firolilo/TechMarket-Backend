@@ -34,7 +34,9 @@ iam:
     window-seconds: 60
     paths:
       - /auth/login
+      - /auth/register
       - /auth/refresh
+      - /auth/logout-all
 
 server:
   port: 8080

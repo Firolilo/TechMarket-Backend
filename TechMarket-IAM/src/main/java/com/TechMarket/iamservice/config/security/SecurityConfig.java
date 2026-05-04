@@ -103,11 +103,15 @@ public class SecurityConfig {
                                         // Public endpoints: Auth login/refresh
                                         .requestMatchers(
                                                 new AntPathRequestMatcher("/auth/login"),
+                                                new AntPathRequestMatcher("/auth/register"),
                                                 new AntPathRequestMatcher("/auth/refresh"))
                                         .permitAll()
 
                                         // Authenticated endpoint: Auth logout
                                         .requestMatchers(new AntPathRequestMatcher("/auth/logout"))
+                                        .authenticated()
+                                        .requestMatchers(
+                                                new AntPathRequestMatcher("/auth/logout-all"))
                                         .authenticated()
 
                                         // Public endpoint: Error handling

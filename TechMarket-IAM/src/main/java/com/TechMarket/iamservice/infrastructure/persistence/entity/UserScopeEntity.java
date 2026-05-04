@@ -1,6 +1,5 @@
 package com.techmarket.iamservice.infrastructure.persistence.entity;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -25,7 +24,7 @@ public class UserScopeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserJpaEntity user;
+    private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id")
@@ -40,7 +39,7 @@ public class UserScopeEntity {
     protected UserScopeEntity() {}
 
     public UserScopeEntity(
-            String tenantId, UserJpaEntity user, BranchEntity branch, String scopeType) {
+            String tenantId, UserEntity user, BranchEntity branch, String scopeType) {
         this.tenantId = tenantId;
         this.user = user;
         this.branch = branch;
@@ -55,7 +54,7 @@ public class UserScopeEntity {
         return tenantId;
     }
 
-    public UserJpaEntity getUser() {
+    public UserEntity getUser() {
         return user;
     }
 
