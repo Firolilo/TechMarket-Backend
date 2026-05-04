@@ -7,6 +7,8 @@ import com.techmarket.core.iam.application.usecase.CreateRoleUseCase;
 import com.techmarket.iamservice.application.orchestration.AssignPermissionsToRoleOrchestrator;
 import com.techmarket.iamservice.application.orchestration.CreateRoleOrchestrator;
 import com.techmarket.iamservice.application.service.AuditTrailService;
+import com.techmarket.iamservice.application.service.PrincipalAccessService;
+import com.techmarket.iamservice.infrastructure.persistence.repository.RoleHierarchyRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantPermissionRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -45,8 +47,18 @@ public class UseCaseConfig {
 
     @Bean
     @ConditionalOnMissingBean(CreateRoleOrchestrator.class)
-    public CreateRoleOrchestrator createRoleOrchestrator(CreateRoleUseCase createRoleUseCase) {
-        return new CreateRoleOrchestrator(createRoleUseCase);
+    public CreateRoleOrchestrator createRoleOrchestrator(
+            CreateRoleUseCase createRoleUseCase,
+            TenantRoleRepository tenantRoleRepository,
+            RoleHierarchyRepository roleHierarchyRepository,
+            AuditTrailService auditTrailService,
+            PrincipalAccessService principalAccessService) {
+        return new CreateRoleOrchestrator(
+                createRoleUseCase,
+                tenantRoleRepository,
+                roleHierarchyRepository,
+                auditTrailService,
+                principalAccessService);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package com.techmarket.iamservice.application.service;
 
+import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.config.security.TokenProperties;
 import java.time.Duration;
@@ -102,7 +103,7 @@ public class JwtTokenService {
             String tokenType = jwt.getClaimAsString("token_type");
             if (!"refresh".equals(tokenType)) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_REFRESH_TOKEN",
+                        ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Provided token is not a refresh token");
             }
@@ -113,7 +114,7 @@ public class JwtTokenService {
 
             if (tokenId == null || tenantId == null || userId == null) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_REFRESH_TOKEN",
+                        ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Refresh token does not contain required claims");
             }
@@ -122,7 +123,7 @@ public class JwtTokenService {
                 tenantId = UUID.fromString(tenantId).toString();
             } catch (IllegalArgumentException ex) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_REFRESH_TOKEN",
+                        ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Refresh token tenant_id claim is invalid");
             }
@@ -130,7 +131,7 @@ public class JwtTokenService {
             return new RefreshTokenClaims(tokenId, userId, tenantId);
         } catch (JwtException | IllegalArgumentException ex) {
             throw new AuthServiceException(
-                    "IAM_INVALID_REFRESH_TOKEN",
+                    ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                     HttpStatus.UNAUTHORIZED,
                     "Refresh token is invalid or expired");
         }
@@ -142,7 +143,7 @@ public class JwtTokenService {
             String tokenType = jwt.getClaimAsString("token_type");
             if (!"access".equals(tokenType)) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_ACCESS_TOKEN",
+                        ErrorCodes.IAM_INVALID_ACCESS_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Provided token is not an access token");
             }
@@ -154,7 +155,7 @@ public class JwtTokenService {
 
             if (tokenId == null || tenantId == null || userId == null || expiresAt == null) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_ACCESS_TOKEN",
+                        ErrorCodes.IAM_INVALID_ACCESS_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Access token does not contain required claims");
             }
@@ -163,7 +164,7 @@ public class JwtTokenService {
                 tenantId = UUID.fromString(tenantId).toString();
             } catch (IllegalArgumentException ex) {
                 throw new AuthServiceException(
-                        "IAM_INVALID_ACCESS_TOKEN",
+                        ErrorCodes.IAM_INVALID_ACCESS_TOKEN,
                         HttpStatus.UNAUTHORIZED,
                         "Access token tenant_id claim is invalid");
             }
@@ -171,7 +172,7 @@ public class JwtTokenService {
             return new AccessTokenClaims(tokenId, userId, tenantId, expiresAt);
         } catch (JwtException | IllegalArgumentException ex) {
             throw new AuthServiceException(
-                    "IAM_INVALID_ACCESS_TOKEN",
+                    ErrorCodes.IAM_INVALID_ACCESS_TOKEN,
                     HttpStatus.UNAUTHORIZED,
                     "Access token is invalid or expired");
         }

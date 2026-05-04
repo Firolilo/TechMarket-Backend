@@ -99,11 +99,15 @@ public class SecurityConfig {
                                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                                 new AntPathRequestMatcher("/swagger-ui.html"))
                                         .permitAll()
+
+                                        // Public endpoints: Auth login/refresh
                                         .requestMatchers(
                                                 new AntPathRequestMatcher("/auth/login"),
                                                 new AntPathRequestMatcher("/auth/register"),
                                                 new AntPathRequestMatcher("/auth/refresh"))
                                         .permitAll()
+
+                                        // Authenticated endpoint: Auth logout
                                         .requestMatchers(new AntPathRequestMatcher("/auth/logout"))
                                         .authenticated()
                                         .requestMatchers(
@@ -114,22 +118,18 @@ public class SecurityConfig {
                                         .requestMatchers(new AntPathRequestMatcher("/error"))
                                         .permitAll()
 
-                                        // Protected endpoints
+                                        // IAM read endpoints
                                         .requestMatchers(
                                                 new AntPathRequestMatcher(
-                                                        "/users/**", HttpMethod.GET.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/roles/**", HttpMethod.GET.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/permissions/**", HttpMethod.GET.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/branches/**", HttpMethod.GET.name()))
+                                                        "/api/v1/iam/**", HttpMethod.GET.name()))
                                         .hasAnyAuthority(
                                                 "ROLE_ADMIN_GLOBAL",
                                                 "SCOPE_iam.users.read",
                                                 "SCOPE_iam.roles.read",
                                                 "SCOPE_iam.permissions.read",
                                                 "SCOPE_iam.branches.read")
+
+                                        // IAM write endpoints
                                         .requestMatchers(
                                                 new AntPathRequestMatcher(
                                                         "/api/v1/iam/**", HttpMethod.POST.name()),
@@ -140,51 +140,11 @@ public class SecurityConfig {
                                                 new AntPathRequestMatcher(
                                                         "/api/v1/iam/**", HttpMethod.DELETE.name()))
                                         .hasAnyAuthority(
-                                                "ROLE_ADMIN_GLOBAL", "SCOPE_iam.permissions.write")
-                                        .requestMatchers(
-                                                new AntPathRequestMatcher(
-                                                        "/users/**", HttpMethod.POST.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/users/**", HttpMethod.PUT.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/users/**", HttpMethod.PATCH.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/users/**", HttpMethod.DELETE.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/roles/**", HttpMethod.POST.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/roles/**", HttpMethod.PUT.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/roles/**", HttpMethod.PATCH.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/roles/**", HttpMethod.DELETE.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/permissions/**", HttpMethod.POST.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/permissions/**", HttpMethod.PUT.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/permissions/**", HttpMethod.PATCH.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/permissions/**",
-                                                        HttpMethod.DELETE.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/branches/**", HttpMethod.POST.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/branches/**", HttpMethod.PUT.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/branches/**", HttpMethod.PATCH.name()),
-                                                new AntPathRequestMatcher(
-                                                        "/branches/**", HttpMethod.DELETE.name()))
-                                        .hasAnyAuthority(
                                                 "ROLE_ADMIN_GLOBAL",
                                                 "SCOPE_iam.users.write",
                                                 "SCOPE_iam.roles.write",
                                                 "SCOPE_iam.permissions.write",
                                                 "SCOPE_iam.branches.write")
-
-                                        // Backward compatibility for legacy protected endpoints
-                                        .requestMatchers(new AntPathRequestMatcher("/api/**"))
-                                        .authenticated()
 
                                         // Deny all other requests
                                         .anyRequest()

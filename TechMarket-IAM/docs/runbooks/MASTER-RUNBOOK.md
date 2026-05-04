@@ -8,12 +8,12 @@ Este runbook guía el desarrollo completo del microservicio IAM Service siguiend
 
 1. **Abrir Cursor:**
    - Abrir Cursor IDE
-   - File → Open Folder → Seleccionar `C:\Tito\Hibrido\proy\Cursor_Project`
+   - File → Open Folder → Seleccionar `D:\Proyectos\TechMarket-Backend`
 
 2. **Agregar repositorios al workspace:**
    - File → Add Folder to Workspace
-   - Agregar: `C:\TechMarket\core-plataform`
-   - Agregar: `C:\TechMarket\iam-service`
+   - Agregar: `D:\Proyectos\TechMarket-Backend\TechMarket-Core`
+   - Agregar: `D:\Proyectos\TechMarket-Backend\TechMarket-IAM`
    - Guardar workspace: File → Save Workspace As...
 
 3. **Buscar archivos rápidamente:**
@@ -38,11 +38,11 @@ Antes de probar endpoints, necesitas obtener un token JWT válido. El proceso de
 1. **Endpoint de autenticación** (ejemplo típico):
    ```powershell
    # Ejemplo de login (ajustar según tu implementación)
-   $response = Invoke-RestMethod -Uri "http://localhost:8080/api/v1/auth/login" `
+   $response = Invoke-RestMethod -Uri "http://localhost:8080/auth/login" `
      -Method POST `
      -ContentType "application/json" `
      -Body '{"username":"user","password":"pass"}'
-   $token = $response.token
+   $token = $response.accessToken
    ```
 
 2. **Guardar token en variable:**

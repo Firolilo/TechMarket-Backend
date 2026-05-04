@@ -133,7 +133,7 @@ class AssignPermissionsToRoleContractTest {
                                 .content(requestBody))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.errorCode").value(ErrorCodes.UNEXPECTED_ERROR))
+                .andExpect(jsonPath("$.errorCode").value(ErrorCodes.IAM_INTERNAL_ERROR))
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.path").value("/api/v1/iam/roles/1/permissions"));
     }

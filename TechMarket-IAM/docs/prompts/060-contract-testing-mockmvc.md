@@ -31,7 +31,7 @@ Tareas:
    - @AutoConfigureMockMvc
    - Mockear CreateRoleOrchestrator con @MockBean
    - Tests:
-     * testCreateRole_Success: POST /api/v1/roles → 201 Created, validar response body
+     * testCreateRole_Success: POST /api/v1/iam/roles → 201 Created, validar response body
      * testCreateRole_ValidationError: POST con datos inválidos → 400 Bad Request, validar ErrorResponse
      * testCreateRole_ServiceError: Orchestrator lanza excepción → validar código HTTP y ErrorResponse
    - Usar MockMvc para hacer requests
@@ -43,7 +43,7 @@ Tareas:
    - @AutoConfigureMockMvc
    - Mockear AssignPermissionsToRoleOrchestrator con @MockBean
    - Tests:
-     * testAssignPermissions_Success: PUT /api/v1/roles/{id}/permissions → 200 OK, validar response
+     * testAssignPermissions_Success: PUT /api/v1/iam/roles/{id}/permissions → 200 OK, validar response
      * testAssignPermissions_ValidationError: PUT con datos inválidos → 400 Bad Request
      * testAssignPermissions_RoleNotFound: Orchestrator lanza EntityNotFoundException → 404 Not Found
      * testAssignPermissions_ServiceError: Orchestrator lanza excepción → validar código HTTP

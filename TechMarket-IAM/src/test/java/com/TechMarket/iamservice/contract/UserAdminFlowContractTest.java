@@ -58,7 +58,7 @@ class UserAdminFlowContractTest {
                                 java.util.Set.of()));
 
         mockMvc.perform(
-                        post("/users")
+                        post("/api/v1/iam/users")
                                 .header("X-Tenant-Id", TENANT_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))
@@ -86,7 +86,7 @@ class UserAdminFlowContractTest {
                                 java.util.Set.of(999999L)));
 
         mockMvc.perform(
-                        post("/users")
+                        post("/api/v1/iam/users")
                                 .header("X-Tenant-Id", TENANT_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody))

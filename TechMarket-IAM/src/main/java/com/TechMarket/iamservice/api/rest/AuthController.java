@@ -1,5 +1,6 @@
 package com.techmarket.iamservice.api.rest;
 
+import com.techmarket.iamservice.api.exception.dto.ApiErrorResponse;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.LogoutRequest;
@@ -8,6 +9,10 @@ import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,6 +33,43 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(
+            operationId = "login",
+            summary = "Authenticate user",
+            description =
+                    "Authenticates a user with username and password, returns JWT token pair.")
+    @ApiResponses(
+            value = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Authentication successful",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema =
+                                                @Schema(implementation = AuthTokenResponse.class))),
+                @ApiResponse(
+                        responseCode = "400",
+                        description = "Validation error",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Invalid credentials",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "429",
+                        description = "Rate limit exceeded",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class)))
+            })
     @PostMapping("/auth/login")
     public ResponseEntity<AuthTokenResponse> login(
             @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
@@ -41,14 +83,72 @@ public class AuthController {
         return ResponseEntity.status(201).body(authService.register(request));
     }
 
+    @Operation(
+            operationId = "refreshToken",
+            summary = "Refresh access token",
+            description = "Exchanges a valid refresh token for a new token pair.")
+    @ApiResponses(
+            value = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Token refreshed successfully",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema =
+                                                @Schema(implementation = AuthTokenResponse.class))),
+                @ApiResponse(
+                        responseCode = "400",
+                        description = "Validation error",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Invalid or expired refresh token",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "429",
+                        description = "Rate limit exceeded",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class)))
+            })
     @PostMapping("/auth/refresh")
     public ResponseEntity<AuthTokenResponse> refresh(
             @Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refresh(request));
     }
 
+    @Operation(
+            operationId = "logout",
+            summary = "Logout user",
+            description = "Revokes the current access token and refresh token.",
+            security = {@SecurityRequirement(name = "bearer-jwt")})
+    @ApiResponses(
+            value = {
+                @ApiResponse(responseCode = "204", description = "Logout successful"),
+                @ApiResponse(
+                        responseCode = "400",
+                        description = "Validation error",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class))),
+                @ApiResponse(
+                        responseCode = "401",
+                        description = "Not authenticated",
+                        content =
+                                @Content(
+                                        mediaType = "application/json",
+                                        schema = @Schema(implementation = ApiErrorResponse.class)))
+            })
     @PostMapping("/auth/logout")
-    @Operation(security = {@SecurityRequirement(name = "bearer-jwt")})
     public ResponseEntity<Void> logout(
             Authentication authentication,
             @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false)
