@@ -10,7 +10,7 @@ RUN mvn -q -f TechMarket-IAM/pom.xml -DskipTests -Dspotless.check.skip=true clea
 FROM eclipse-temurin:21-jre
 WORKDIR /opt/iam-service
 
-COPY --from=builder /workspace/TechMarket-IAM/target/TechMarket-IAM-*.jar app.jar
+COPY --from=builder /workspace/TechMarket-IAM/target/iam-service-*.jar app.jar
 
 EXPOSE 8080
 
