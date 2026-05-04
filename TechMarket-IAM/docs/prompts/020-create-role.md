@@ -35,11 +35,11 @@ Reglas obligatorias:
 Tareas:
 
 1. Controller REST (RoleController):
-   - Endpoint: POST /api/v1/roles
+   - Endpoint: POST /api/v1/iam/roles
    - Validación JSR-303 en @RequestBody CreateRoleRequest
    - Inyectar CreateRoleOrchestrator
    - Retornar ResponseEntity<CreateRoleResponse> con HttpStatus.CREATED
-   - Manejar excepciones (delegar a GlobalExceptionHandler)
+   - Manejar excepciones (delegar a GlobalRestExceptionHandler)
 
 2. Orchestrator (CreateRoleOrchestrator):
    - @Component
@@ -74,7 +74,7 @@ Tareas:
 Entregables:
 - Archivos creados/modificados con rutas exactas.
 - Tests pasando: mvn test
-- Endpoint funcionando: curl POST /api/v1/roles
+- Endpoint funcionando: curl POST /api/v1/iam/roles
 ```
 
 ## Checklist de Validación Post-Generación
@@ -108,12 +108,12 @@ Entregables:
 ### Endpoint
 ```bash
 # Test exitoso
-curl -X POST http://localhost:8080/api/v1/roles \
+curl -X POST http://localhost:8080/api/v1/iam/roles \
   -H "Content-Type: application/json" \
   -d '{"name":"Admin","description":"Administrator role"}'
 
 # Test validación
-curl -X POST http://localhost:8080/api/v1/roles \
+curl -X POST http://localhost:8080/api/v1/iam/roles \
   -H "Content-Type: application/json" \
   -d '{"name":""}'
 ```

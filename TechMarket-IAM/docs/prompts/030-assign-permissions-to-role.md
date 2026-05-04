@@ -36,12 +36,12 @@ Reglas obligatorias:
 Tareas:
 
 1. Controller REST (AssignPermissionsToRoleController):
-   - Endpoint: PUT /api/v1/roles/{roleId}/permissions
+   - Endpoint: PUT /api/v1/iam/roles/{roleId}/permissions
    - Validación JSR-303 en @RequestBody AssignPermissionsToRoleRequest
    - Validar que roleId del path coincida con roleId del body (si aplica)
    - Inyectar AssignPermissionsToRoleOrchestrator
    - Retornar ResponseEntity<AssignPermissionsToRoleResponse> con HttpStatus.OK
-   - Manejar excepciones (delegar a GlobalExceptionHandler)
+   - Manejar excepciones (delegar a GlobalRestExceptionHandler)
 
 2. Orchestrator (AssignPermissionsToRoleOrchestrator):
    - Verificar que tenga @Component
@@ -74,7 +74,7 @@ Tareas:
 Entregables:
 - Archivos creados/modificados con rutas exactas.
 - Tests pasando: mvn test
-- Endpoint funcionando: curl PUT /api/v1/roles/{id}/permissions
+- Endpoint funcionando: curl PUT /api/v1/iam/roles/{id}/permissions
 ```
 
 ## Checklist de Validación Post-Generación
@@ -110,12 +110,12 @@ Entregables:
 ### Endpoint
 ```bash
 # Test exitoso
-curl -X PUT http://localhost:8080/api/v1/roles/1/permissions \
+curl -X PUT http://localhost:8080/api/v1/iam/roles/1/permissions \
   -H "Content-Type: application/json" \
   -d '{"roleId":1,"permissionIds":[1,2,3]}'
 
 # Test validación
-curl -X PUT http://localhost:8080/api/v1/roles/1/permissions \
+curl -X PUT http://localhost:8080/api/v1/iam/roles/1/permissions \
   -H "Content-Type: application/json" \
   -d '{"roleId":1,"permissionIds":[]}'
 ```

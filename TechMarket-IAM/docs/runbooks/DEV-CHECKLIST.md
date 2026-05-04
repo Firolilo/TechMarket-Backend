@@ -40,7 +40,7 @@ Checklist diario para desarrollo. Ejecutar antes de cada commit.
 - [ ] Ejemplos en Swagger UI funcionan
 
 ### Exception Handling
-- [ ] Excepciones manejadas por GlobalExceptionHandler
+- [ ] Excepciones manejadas por GlobalRestExceptionHandler
 - [ ] Respuestas de error tienen estructura consistente
 - [ ] Mensajes i18n funcionan
 

@@ -3,6 +3,7 @@ package com.techmarket.iamservice.api.rest;
 import com.techmarket.iamservice.api.exception.dto.ApiErrorResponse;
 import com.techmarket.iamservice.application.dto.CreateRoleRequest;
 import com.techmarket.iamservice.application.dto.RoleResponse;
+import com.techmarket.iamservice.application.orchestration.CreateRoleOrchestrator;
 import com.techmarket.iamservice.application.service.RoleManagementService;
 import com.techmarket.iamservice.application.service.TenantAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,12 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoleController {
 
     private final RoleManagementService roleManagementService;
+    private final CreateRoleOrchestrator createRoleOrchestrator;
     private final TenantAuthorizationService tenantAuthorizationService;
 
     public RoleController(
             RoleManagementService roleManagementService,
+            CreateRoleOrchestrator createRoleOrchestrator,
             TenantAuthorizationService tenantAuthorizationService) {
         this.roleManagementService = roleManagementService;
+        this.createRoleOrchestrator = createRoleOrchestrator;
         this.tenantAuthorizationService = tenantAuthorizationService;
     }
 
@@ -153,7 +157,7 @@ public class RoleController {
                 tenantAuthorizationService.resolveTenantForWrite(
                         tenantId, request.tenantId(), authentication);
         RoleResponse roleResponse =
-                roleManagementService.create(scopedTenantId, request, authentication);
+                createRoleOrchestrator.execute(scopedTenantId, request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(roleResponse);
     }
 }
