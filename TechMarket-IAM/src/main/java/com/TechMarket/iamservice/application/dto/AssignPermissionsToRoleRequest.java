@@ -6,6 +6,6 @@ import java.util.Collection;
 
 public record AssignPermissionsToRoleRequest(
         @NotNull(message = "{validation.role.id.required}") Long roleId,
-        @NotNull(message = "tenantId is required") String tenantId,
+        @NotNull(message = "{validation.tenant.id.required}") String tenantId,
         @NotEmpty(message = "{validation.permission.ids.required}")
                 Collection<@NotNull Long> permissionIds) {}

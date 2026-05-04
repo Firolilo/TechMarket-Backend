@@ -7,17 +7,19 @@ import jakarta.validation.constraints.Size;
 import java.util.Set;
 
 public record CreateUserRequest(
-        @NotBlank(message = "username is required")
-                @Size(min = 3, max = 100, message = "username must have 3-100 chars")
+        @NotBlank(message = "{validation.user.username.required}")
+                @Size(min = 3, max = 100, message = "{validation.user.username.size}")
                 String username,
-        @NotBlank(message = "email is required") @Email(message = "email is invalid") String email,
-        @NotBlank(message = "password is required")
-                @Size(min = 8, max = 72, message = "password must have 8-72 chars")
+        @NotBlank(message = "{validation.user.email.required}")
+                @Email(message = "{validation.user.email.invalid}")
+                String email,
+        @NotBlank(message = "{validation.user.password.required}")
+                @Size(min = 8, max = 72, message = "{validation.user.password.size}")
                 String password,
         String tenantId,
         Boolean active,
-        @NotEmpty(message = "at least one role is required")
-                @Size(max = 50, message = "maximum 50 roles allowed")
+        @NotEmpty(message = "{validation.user.roles.required}")
+                @Size(max = 50, message = "{validation.user.roles.size}")
                 Set<Long> roleIds,
-        @NotBlank(message = "scopeType is required") String scopeType,
-        @Size(max = 100, message = "maximum 100 branches allowed") Set<Long> branchIds) {}
+        @NotBlank(message = "{validation.user.scopeType.required}") String scopeType,
+        @Size(max = 100, message = "{validation.user.branches.size}") Set<Long> branchIds) {}
