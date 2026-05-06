@@ -568,6 +568,9 @@ json
 ### Integración IA para insights y recomendaciones
 
 ## 4. MÓDULO EMBAJADOR (50+ endpoints)
+
+> Nota temporal: los endpoints del módulo Embajador se ignorarán momentáneamente en la implementación. Este bloque corresponde a los endpoints 56 al 125.
+
 ### Perfil y configuración
 #### 56. `GET /api/ambassadors/profile`
 Obtener perfil del embajador autenticado.
