@@ -37,7 +37,8 @@ import org.springframework.context.annotation.Configuration;
             @Tag(name = "Auth", description = "Authentication and token operations"),
             @Tag(name = "Users", description = "User management operations"),
             @Tag(name = "Roles", description = "Role management operations"),
-            @Tag(name = "Permissions", description = "Permission management operations")
+            @Tag(name = "Permissions", description = "Permission management operations"),
+            @Tag(name = "Branches", description = "Branch management operations")
         })
 @SecurityScheme(
         name = "bearer-jwt",

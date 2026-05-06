@@ -8,6 +8,13 @@ public record RateLimitProperties(
         boolean enabled, int maxRequests, long windowSeconds, List<String> paths) {
 
     public RateLimitProperties {
-        paths = paths == null ? List.of("/auth/login", "/auth/refresh") : List.copyOf(paths);
+        paths =
+                paths == null
+                        ? List.of(
+                                "/auth/login",
+                                "/auth/register",
+                                "/auth/refresh",
+                                "/auth/logout-all")
+                        : List.copyOf(paths);
     }
 }

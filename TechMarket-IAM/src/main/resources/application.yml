@@ -40,8 +40,8 @@ iam:
     paths:
       - /auth/login
       - /auth/register
-      - /auth/verify-otp
       - /auth/refresh
+      - /auth/logout-all
 
 server:
   port: 8080

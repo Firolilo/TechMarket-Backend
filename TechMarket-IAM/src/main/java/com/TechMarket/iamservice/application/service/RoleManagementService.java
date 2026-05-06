@@ -1,11 +1,11 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.PermissionJpaEntity;
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
 import com.techmarket.core.shared.exceptions.EntityNotFoundException;
 import com.techmarket.iamservice.application.dto.CreateRoleRequest;
 import com.techmarket.iamservice.application.dto.RoleResponse;
 import com.techmarket.iamservice.application.model.IamConstants;
+import com.techmarket.iamservice.infrastructure.persistence.entity.PermissionEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RoleHierarchyRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.projection.RoleHierarchyView;
@@ -38,13 +38,11 @@ public class RoleManagementService {
 
     @Transactional(readOnly = true)
     public List<RoleResponse> findAll() {
-        List<RoleJpaEntity> roles = tenantRoleRepository.findAll();
+        List<RoleEntity> roles = tenantRoleRepository.findAll();
         Map<Long, RoleHierarchyView> hierarchyByRoleId =
                 roleHierarchyRepository
                         .findHierarchyByRoleIds(
-                                roles.stream()
-                                        .map(RoleJpaEntity::getId)
-                                        .collect(Collectors.toSet()))
+                                roles.stream().map(RoleEntity::getId).collect(Collectors.toSet()))
                         .stream()
                         .collect(Collectors.toMap(RoleHierarchyView::getRoleId, item -> item));
 
@@ -55,13 +53,11 @@ public class RoleManagementService {
 
     @Transactional(readOnly = true)
     public List<RoleResponse> findAllByTenant(String tenantId) {
-        List<RoleJpaEntity> roles = tenantRoleRepository.findAllByTenantId(tenantId);
+        List<RoleEntity> roles = tenantRoleRepository.findAllByTenantId(tenantId);
         Map<Long, RoleHierarchyView> hierarchyByRoleId =
                 roleHierarchyRepository
                         .findHierarchyByRoleIds(
-                                roles.stream()
-                                        .map(RoleJpaEntity::getId)
-                                        .collect(Collectors.toSet()))
+                                roles.stream().map(RoleEntity::getId).collect(Collectors.toSet()))
                         .stream()
                         .collect(Collectors.toMap(RoleHierarchyView::getRoleId, item -> item));
 
@@ -73,9 +69,9 @@ public class RoleManagementService {
     @Transactional
     public RoleResponse create(
             String tenantId, CreateRoleRequest request, Authentication authentication) {
-        RoleJpaEntity role = new RoleJpaEntity(request.name().trim(), request.description());
+        RoleEntity role = new RoleEntity(request.name().trim(), request.description());
         role.setTenantId(tenantId);
-        RoleJpaEntity saved = tenantRoleRepository.save(role);
+        RoleEntity saved = tenantRoleRepository.save(role);
 
         Integer hierarchyLevel =
                 resolveHierarchyLevel(tenantId, request.hierarchyLevel(), request.parentRoleId());
@@ -139,10 +135,10 @@ public class RoleManagementService {
         return Math.max(IamConstants.DEFAULT_HIERARCHY_LEVEL, parent.getHierarchyLevel() + 1);
     }
 
-    private RoleResponse toResponse(RoleJpaEntity role, RoleHierarchyView hierarchy) {
+    private RoleResponse toResponse(RoleEntity role, RoleHierarchyView hierarchy) {
         Set<Long> permissionIds =
                 role.getPermissions().stream()
-                        .map(PermissionJpaEntity::getId)
+                        .map(PermissionEntity::getId)
                         .collect(Collectors.toSet());
 
         Integer hierarchyLevel =

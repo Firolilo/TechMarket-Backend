@@ -1,19 +1,18 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.RoleJpaEntity;
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
+import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.ForgotPasswordRequest;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
-import com.techmarket.iamservice.application.dto.RegisterRequest;
-import com.techmarket.iamservice.application.dto.VerifyOtpRequest;
+import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.model.IamConstants;
 import com.techmarket.iamservice.application.model.UserScopeType;
-import com.techmarket.iamservice.config.security.OtpProperties;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserScopeEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
@@ -76,93 +75,37 @@ public class AuthService {
     @Transactional
     public AuthTokenResponse login(String tenantId, LoginRequest request) {
         String normalizedTenantId = normalizeTenantId(tenantId);
-        UserJpaEntity user = findUser(normalizedTenantId, request.loginIdentifier());
-        UserCredentialEntity credential = findCredential(user.getId(), normalizedTenantId);
-        validatePasswordAndStatus(request.password(), user, credential);
 
-        if (credential.isOtpEnabled()) {
-            return createOtpChallenge(user, credential, normalizedTenantId, "AUTH_LOGIN_CHALLENGE");
-        }
-
-        AuthTokenResponse response = issueTokenPair(user, normalizedTenantId);
-        auditTrailService.record(
-                "AUTH_LOGIN",
-                "User",
-                user.getId().toString(),
-                normalizedTenantId,
-                user.getId().toString());
-        return response;
-    }
-
-    @Transactional
-    public AuthTokenResponse register(String tenantId, RegisterRequest request) {
-        String normalizedTenantId = normalizeTenantId(tenantId);
-        validateRegistrationRequest(request);
-        String username = normalizeUsername(request.effectiveUsername());
-        String email = normalizeEmail(request.email());
-
-        if (tenantUserRepository.existsByTenantIdAndUsername(normalizedTenantId, username)) {
-            throw new AuthServiceException(
-                    "IAM_USERNAME_ALREADY_EXISTS",
-                    HttpStatus.CONFLICT,
-                    "Username already exists for tenant");
-        }
-        if (tenantUserRepository.existsByTenantIdAndEmail(normalizedTenantId, email)) {
-            throw new AuthServiceException(
-                    "IAM_EMAIL_ALREADY_EXISTS",
-                    HttpStatus.CONFLICT,
-                    "Email already exists for tenant");
-        }
-
-        UserJpaEntity user = new UserJpaEntity(username, email, true);
-        user.setTenantId(normalizedTenantId);
-        UserJpaEntity savedUser = tenantUserRepository.save(user);
+        UserEntity user =
+                tenantUserRepository
+                        .findByTenantIdAndUsername(normalizedTenantId, request.username())
+                        .orElseThrow(
+                                () ->
+                                        new AuthServiceException(
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid username or password"));
 
         UserCredentialEntity credential =
-                new UserCredentialEntity(
-                        savedUser.getId(),
-                        normalizedTenantId,
-                        passwordEncoder.encode(request.password()));
-        credential.setOtpEnabled(
-                request.otpEnabled() != null
-                        ? request.otpEnabled()
-                        : !request.endpointContract() && otpProperties.enabledByDefault());
-        userCredentialRepository.save(credential);
-        userScopeRepository.save(
-                new UserScopeEntity(
-                        normalizedTenantId, savedUser, null, UserScopeType.GLOBAL.name()));
+                userCredentialRepository
+                        .findByUserIdAndTenantId(user.getId(), normalizedTenantId)
+                        .orElseThrow(
+                                () ->
+                                        new AuthServiceException(
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid username or password"));
 
-        auditTrailService.record(
-                "AUTH_REGISTER",
-                "User",
-                savedUser.getId().toString(),
-                normalizedTenantId,
-                savedUser.getId().toString());
-
-        if (credential.isOtpEnabled()) {
-            return createOtpChallenge(
-                    savedUser, credential, normalizedTenantId, "AUTH_REGISTER_CHALLENGE");
-        }
-
-        return issueTokenPair(savedUser, normalizedTenantId);
-    }
-
-    @Transactional
-    public AuthTokenResponse verifyOtp(String tenantId, VerifyOtpRequest request) {
-        String normalizedTenantId = normalizeTenantId(tenantId);
-        UserJpaEntity user = findUser(normalizedTenantId, request.username());
-        UserCredentialEntity credential = findCredential(user.getId(), normalizedTenantId);
-
-        if (!credential.isOtpEnabled()) {
+        if (!passwordEncoder.matches(request.password(), credential.getPasswordHash())) {
             throw new AuthServiceException(
-                    "IAM_OTP_NOT_ENABLED",
-                    HttpStatus.BAD_REQUEST,
-                    "OTP is not enabled for this account");
+                    ErrorCodes.IAM_INVALID_CREDENTIALS,
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid username or password");
         }
 
         if (!user.isActive()) {
             throw new AuthServiceException(
-                    "IAM_USER_INACTIVE",
+                    ErrorCodes.IAM_USER_INACTIVE,
                     HttpStatus.UNAUTHORIZED,
                     "User is inactive for this tenant");
         }
@@ -212,9 +155,57 @@ public class AuthService {
         return response;
     }
 
-    @Transactional(readOnly = true)
-    public void forgotPassword(ForgotPasswordRequest request) {
-        normalizeEmail(request.email());
+    @Transactional
+    public AuthTokenResponse register(RegisterUserRequest request) {
+        String normalizedEmail = normalizeEmail(request.email());
+        if (tenantUserRepository.existsByTenantIdAndEmail(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)
+                || tenantUserRepository.existsByTenantIdAndUsername(
+                        IamConstants.GLOBAL_TENANT_ID, normalizedEmail)) {
+            throw new AuthServiceException(
+                    "IAM_USER_ALREADY_EXISTS",
+                    HttpStatus.CONFLICT,
+                    "User already exists for the public tenant");
+        }
+
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("password and confirmPassword must match");
+        }
+
+        UserEntity user = new UserEntity(normalizedEmail, normalizedEmail, true);
+        user.setTenantId(IamConstants.GLOBAL_TENANT_ID);
+        user.setFirstName(trimToNull(request.nombre()));
+        user.setLastName(trimToNull(request.apellido()));
+        user.setPhone(trimToNull(request.telefono()));
+        user.setCountry(trimToNull(request.pais()));
+        user.setCity(trimToNull(request.ciudad()));
+        user.setUserType(trimToNull(request.tipo()));
+        user.setTermsAccepted(request.terminos());
+        user.assignRoles(Set.of());
+
+        UserEntity savedUser = tenantUserRepository.save(user);
+
+        userCredentialRepository.save(
+                new UserCredentialEntity(
+                        savedUser.getId(),
+                        IamConstants.GLOBAL_TENANT_ID,
+                        passwordEncoder.encode(request.password())));
+
+        userScopeRepository.save(
+                new UserScopeEntity(
+                        IamConstants.GLOBAL_TENANT_ID,
+                        savedUser,
+                        null,
+                        UserScopeType.GLOBAL.name()));
+
+        auditTrailService.record(
+                "AUTH_REGISTER",
+                "User",
+                savedUser.getId().toString(),
+                IamConstants.GLOBAL_TENANT_ID,
+                savedUser.getId().toString());
+
+        return issueTokenPair(savedUser, IamConstants.GLOBAL_TENANT_ID);
     }
 
     @Transactional
@@ -229,7 +220,7 @@ public class AuthService {
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_INVALID_REFRESH_TOKEN",
+                                                ErrorCodes.IAM_INVALID_REFRESH_TOKEN,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "Refresh token is invalid or revoked"));
 
@@ -237,19 +228,21 @@ public class AuthService {
             persistedToken.revoke();
             refreshTokenRepository.save(persistedToken);
             throw new AuthServiceException(
-                    "IAM_REFRESH_TOKEN_EXPIRED", HttpStatus.UNAUTHORIZED, "Refresh token expired");
+                    ErrorCodes.IAM_REFRESH_TOKEN_EXPIRED,
+                    HttpStatus.UNAUTHORIZED,
+                    "Refresh token expired");
         }
 
         persistedToken.revoke();
         refreshTokenRepository.save(persistedToken);
 
-        UserJpaEntity user =
+        UserEntity user =
                 tenantUserRepository
                         .findByIdAndTenantId(refreshClaims.userId(), refreshClaims.tenantId())
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
-                                                "IAM_USER_NOT_FOUND",
+                                                ErrorCodes.IAM_USER_NOT_FOUND,
                                                 HttpStatus.UNAUTHORIZED,
                                                 "User not found for refresh token"));
 
@@ -308,8 +301,30 @@ public class AuthService {
         }
     }
 
-    private AuthTokenResponse issueTokenPair(UserJpaEntity user, String tenantId) {
-        List<String> roles = user.getRoles().stream().map(RoleJpaEntity::getName).sorted().toList();
+    @Transactional
+    public void logoutAll(Authentication authentication, String authorizationHeader) {
+        JwtTokenService.AccessTokenClaims accessClaims =
+                resolveAccessClaims(authentication, authorizationHeader);
+
+        List<RefreshTokenEntity> refreshTokens =
+                refreshTokenRepository.findAllByUserIdAndTenantIdAndRevokedFalse(
+                        accessClaims.userId(), accessClaims.tenantId());
+        if (!refreshTokens.isEmpty()) {
+            refreshTokens.forEach(RefreshTokenEntity::revoke);
+            refreshTokenRepository.saveAll(refreshTokens);
+        }
+
+        accessTokenRevocationService.revoke(accessClaims.tokenId(), accessClaims.expiresAt());
+        auditTrailService.record(
+                "AUTH_LOGOUT_ALL",
+                "User",
+                accessClaims.userId().toString(),
+                accessClaims.tenantId(),
+                accessClaims.userId().toString());
+    }
+
+    private AuthTokenResponse issueTokenPair(UserEntity user, String tenantId) {
+        List<String> roles = user.getRoles().stream().map(RoleEntity::getName).sorted().toList();
         List<String> userScopes = resolveUserScopes(user.getId(), tenantId);
         List<String> authorizationScopes = resolveAuthorizationScopes(user.getRoles());
 
@@ -384,10 +399,10 @@ public class AuthService {
         return new ArrayList<>(values);
     }
 
-    private List<String> resolveAuthorizationScopes(Collection<RoleJpaEntity> roles) {
+    private List<String> resolveAuthorizationScopes(Collection<RoleEntity> roles) {
         Set<String> scopes = new TreeSet<>();
         if (roles != null) {
-            for (RoleJpaEntity role : roles) {
+            for (RoleEntity role : roles) {
                 if (role == null) {
                     continue;
                 }
@@ -437,7 +452,7 @@ public class AuthService {
     private String normalizeTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new AuthServiceException(
-                    "IAM_TENANT_REQUIRED",
+                    ErrorCodes.IAM_TENANT_REQUIRED,
                     HttpStatus.BAD_REQUEST,
                     "X-Tenant-Id header is required");
         }
@@ -447,129 +462,25 @@ public class AuthService {
             return UUID.fromString(normalized).toString();
         } catch (IllegalArgumentException ex) {
             throw new AuthServiceException(
-                    "IAM_TENANT_INVALID",
+                    ErrorCodes.IAM_TENANT_INVALID,
                     HttpStatus.BAD_REQUEST,
                     "X-Tenant-Id must be a valid UUID");
         }
     }
 
-    private UserJpaEntity findUser(String tenantId, String username) {
-        return tenantUserRepository
-                .findByTenantIdAndUsername(tenantId, normalizeUsername(username))
-                .orElseThrow(
-                        () ->
-                                new AuthServiceException(
-                                        "IAM_INVALID_CREDENTIALS",
-                                        HttpStatus.UNAUTHORIZED,
-                                        "Invalid username or password"));
-    }
-
-    private UserCredentialEntity findCredential(Long userId, String tenantId) {
-        return userCredentialRepository
-                .findByUserIdAndTenantId(userId, tenantId)
-                .orElseThrow(
-                        () ->
-                                new AuthServiceException(
-                                        "IAM_INVALID_CREDENTIALS",
-                                        HttpStatus.UNAUTHORIZED,
-                                        "Invalid username or password"));
-    }
-
-    private void validatePasswordAndStatus(
-            String rawPassword, UserJpaEntity user, UserCredentialEntity credential) {
-        if (!passwordEncoder.matches(rawPassword, credential.getPasswordHash())) {
-            throw new AuthServiceException(
-                    "IAM_INVALID_CREDENTIALS",
-                    HttpStatus.UNAUTHORIZED,
-                    "Invalid username or password");
-        }
-
-        if (!user.isActive()) {
-            throw new AuthServiceException(
-                    "IAM_USER_INACTIVE",
-                    HttpStatus.UNAUTHORIZED,
-                    "User is inactive for this tenant");
-        }
-    }
-
-    private AuthTokenResponse createOtpChallenge(
-            UserJpaEntity user,
-            UserCredentialEntity credential,
-            String tenantId,
-            String auditAction) {
-        String challengeId = UUID.randomUUID().toString();
-        String otpCode = generateOtpCode();
-        LocalDateTime expiresAt =
-                LocalDateTime.now(ZoneOffset.UTC)
-                        .plusMinutes(Math.max(1, otpProperties.expiresMinutes()));
-
-        credential.beginOtpChallenge(passwordEncoder.encode(otpCode), challengeId, expiresAt);
-        userCredentialRepository.save(credential);
-        otpDeliveryService.deliver(tenantId, user, otpCode, challengeId);
-        auditTrailService.record(
-                auditAction, "User", user.getId().toString(), tenantId, user.getId().toString());
-
-        long otpExpiresIn =
-                Math.max(
-                        1,
-                        expiresAt.toEpochSecond(ZoneOffset.UTC)
-                                - LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC));
-
-        return new AuthTokenResponse(
-                null,
-                null,
-                "OTP",
-                0,
-                0,
-                tenantId,
-                user.getId(),
-                user.getUsername(),
-                user.getRoles().stream().map(RoleJpaEntity::getName).sorted().toList(),
-                resolveUserScopes(user.getId(), tenantId),
-                true,
-                challengeId,
-                otpExpiresIn);
-    }
-
-    private String generateOtpCode() {
-        int length = Math.max(4, otpProperties.codeLength());
-        int bound = (int) Math.pow(10, length);
-        int value = ThreadLocalRandom.current().nextInt(bound);
-        return String.format(Locale.ROOT, "%0" + length + "d", value);
-    }
-
-    private String normalizeUsername(String username) {
-        return username == null ? null : username.trim();
-    }
-
     private String normalizeEmail(String email) {
-        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
     }
 
-    private void validateRegistrationRequest(RegisterRequest request) {
-        if (request.effectiveUsername() == null || request.effectiveUsername().isBlank()) {
-            throw new AuthServiceException(
-                    "IAM_USERNAME_REQUIRED", HttpStatus.BAD_REQUEST, "Username is required");
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
         }
-        if (request.email() == null || request.email().isBlank()) {
-            throw new AuthServiceException(
-                    "IAM_EMAIL_REQUIRED", HttpStatus.BAD_REQUEST, "Email is required");
-        }
-        if (request.password() == null || request.password().isBlank()) {
-            throw new AuthServiceException(
-                    "IAM_PASSWORD_REQUIRED", HttpStatus.BAD_REQUEST, "Password is required");
-        }
-        if (request.confirmPassword() != null
-                && !request.confirmPassword().equals(request.password())) {
-            throw new AuthServiceException(
-                    "IAM_PASSWORD_CONFIRMATION_MISMATCH",
-                    HttpStatus.BAD_REQUEST,
-                    "Password confirmation does not match");
-        }
-        if (Boolean.FALSE.equals(request.terminos())) {
-            throw new AuthServiceException(
-                    "IAM_TERMS_REQUIRED", HttpStatus.BAD_REQUEST, "Terms must be accepted");
-        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 
     private String extractBearerToken(String authorizationHeader) {
@@ -583,5 +494,34 @@ public class AuthService {
         }
 
         return token.isBlank() ? null : token;
+    }
+
+    private JwtTokenService.AccessTokenClaims resolveAccessClaims(
+            Authentication authentication, String authorizationHeader) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            String tokenId = jwtAuthenticationToken.getToken().getId();
+            java.time.Instant expiresAt = jwtAuthenticationToken.getToken().getExpiresAt();
+            String tenantId = jwtAuthenticationToken.getToken().getClaimAsString("tenant_id");
+            Long userId = Long.valueOf(jwtAuthenticationToken.getToken().getSubject());
+
+            if (tokenId == null || expiresAt == null || tenantId == null || userId == null) {
+                throw new AuthServiceException(
+                        "IAM_INVALID_ACCESS_TOKEN",
+                        HttpStatus.UNAUTHORIZED,
+                        "Access token does not contain required claims");
+            }
+
+            return new JwtTokenService.AccessTokenClaims(tokenId, userId, tenantId, expiresAt);
+        }
+
+        String accessToken = extractBearerToken(authorizationHeader);
+        if (accessToken == null) {
+            throw new AuthServiceException(
+                    "IAM_INVALID_ACCESS_TOKEN",
+                    HttpStatus.UNAUTHORIZED,
+                    "Access token is required for logout-all");
+        }
+
+        return jwtTokenService.parseAccessToken(accessToken);
     }
 }

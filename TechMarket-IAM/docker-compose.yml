@@ -28,7 +28,7 @@ services:
   iam-service:
     build:
       context: ..
-      dockerfile: iam-service/Dockerfile
+      dockerfile: TechMarket-IAM/Dockerfile
     container_name: iam-service
     depends_on:
       iam-postgres:

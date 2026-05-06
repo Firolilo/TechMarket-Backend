@@ -37,7 +37,7 @@ com.techmarket.iamservice
 - Ubicación: `application.dto.*` (internos) o `api.rest.dto.*` (API)
 
 **Exception Handlers:**
-- Nombre: `GlobalExceptionHandler` o `GlobalRestExceptionHandler`
+- Nombre: `GlobalRestExceptionHandler`
 - Ubicación: `api.exception.*` o `api.rest.*`
 
 **Configurations:**
@@ -48,16 +48,16 @@ com.techmarket.iamservice
 ### Endpoints REST
 
 **Patrón:**
-- Base: `/api/v1/{resource}`
+- Base: `/api/v1/iam/{resource}`
 - Métodos HTTP: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`
-- Nombres en plural: `/api/v1/roles`, `/api/v1/permissions`
+- Nombres en plural: `/api/v1/iam/roles`, `/api/v1/iam/permissions`
 
 **Ejemplos:**
 ```
-POST   /api/v1/roles
-GET    /api/v1/roles/{id}
-PUT    /api/v1/roles/{id}/permissions
-DELETE /api/v1/roles/{id}
+POST   /api/v1/iam/roles
+GET    /api/v1/iam/roles/{id}
+PUT    /api/v1/iam/roles/{id}/permissions
+DELETE /api/v1/iam/roles/{id}
 ```
 
 ## 📝 Logging Conventions

@@ -125,13 +125,13 @@ Entregables:
 ### Validación Manual
 ```bash
 # Test con error (debe retornar mensaje en español)
-curl -X POST http://localhost:8080/api/v1/roles \
+curl -X POST http://localhost:8080/api/v1/iam/roles \
   -H "Content-Type: application/json" \
   -H "Accept-Language: es" \
   -d '{"name":""}'
 
 # Test con error (debe retornar mensaje en inglés)
-curl -X POST http://localhost:8080/api/v1/roles \
+curl -X POST http://localhost:8080/api/v1/iam/roles \
   -H "Content-Type: application/json" \
   -H "Accept-Language: en" \
   -d '{"name":""}'
