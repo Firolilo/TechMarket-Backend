@@ -32,6 +32,8 @@ Endpoints 1-8 are implemented in `TechMarket-IAM` for authentication and user pr
 
 Endpoints 9-55 are implemented in `TechMarket-IA`. Client-facing controllers must stay under packages containing `api.admin` because the IA architecture test expects controller classes there, even for marketplace or client routes. The current client endpoint implementation uses the `X-User-Id` header as the authenticated user context because IA does not yet have the IAM security integration wired locally.
 
+Endpoints 56-125 belong to the Ambassador module (`/api/ambassadors/**`) and are intentionally ignored for now. Do not implement that range unless the user explicitly asks to resume Ambassador work.
+
 Implemented IA endpoint groups:
 
 - 9-15: client profile and addresses under `/api/clients/profile` and `/api/clients/addresses`.
