@@ -3,8 +3,10 @@ package com.techmarket.techmarket.users.api.admin.client;
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.entity.ListingJpaEntity;
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.repository.ListingSpringDataRepository;
 import com.techmarket.techmarket.users.api.admin.client.request.AddCartItemRequest;
+import com.techmarket.techmarket.users.api.admin.client.request.CancelOrderRequest;
 import com.techmarket.techmarket.users.api.admin.client.request.CheckoutRequest;
 import com.techmarket.techmarket.users.api.admin.client.request.UpdateCartItemRequest;
+import com.techmarket.techmarket.users.api.admin.client.response.CancelOrderResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CartItemResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CartResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CheckoutResponse;
@@ -204,6 +206,28 @@ public class ClientCartOrderController {
                 order.getTotal(),
                 items,
                 new TrackingResponse(null, null));
+    }
+
+    @PutMapping("/orders/{orderId}/cancel")
+    public CancelOrderResponse cancelOrder(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String orderId,
+            @Valid @RequestBody CancelOrderRequest request) {
+        UUID currentUserId = parseUserId(userId);
+        ClientOrderJpaEntity order =
+                orderRepository
+                        .findByIdAndUserId(parsePrefixedUuid(orderId, "ORD-"), currentUserId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Order not found"));
+        if ("Cancelada".equalsIgnoreCase(order.getStatus())) {
+            return new CancelOrderResponse("Orden cancelada", order.getStatus());
+        }
+        order.setStatus("Cancelada");
+        order.setUpdatedAt(OffsetDateTime.now());
+        orderRepository.save(order);
+        return new CancelOrderResponse("Orden cancelada", order.getStatus());
     }
 
     private CartResponse toCartResponse(UUID userId) {

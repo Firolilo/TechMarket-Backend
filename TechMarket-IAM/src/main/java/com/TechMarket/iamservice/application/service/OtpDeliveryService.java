@@ -1,8 +1,8 @@
 package com.techmarket.iamservice.application.service;
 
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 
 public interface OtpDeliveryService {
 
-    void deliver(String tenantId, UserJpaEntity user, String otpCode, String challengeId);
+    void deliver(String tenantId, UserEntity user, String otpCode, String challengeId);
 }

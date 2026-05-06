@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.techmarket.core.iam.infrastructure.persistence.entity.UserJpaEntity;
 import com.techmarket.iamservice.application.service.OtpDeliveryService;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserCredentialRepository;
@@ -47,7 +47,7 @@ class AuthFlowContractTest {
                             return null;
                         })
                 .when(otpDeliveryService)
-                .deliver(anyString(), any(UserJpaEntity.class), anyString(), anyString());
+                .deliver(anyString(), any(UserEntity.class), anyString(), anyString());
 
         MvcResult registerResult =
                 mockMvc.perform(
@@ -94,9 +94,9 @@ class AuthFlowContractTest {
 
     @Test
     void shouldRequireOtpOnLoginWhenEnabledForUser() throws Exception {
-        UserJpaEntity user = new UserJpaEntity("otp.login", "otp.login@example.com", true);
+        UserEntity user = new UserEntity("otp.login", "otp.login@example.com", true);
         user.setTenantId(TENANT_ID);
-        UserJpaEntity savedUser = tenantUserRepository.save(user);
+        UserEntity savedUser = tenantUserRepository.save(user);
 
         UserCredentialEntity credential =
                 new UserCredentialEntity(

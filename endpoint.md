@@ -1,10 +1,9 @@
-ENDPOINTS TECHMARKET
-
-1. AUTENTICACIÓN (8 endpoints)
+# ENDPOINTS TECHMARKET
+## 1. AUTENTICACIÓN (8 endpoints)
 Registro, login, logout, refresh token, recuperar contraseña, verificar email
-Perfil de usuario y configuración
+### Perfil de usuario y configuración
 
-POST auth/register
+#### 1. `POST /auth/register`
 Registrar nuevo usuario en el sistema.
 
 {
@@ -30,7 +29,8 @@ Response (201 Created):
   "mensaje": "Verificar email enviado a usuario@example.com"
 }
 
-POST auth/login Autenticar usuario y obtener token JWT.
+#### 2. `POST /auth/login`
+Autenticar usuario y obtener token JWT.
 {
   "email": "usuario@example.com",
   "password": "SecurePass123!",
@@ -50,7 +50,7 @@ Response 200 ok
   "expiresIn": 3600
 
 }
-POST auth/logout
+#### 3. `POST /auth/logout`
 Headers: Authorization: Bearer {token}
 
 Response (200 OK):
@@ -59,7 +59,7 @@ Response (200 OK):
   "timestamp": "2026-04-28T15:30:00Z"
 }
 
-POST auth/refresh-token
+#### 4. `POST /auth/refresh-token`
 Refrescar token JWT expirado.
 
 {
@@ -72,16 +72,16 @@ Response 200
   "expiresIn": 3600
 }
 
-POST auth/forgot-password
+#### 5. `POST /auth/forgot-password`
 Solicitar recuperación de contraseña.
 
 {
   "email": "usuario@example.com"
 }
 
-Perfil de Usuario
+### Perfil de Usuario
 
-GET users/profile
+#### 6. `GET /users/profile`
 Obtener perfil del usuario autenticado.
 Headers: Authorization: Bearer {token}
 Response (200 OK):
@@ -99,7 +99,7 @@ Response (200 OK):
   "fechaRegistro": "2026-04-01T10:00:00Z",
   "ultimaActualizacion": "2026-04-28T14:20:00Z"
 }
-PUT users/profile
+#### 7. `PUT /users/profile`
 Actualizar perfil del usuario autenticado.
 {
   "nombre": "Juan",
@@ -108,7 +108,7 @@ Actualizar perfil del usuario autenticado.
   "ciudad": "La Paz",
   "descripcion": "Comprador de productos tecnológicos"
 }
-GET users/public/:userId
+#### 8. `GET /users/public/:userId`
 Obtener perfil público de otro usuario.
 {
   "id": "USR-002",
@@ -125,9 +125,9 @@ Obtener perfil público de otro usuario.
 
 
 
-2. MÓDULO CLIENTE (50+ endpoints)
-Perfil y direcciones
-GET /api/clients/profile 
+## 2. MÓDULO CLIENTE (50+ endpoints)
+### Perfil y direcciones
+#### 9. `GET /api/clients/profile`
 Obtener los datos del perfil del cliente autenticado.
 Response (200 OK):
 json
@@ -139,7 +139,7 @@ json
  "telefono": "+56912345678",
  "avatar": "https://techmarket.bo/avatars/usr-001.jpg"
 }
-PUT /api/clients/profile 
+#### 10. `PUT /api/clients/profile`
 Actualizar información del perfil.
 Request:
 json
@@ -150,7 +150,7 @@ json
  "avatar": "https://techmarket.bo/avatars/new-avatar.jpg"
 }
 Response (200 OK): (Retorna el perfil actualizado con la misma estructura del GET)
-GET /api/clients/addresses 
+#### 11. `GET /api/clients/addresses`
 Listar todas las direcciones guardadas del cliente.
 Response (200 OK):
 json
@@ -165,7 +165,7 @@ json
    "esPredeterminada": true
  }
 ]
-POST /api/clients/addresses 
+#### 12. `POST /api/clients/addresses`
 Crear una nueva dirección.
 Request:
 json
@@ -178,7 +178,7 @@ json
  "esPredeterminada": false
 }
 Response (201 Created): (Retorna la nueva dirección con su id generado)
-PUT /api/clients/addresses/:addressId 
+#### 13. `PUT /api/clients/addresses/:addressId`
 Actualizar una dirección existente.
 Request:
 json
@@ -186,19 +186,19 @@ json
  "direccion": "Av. Equipetrol, Calle 5, #125 (Nueva numeración)"
 }
 Response (200 OK): (Retorna la dirección actualizada)
-DELETE /api/clients/addresses/:addressId 
+#### 14. `DELETE /api/clients/addresses/:addressId`
 Eliminar una dirección.
 Response (200 OK):
 json
 { "mensaje": "Dirección eliminada correctamente" }
-PUT /api/clients/addresses/:addressId/default 
+#### 15. `PUT /api/clients/addresses/:addressId/default`
 Establecer una dirección como predeterminada.
 Response (200 OK):
 json
 { "mensaje": "Dirección establecida como predeterminada" }
 
-Marketplace y búsqueda (productos, categorías, empresas)
-GET /api/marketplace/products 
+### Marketplace y búsqueda (productos, categorías, empresas)
+#### 16. `GET /api/marketplace/products`
 Listar productos (con query params: ?search=laptop&category=tech).
 
 Response (200 OK):
@@ -216,7 +216,7 @@ json
     }
   ]
 }
-GET /api/marketplace/products/:productId 
+#### 17. `GET /api/marketplace/products/:productId`
 Obtener el detalle completo de un producto.
 
 Response (200 OK):
@@ -230,7 +230,7 @@ json
   "empresa": { "id": "EMP-005", "nombre": "ElectroMundo" },
   "stock": 15
 }
-GET /api/marketplace/categories 
+#### 18. `GET /api/marketplace/categories`
 Listar el árbol de categorías disponibles.
 
 Response (200 OK):
@@ -246,11 +246,11 @@ json
   }
 ]
 
-GET /api/marketplace/categories/:categoryId/products 
+#### 19. `GET /api/marketplace/categories/:categoryId/products`
 Listar productos de una categoría específica.
 
 Response (200 OK): (Retorna la misma estructura que GET /api/marketplace/products)
-GET /api/marketplace/companies 
+#### 20. `GET /api/marketplace/companies`
 Listar las empresas/tiendas registradas.
 
 Response (200 OK):
@@ -263,7 +263,7 @@ json
     "calificacion": 4.9
   }
 ]
-GET /api/marketplace/companies/:companyId 
+#### 21. `GET /api/marketplace/companies/:companyId`
 Obtener el perfil público de una empresa.
 
 Response (200 OK):
@@ -275,12 +275,12 @@ json
   "fechaRegistro": "2024-01-01",
   "ventasCompletadas": 1500
 }
-GET /api/marketplace/companies/:companyId/products 
+#### 22. `GET /api/marketplace/companies/:companyId/products`
 Listar el catálogo de productos de una empresa.
 
 Response (200 OK): (Retorna estructura de paginación de productos)
-Órdenes y compras
-GET /api/clients/cart 
+### Órdenes y compras
+#### 23. `GET /api/clients/cart`
 Obtener el estado actual del carrito.
 
 Response (200 OK):
@@ -297,31 +297,31 @@ json
     }
   ]
 }
-POST /api/clients/cart/items 
+#### 24. `POST /api/clients/cart/items`
 Agregar un producto al carrito.
 
 Request:
 json
 { "productoId": "PROD-104", "cantidad": 2 }
 Response (200 OK): (Retorna el carrito actualizado)
-PUT /api/clients/cart/items/:itemId 
+#### 25. `PUT /api/clients/cart/items/:itemId`
 Actualizar la cantidad de un ítem.
 
 Request:
 json
 { "cantidad": 3 }
 Response (200 OK): (Retorna el carrito actualizado)
-DELETE /api/clients/cart/items/:itemId 
+#### 26. `DELETE /api/clients/cart/items/:itemId`
 Eliminar un ítem del carrito.
 
 Response (200 OK): (Retorna el carrito actualizado)
-DELETE /api/clients/cart 
+#### 27. `DELETE /api/clients/cart`
 Vaciar el carrito completo.
 
 Response (200 OK):
 json
 { "mensaje": "Carrito vaciado correctamente" }
-POST /api/clients/checkout 
+#### 28. `POST /api/clients/checkout`
 Procesar la compra.
 
 Request:
@@ -337,7 +337,7 @@ json
   "estado": "PendientePago",
   "total": 1215.50
 }
-GET /api/clients/orders 
+#### 29. `GET /api/clients/orders`
 Listar el historial de órdenes.
 
 Response (200 OK):
@@ -350,7 +350,7 @@ json
     "total": 1215.50
   }
 ]
-GET /api/clients/orders/:orderId 
+#### 30. `GET /api/clients/orders/:orderId`
 Obtener el detalle completo de una orden.
 
 Response (200 OK):
@@ -362,7 +362,7 @@ json
   "items": [{ "productoId": "PROD-992", "cantidad": 1 }],
   "tracking": { "codigo": "TRK-999888", "empresa": "FedEx" }
 }
-PUT /api/clients/orders/:orderId/cancel
+#### 31. `PUT /api/clients/orders/:orderId/cancel`
 Solicitar la cancelación de una orden.
 
 Request:
@@ -371,8 +371,8 @@ json
 Response (200 OK):
 json
 { "mensaje": "Orden cancelada", "nuevoEstado": "Cancelada" }
-Reseñas y valoraciones
-POST /api/clients/reviews/products/:productId 
+### Reseñas y valoraciones
+#### 32. `POST /api/clients/reviews/products/:productId`
 Crear una reseña de producto.
 
 Request:
@@ -381,27 +381,27 @@ json
 Response (201 Created):
 json
 { "id": "REV-050", "mensaje": "Reseña publicada" }
-PUT /api/clients/reviews/:reviewId 
+#### 33. `PUT /api/clients/reviews/:reviewId`
 Editar una reseña existente.
 
 Request:
 json
 { "calificacion": 4, "comentario": "Buen equipo, pero tardó el envío" }
 Response (200 OK): (Retorna la reseña actualizada)
-DELETE /api/clients/reviews/:reviewId 
+#### 34. `DELETE /api/clients/reviews/:reviewId`
 Eliminar una reseña.
 
 Response (200 OK):
 json
 { "mensaje": "Reseña eliminada" }
-POST /api/clients/reviews/companies/:companyId 
+#### 35. `POST /api/clients/reviews/companies/:companyId`
 Calificar a una empresa.
 
 Request:
 json
 { "calificacion": 5, "comentario": "Excelente atención al cliente" }
 Response (201 Created): (Mismo formato que reseña de producto)
-GET /api/marketplace/products/:productId/reviews 
+#### 36. `GET /api/marketplace/products/:productId/reviews`
 Leer las reseñas de un producto.
 
 Response (200 OK):
@@ -415,8 +415,8 @@ json
     "fecha": "2026-05-01"
   }
 ]
-Chat y comunicación
-GET /api/clients/chats 
+### Chat y comunicación
+#### 37. `GET /api/clients/chats`
 Listar conversaciones activas.
 
 Response (200 OK):
@@ -429,7 +429,7 @@ json
     "mensajesSinLeer": 1
   }
 ]
-POST /api/clients/chats 
+#### 38. `POST /api/clients/chats`
 Iniciar una nueva conversación.
 
 Request:
@@ -438,7 +438,7 @@ json
 Response (201 Created):
 json
 { "chatId": "CHT-885", "estado": "Abierto" }
-GET /api/clients/chats/:chatId/messages 
+#### 39. `GET /api/clients/chats/:chatId/messages`
 Obtener el historial de mensajes.
 
 Response (200 OK):
@@ -451,53 +451,53 @@ json
     "fecha": "2026-05-03T10:00:00Z"
   }
 ]
-POST /api/clients/chats/:chatId/messages 
+#### 40. `POST /api/clients/chats/:chatId/messages`
 Enviar un mensaje.
 
 Request:
 json
 { "contenido": "Gracias por la información" }
 Response (201 Created): (Retorna el objeto del mensaje enviado)
-PUT /api/clients/chats/:chatId/read 
+#### 41. `PUT /api/clients/chats/:chatId/read`
 Marcar mensajes como leídos.
 
 Response (200 OK):
 json
 { "mensaje": "Chat marcado como leído" }
-Comunidades y favoritos
-GET /api/clients/favorites/products 
+### Comunidades y favoritos
+#### 42. `GET /api/clients/favorites/products`
 Listar productos favoritos.
 
 Response (200 OK): (Retorna array de productos reducidos)
-POST /api/clients/favorites/products/:productId 
+#### 43. `POST /api/clients/favorites/products/:productId`
 Agregar producto a favoritos.
 
 Response (200 OK):
 json
 { "mensaje": "Agregado a favoritos" }
-DELETE /api/clients/favorites/products/:productId
+#### 44. `DELETE /api/clients/favorites/products/:productId`
 Quitar producto de favoritos.
 
 Response (200 OK):
 json
 { "mensaje": "Removido de favoritos" }
-GET /api/clients/favorites/companies 
+#### 45. `GET /api/clients/favorites/companies`
 Listar empresas seguidas.
 
 Response (200 OK): (Retorna array de empresas reducidas)
-POST /api/clients/favorites/companies/:companyId 
+#### 46. `POST /api/clients/favorites/companies/:companyId`
 Seguir a una empresa.
 
 Response (200 OK):
 json
 { "mensaje": "Ahora sigues a esta empresa" }
-DELETE /api/clients/favorites/companies/:companyId 
+#### 47. `DELETE /api/clients/favorites/companies/:companyId`
 Dejar de seguir empresa.
 
 Response (200 OK):
 json
 { "mensaje": "Dejaste de seguir a esta empresa" }
-GET /api/clients/communities 
+#### 48. `GET /api/clients/communities`
 Listar comunidades del cliente.
 
 Response (200 OK):
@@ -505,19 +505,19 @@ json
 [
   { "id": "COM-01", "nombre": "PC Gamers Bolivia", "miembros": 1500 }
 ]
-POST /api/clients/communities/:communityId/join 
+#### 49. `POST /api/clients/communities/:communityId/join`
 Unirse a comunidad.
 
 Response (200 OK):
 json
 { "mensaje": "Te has unido a la comunidad" }
-DELETE /api/clients/communities/:communityId/leave 
+#### 50. `DELETE /api/clients/communities/:communityId/leave`
 Salir de comunidad.
 
 Response (200 OK):
 json
 { "mensaje": "Has salido de la comunidad" }
-GET /api/clients/communities/:communityId/posts 
+#### 51. `GET /api/clients/communities/:communityId/posts`
 Ver posts de una comunidad.
 
 Response (200 OK):
@@ -525,8 +525,8 @@ json
 [
   { "id": "POST-01", "autor": "Carlos", "contenido": "¿Qué tarjeta gráfica recomiendan?" }
 ]
-Notificaciones
-GET /api/clients/notifications 
+### Notificaciones
+#### 52. `GET /api/clients/notifications`
 Listar notificaciones.
 
 Response (200 OK):
@@ -539,37 +539,37 @@ json
     "enlace": "/ordenes/1"
   }
 ]
-PUT /api/clients/notifications/:notificationId/read 
+#### 53. `PUT /api/clients/notifications/:notificationId/read`
 Marcar una notificación como leída.
 
 Response (200 OK):
 json
 { "id": "NOT-123", "leido": true }
-PUT /api/clients/notifications/read-all 
+#### 54. `PUT /api/clients/notifications/read-all`
 Marcar todas como leídas.
 
 Response (200 OK):
 json
 { "mensaje": "Todas las notificaciones marcadas como leídas" }
-DELETE /api/clients/notifications/:notificationId 
+#### 55. `DELETE /api/clients/notifications/:notificationId`
 Eliminar una notificación.
 
 Response (200 OK):
 json
 { "mensaje": "Notificación eliminada" }
-3. MÓDULO EMPRESA (60+ endpoints)
-Perfil y configuración
-Gestión de productos y publicaciones
-Campañas publicitarias
-Chat con clientes y leads
-Órdenes y ventas
-Analytics y reportes
-Gestión de equipo
-Integración IA para insights y recomendaciones
+## 3. MÓDULO EMPRESA (60+ endpoints)
+### Perfil y configuración
+### Gestión de productos y publicaciones
+### Campañas publicitarias
+### Chat con clientes y leads
+### Órdenes y ventas
+### Analytics y reportes
+### Gestión de equipo
+### Integración IA para insights y recomendaciones
 
-4. MÓDULO EMBAJADOR (50+ endpoints)
-Perfil y configuración
-GET /api/ambassadors/profile
+## 4. MÓDULO EMBAJADOR (50+ endpoints)
+### Perfil y configuración
+#### 56. `GET /api/ambassadors/profile`
 Obtener perfil del embajador autenticado.
 Response 200:
 {
@@ -584,7 +584,7 @@ Response 200:
  "estado": "Activo",
  "nivel": "Gold",
  "codigoReferido": "MARIA-GOLD"}
-PUT /api/ambassadors/profile
+#### 57. `PUT /api/ambassadors/profile`
 Actualizar perfil del embajador.
 Request:
 {
@@ -596,12 +596,12 @@ Request:
 Response 200:
 {
  "mensaje": "Perfil actualizado correctamente"}
-POST /api/ambassadors/profile/photo
+#### 58. `POST /api/ambassadors/profile/photo`
 Subir o cambiar foto de perfil.
 Response 200:
 {
  "url": "https://cdn.techmarket.bo/ambassadors/amb-001-avatar.jpg"}
-GET /api/ambassadors/profile/stats
+#### 59. `GET /api/ambassadors/profile/stats`
 Obtener métricas principales del embajador.
 Response 200:
 {
@@ -610,7 +610,7 @@ Response 200:
  "conversionRate": 64.5,
  "comisionesTotales": "Bs 18.500",
  "nivel": "Gold"}
-GET /api/ambassadors/settings
+#### 60. `GET /api/ambassadors/settings`
 Obtener configuración del embajador.
 Response 200:
 {
@@ -618,7 +618,7 @@ Response 200:
  "notificacionesPush": true,
  "mostrarPerfilPublico": true,
  "idioma": "es"}
-PUT /api/ambassadors/settings
+#### 61. `PUT /api/ambassadors/settings`
 Actualizar configuración del embajador.
 Request:
 {
@@ -628,8 +628,8 @@ Request:
 Response 200:
 {
  "mensaje": "Configuración actualizada"}
-Referral links y códigos
-GET /api/ambassadors/referral-links
+### Referral links y códigos
+#### 62. `GET /api/ambassadors/referral-links`
 Listar links de referido creados por el embajador.
 Response 200:
 [
@@ -642,7 +642,7 @@ Response 200:
    "conversiones": 24,
    "activo": true
  }]
-POST /api/ambassadors/referral-links
+#### 63. `POST /api/ambassadors/referral-links`
 Crear nuevo link de referido.
 Request:
 {
@@ -654,7 +654,7 @@ Response 201:
  "id": "REFLINK-002",
  "codigo": "MARIA-LPZ",
  "url": "https://techmarket.bo/register?ref=MARIA-LPZ"}
-GET /api/ambassadors/referral-links/:linkId
+#### 64. `GET /api/ambassadors/referral-links/:linkId`
 Obtener detalle de un link de referido.
 Response 200:
 {
@@ -666,7 +666,7 @@ Response 200:
  "conversiones": 24,
  "conversionRate": 7.5,
  "activo": true}
-PUT /api/ambassadors/referral-links/:linkId
+#### 65. `PUT /api/ambassadors/referral-links/:linkId`
 Actualizar un link de referido.
 Request:
 {
@@ -675,7 +675,7 @@ Request:
 Response 200:
 {
  "mensaje": "Link actualizado correctamente"}
-PATCH /api/ambassadors/referral-links/:linkId/status
+#### 66. `PATCH /api/ambassadors/referral-links/:linkId/status`
 Activar o desactivar link.
 Request:
 {
@@ -684,17 +684,17 @@ Response 200:
 {
  "id": "REFLINK-001",
  "activo": false}
-DELETE /api/ambassadors/referral-links/:linkId
+#### 67. `DELETE /api/ambassadors/referral-links/:linkId`
 Eliminar link de referido.
 Response 200:
 {
  "mensaje": "Link de referido eliminado"}
-GET /api/ambassadors/referral-links/:linkId/qr
+#### 68. `GET /api/ambassadors/referral-links/:linkId/qr`
 Generar QR del link de referido.
 Response 200:
 {
  "qrUrl": "https://cdn.techmarket.bo/qr/reflink-001.png"}
-GET /api/ambassadors/referral-codes
+#### 69. `GET /api/ambassadors/referral-codes`
 Listar códigos activos del embajador.
 Response 200:
 [
@@ -704,8 +704,8 @@ Response 200:
    "usos": 58,
    "activo": true
  }]
-Negocios referidos
-GET /api/ambassadors/referrals
+### Negocios referidos
+#### 70. `GET /api/ambassadors/referrals`
 Listar negocios o usuarios referidos.
 Response 200:
 [
@@ -717,7 +717,7 @@ Response 200:
    "fechaRegistro": "2026-04-10",
    "comisionGenerada": "Bs 850"
  }]
-POST /api/ambassadors/referrals
+#### 71. `POST /api/ambassadors/referrals`
 Registrar manualmente un prospecto referido.
 Request:
 {
@@ -732,7 +732,7 @@ Response 201:
  "id": "BUS-002",
  "estado": "prospecto",
  "mensaje": "Prospecto registrado correctamente"}
-GET /api/ambassadors/referrals/:referralId
+#### 72. `GET /api/ambassadors/referrals/:referralId`
 Obtener detalle de un referido.
 Response 200:
 {
@@ -747,7 +747,7 @@ Response 200:
  },
  "fechaRegistro": "2026-04-10",
  "ultimaActividad": "2026-05-01T14:20:00Z"}
-PUT /api/ambassadors/referrals/:referralId
+#### 73. `PUT /api/ambassadors/referrals/:referralId`
 Actualizar datos de un referido.
 Request:
 {
@@ -757,7 +757,7 @@ Request:
 Response 200:
 {
  "mensaje": "Referido actualizado correctamente"}
-PATCH /api/ambassadors/referrals/:referralId/status
+#### 74. `PATCH /api/ambassadors/referrals/:referralId/status`
 Actualizar estado del referido.
 Request:
 {
@@ -766,12 +766,12 @@ Response 200:
 {
  "id": "BUS-001",
  "estado": "en_onboarding"}
-DELETE /api/ambassadors/referrals/:referralId
+#### 75. `DELETE /api/ambassadors/referrals/:referralId`
 Eliminar referido prospecto.
 Response 200:
 {
  "mensaje": "Referido eliminado correctamente"}
-GET /api/ambassadors/referrals/:referralId/activity
+#### 76. `GET /api/ambassadors/referrals/:referralId/activity`
 Obtener actividad del referido.
 Response 200:
 [
@@ -781,7 +781,7 @@ Response 200:
    "descripcion": "Empresa completó registro inicial",
    "fecha": "2026-04-10T10:00:00Z"
  }]
-POST /api/ambassadors/referrals/:referralId/notes
+#### 77. `POST /api/ambassadors/referrals/:referralId/notes`
 Agregar nota interna al referido.
 Request:
 {
@@ -790,7 +790,7 @@ Response 201:
 {
  "id": "NOTE-001",
  "mensaje": "Nota agregada"}
-GET /api/ambassadors/referrals/:referralId/notes
+#### 78. `GET /api/ambassadors/referrals/:referralId/notes`
 Listar notas del referido.
 Response 200:
 [
@@ -799,14 +799,14 @@ Response 200:
    "nota": "Interesado en vender accesorios gaming.",
    "fecha": "2026-04-29T15:00:00Z"
  }]
-POST /api/ambassadors/referrals/:referralId/files
+#### 79. `POST /api/ambassadors/referrals/:referralId/files`
 Subir archivo asociado al referido.
 Response 201:
 {
  "id": "FILE-001",
  "url": "https://cdn.techmarket.bo/referrals/file-001.pdf"}
-Seguimiento de onboarding
-GET /api/ambassadors/onboarding
+### Seguimiento de onboarding
+#### 80. `GET /api/ambassadors/onboarding`
 Listar procesos de onboarding activos.
 Response 200:
 [
@@ -817,7 +817,7 @@ Response 200:
    "progreso": 75,
    "estado": "en_proceso"
  }]
-GET /api/ambassadors/onboarding/:onboardingId
+#### 81. `GET /api/ambassadors/onboarding/:onboardingId`
 Obtener detalle del onboarding.
 Response 200:
 {
@@ -837,7 +837,7 @@ Response 200:
      "completado": false
    }
  ]}
-POST /api/ambassadors/onboarding/:onboardingId/tasks
+#### 82. `POST /api/ambassadors/onboarding/:onboardingId/tasks`
 Crear tarea de seguimiento.
 Request:
 {
@@ -847,7 +847,7 @@ Response 201:
 {
  "id": "TASK-001",
  "mensaje": "Tarea creada"}
-GET /api/ambassadors/onboarding/:onboardingId/tasks
+#### 83. `GET /api/ambassadors/onboarding/:onboardingId/tasks`
 Listar tareas de onboarding.
 Response 200:
 [
@@ -857,7 +857,7 @@ Response 200:
    "estado": "pendiente",
    "fechaLimite": "2026-05-10"
  }]
-PATCH /api/ambassadors/onboarding/tasks/:taskId/status
+#### 84. `PATCH /api/ambassadors/onboarding/tasks/:taskId/status`
 Actualizar estado de una tarea.
 Request:
 {
@@ -866,7 +866,7 @@ Response 200:
 {
  "id": "TASK-001",
  "estado": "completada"}
-POST /api/ambassadors/onboarding/:onboardingId/reminders
+#### 85. `POST /api/ambassadors/onboarding/:onboardingId/reminders`
 Crear recordatorio de seguimiento.
 Request:
 {
@@ -876,7 +876,7 @@ Response 201:
 {
  "id": "REM-001",
  "mensaje": "Recordatorio creado"}
-GET /api/ambassadors/onboarding/milestones
+#### 86. `GET /api/ambassadors/onboarding/milestones`
 Listar hitos de onboarding disponibles.
 Response 200:
 [
@@ -890,13 +890,13 @@ Response 200:
    "nombre": "Primera publicación",
    "orden": 2
  }]
-PATCH /api/ambassadors/onboarding/:onboardingId/milestones/:milestoneId
+#### 87. `PATCH /api/ambassadors/onboarding/:onboardingId/milestones/:milestoneId`
 Marcar hito como completado.
 Response 200:
 {
  "mensaje": "Hito marcado como completado"}
-Prospectos y leads
-GET /api/ambassadors/leads
+### Prospectos y leads
+#### 88. `GET /api/ambassadors/leads`
 Listar leads capturados.
 Response 200:
 [
@@ -907,7 +907,7 @@ Response 200:
    "estado": "nuevo",
    "fuente": "evento"
  }]
-POST /api/ambassadors/leads
+#### 89. `POST /api/ambassadors/leads`
 Crear nuevo lead.
 Request:
 {
@@ -920,7 +920,7 @@ Response 201:
 {
  "id": "LEAD-001",
  "mensaje": "Lead creado correctamente"}
-GET /api/ambassadors/leads/:leadId
+#### 90. `GET /api/ambassadors/leads/:leadId`
 Obtener detalle de un lead.
 Response 200:
 {
@@ -929,12 +929,12 @@ Response 200:
  "tipo": "empresa",
  "estado": "nuevo",
  "probabilidadCierre": 68}
-PUT /api/ambassadors/leads/:leadId
+#### 91. `PUT /api/ambassadors/leads/:leadId`
 Actualizar lead.
 Response 200:
 {
  "mensaje": "Lead actualizado"}
-PATCH /api/ambassadors/leads/:leadId/status
+#### 92. `PATCH /api/ambassadors/leads/:leadId/status`
 Cambiar estado del lead.
 Request:
 {
@@ -943,19 +943,19 @@ Response 200:
 {
  "id": "LEAD-001",
  "estado": "contactado"}
-POST /api/ambassadors/leads/:leadId/convert
+#### 93. `POST /api/ambassadors/leads/:leadId/convert`
 Convertir lead en referido.
 Response 201:
 {
  "referidoId": "BUS-003",
  "mensaje": "Lead convertido en referido"}
-DELETE /api/ambassadors/leads/:leadId
+#### 94. `DELETE /api/ambassadors/leads/:leadId`
 Eliminar lead.
 Response 200:
 {
  "mensaje": "Lead eliminado"}
-Comisiones y pagos
-GET /api/ambassadors/commissions
+### Comisiones y pagos
+#### 95. `GET /api/ambassadors/commissions`
 Listar comisiones generadas.
 Response 200:
 [
@@ -967,7 +967,7 @@ Response 200:
    "estado": "disponible",
    "fecha": "2026-04-28"
  }]
-GET /api/ambassadors/commissions/summary
+#### 96. `GET /api/ambassadors/commissions/summary`
 Resumen de comisiones.
 Response 200:
 {
@@ -975,7 +975,7 @@ Response 200:
  "disponible": "Bs 3.200",
  "pendiente": "Bs 1.100",
  "pagado": "Bs 14.200"}
-GET /api/ambassadors/commissions/:commissionId
+#### 97. `GET /api/ambassadors/commissions/:commissionId`
 Detalle de comisión.
 Response 200:
 {
@@ -986,7 +986,7 @@ Response 200:
  "porcentaje": 5,
  "estado": "disponible",
  "fechaGeneracion": "2026-04-28T12:00:00Z"}
-POST /api/ambassadors/commissions/:commissionId/dispute
+#### 98. `POST /api/ambassadors/commissions/:commissionId/dispute`
 Crear reclamo sobre una comisión.
 Request:
 {
@@ -996,14 +996,14 @@ Response 201:
 {
  "id": "DSP-001",
  "estado": "pendiente_revision"}
-GET /api/ambassadors/wallet
+#### 99. `GET /api/ambassadors/wallet`
 Obtener billetera del embajador.
 Response 200:
 {
  "saldoDisponible": "Bs 3.200",
  "saldoPendiente": "Bs 1.100",
  "totalRetirado": "Bs 14.200"}
-POST /api/ambassadors/wallet/withdraw
+#### 100. `POST /api/ambassadors/wallet/withdraw`
 Solicitar retiro de saldo.
 Request:
 {
@@ -1014,7 +1014,7 @@ Response 201:
  "id": "WDR-001",
  "estado": "pendiente",
  "fechaEstimada": "2026-05-07"}
-GET /api/ambassadors/payouts
+#### 101. `GET /api/ambassadors/payouts`
 Listar retiros solicitados.
 Response 200:
 [
@@ -1024,7 +1024,7 @@ Response 200:
    "estado": "pendiente",
    "fecha": "2026-05-03"
  }]
-GET /api/ambassadors/payout-methods
+#### 102. `GET /api/ambassadors/payout-methods`
 Listar métodos de pago del embajador.
 Response 200:
 [
@@ -1035,7 +1035,7 @@ Response 200:
    "ultimos4": "1234",
    "predeterminado": true
  }]
-POST /api/ambassadors/payout-methods
+#### 103. `POST /api/ambassadors/payout-methods`
 Agregar método de pago.
 Request:
 {
@@ -1047,13 +1047,13 @@ Response 201:
 {
  "id": "PAYM-002",
  "mensaje": "Método de pago agregado"}
-DELETE /api/ambassadors/payout-methods/:methodId
+#### 104. `DELETE /api/ambassadors/payout-methods/:methodId`
 Eliminar método de pago.
 Response 200:
 {
  "mensaje": "Método de pago eliminado"}
 Red de embajadores
-GET /api/ambassadors/network
+#### 105. `GET /api/ambassadors/network`
 Listar red directa del embajador.
 Response 200:
 [
@@ -1064,7 +1064,7 @@ Response 200:
    "referidos": 18,
    "estado": "Activo"
  }]
-GET /api/ambassadors/network/tree
+#### 106. `GET /api/ambassadors/network/tree`
 Obtener árbol de red de embajadores.
 Response 200:
 {
@@ -1078,7 +1078,7 @@ Response 200:
      "nivel": "Silver"
    }
  ]}
-POST /api/ambassadors/network/invitations
+#### 107. `POST /api/ambassadors/network/invitations`
 Invitar nuevo embajador.
 Request:
 {
@@ -1089,7 +1089,7 @@ Response 201:
 {
  "id": "INV-AMB-001",
  "estado": "enviada"}
-GET /api/ambassadors/network/invitations
+#### 108. `GET /api/ambassadors/network/invitations`
 Listar invitaciones enviadas.
 Response 200:
 [
@@ -1098,12 +1098,12 @@ Response 200:
    "email": "nuevoembajador@example.com",
    "estado": "pendiente"
  }]
-DELETE /api/ambassadors/network/invitations/:invitationId
+#### 109. `DELETE /api/ambassadors/network/invitations/:invitationId`
 Cancelar invitación.
 Response 200:
 {
  "mensaje": "Invitación cancelada"}
-GET /api/ambassadors/network/ranking
+#### 110. `GET /api/ambassadors/network/ranking`
 Ranking de embajadores.
 Response 200:
 [
@@ -1114,8 +1114,8 @@ Response 200:
    "conversiones": 48,
    "comisiones": "Bs 18.500"
  }]
-Chat y comunicación
-GET /api/ambassadors/chats
+### Chat y comunicación
+#### 111. `GET /api/ambassadors/chats`
 Listar conversaciones del embajador.
 Response 200:
 [
@@ -1125,7 +1125,7 @@ Response 200:
    "ultimoMensaje": "Ya completamos el registro.",
    "mensajesSinLeer": 2
  }]
-POST /api/ambassadors/chats
+#### 112. `POST /api/ambassadors/chats`
 Crear conversación.
 Request:
 {
@@ -1135,7 +1135,7 @@ Response 201:
 {
  "id": "CHT-AMB-002",
  "estado": "Abierto"}
-GET /api/ambassadors/chats/:chatId/messages
+#### 113. `GET /api/ambassadors/chats/:chatId/messages`
 Obtener mensajes de una conversación.
 Response 200:
 [
@@ -1145,7 +1145,7 @@ Response 200:
    "contenido": "Hola, te ayudo con el onboarding.",
    "fecha": "2026-05-03T10:00:00Z"
  }]
-POST /api/ambassadors/chats/:chatId/messages
+#### 114. `POST /api/ambassadors/chats/:chatId/messages`
 Enviar mensaje.
 Request:
 {
@@ -1154,13 +1154,13 @@ Response 201:
 {
  "id": "MSG-002",
  "estado": "enviado"}
-PUT /api/ambassadors/chats/:chatId/read
+#### 115. `PUT /api/ambassadors/chats/:chatId/read`
 Marcar conversación como leída.
 Response 200:
 {
  "mensaje": "Conversación marcada como leída"}
 Reportes y analytics
-GET /api/ambassadors/reports/performance
+#### 116. `GET /api/ambassadors/reports/performance`
 Obtener reporte general de desempeño.
 Response 200:
 {
@@ -1170,7 +1170,7 @@ Response 200:
  "conversiones": 31,
  "conversionRate": 36.04,
  "comisiones": "Bs 4.800"}
-GET /api/ambassadors/reports/referrals
+#### 117. `GET /api/ambassadors/reports/referrals`
 Reporte de referidos.
 Response 200:
 [
@@ -1181,7 +1181,7 @@ Response 200:
    "ventasGeneradas": 42,
    "comision": "Bs 850"
  }]
-GET /api/ambassadors/reports/commissions
+#### 118. `GET /api/ambassadors/reports/commissions`
 Reporte de comisiones por período.
 Response 200:
 {
@@ -1190,7 +1190,7 @@ Response 200:
  "pendiente": "Bs 900",
  "disponible": "Bs 1.500",
  "pagado": "Bs 2.400"}
-GET /api/ambassadors/reports/conversion-funnel
+#### 119. `GET /api/ambassadors/reports/conversion-funnel`
 Obtener embudo de conversión.
 Response 200:
 {
@@ -1198,13 +1198,13 @@ Response 200:
  "leads": 86,
  "registros": 48,
  "activos": 31}
-GET /api/ambassadors/reports/export
+#### 120. `GET /api/ambassadors/reports/export`
 Exportar reporte del embajador.
 Response 200:
 {
  "downloadUrl": "https://techmarket.bo/reports/amb-001-mayo.pdf"}
 Asistente IA para embajadores
-POST /api/ambassadors/ai/query
+#### 121. `POST /api/ambassadors/ai/query`
 Enviar consulta al asistente IA.
 Request:
 {
@@ -1220,7 +1220,7 @@ Response 200:
    ],
    "foco": "conversion"
  }}
-GET /api/ambassadors/ai/insights
+#### 122. `GET /api/ambassadors/ai/insights`
 Obtener insights automáticos.
 Response 200:
 {
@@ -1231,7 +1231,7 @@ Response 200:
    { "etiqueta": "Potencial de comisiones", "valor": 88 }
  ],
  "recomendacion": "Hay buen potencial en empresas de hardware y servicios técnicos."}
-POST /api/ambassadors/ai/prospect-score
+#### 123. `POST /api/ambassadors/ai/prospect-score`
 Calcular score de un prospecto.
 Request:
 {
@@ -1246,7 +1246,7 @@ Response 200:
    "Respondió en menos de 24 horas",
    "Está en ciudad con alta demanda"
  ]}
-POST /api/ambassadors/ai/follow-up-suggestion
+#### 124. `POST /api/ambassadors/ai/follow-up-suggestion`
 Generar sugerencia de seguimiento.
 Request:
 {
@@ -1255,7 +1255,7 @@ Response 200:
 {
  "mensajeSugerido": "Hola Carlos, vi que ya completaste tu perfil. El siguiente paso ideal es publicar tus primeros 3 productos para activar visibilidad en marketplace.",
  "canalRecomendado": "whatsapp"}
-POST /api/ambassadors/ai/improvement-plan
+#### 125. `POST /api/ambassadors/ai/improvement-plan`
 Solicitar plan de mejora.
 Request:
 {
@@ -1273,9 +1273,9 @@ Response 200:
  }}
 
 
-5. MÓDULO ESPECIALISTA/Tecnico (45+ endpoints)
-Perfil, servicios y portafolio (s)
-GET /api/specialists/profile
+## 5. MÓDULO ESPECIALISTA/Tecnico (45+ endpoints)
+### Perfil, servicios y portafolio (s)
+#### 126. `GET /api/specialists/profile`
 Obtener perfil del técnico.
 Json
 {
@@ -1285,14 +1285,14 @@ Json
   "ubicacion": "Santa Cruz",
   "calificacion": 4.8
 }
-PUT /api/specialists/profile
+#### 127. `PUT /api/specialists/profile`
 Actualizar perfil del técnico.
 Json
 {
   "mensaje": "Perfil actualizado correctamente"
 }
 
-GET /api/specialists/profile/stats
+#### 128. `GET /api/specialists/profile/stats`
 Obtener KPIs del técnico (trabajos completados, reseñas, calificación).
 Json
 {
@@ -1301,14 +1301,14 @@ Json
   "calificacionPromedio": 4.8
 }
 
-POST /api/specialists/profile/photo
+#### 129. `POST /api/specialists/profile/photo`
 Subir o cambiar foto de perfil.
 Json
 {
   "url": "https://cdn.techmarket.bo/specialists/tec-01-avatar.jpg"
 }
 
-GET /api/specialists/services
+#### 130. `GET /api/specialists/services`
 Listar servicios publicados por el técnico.
 Json
 [
@@ -1322,7 +1322,7 @@ Json
   }
 ]
 
-POST /api/specialists/services
+#### 131. `POST /api/specialists/services`
 Crear un nuevo servicio.
 Json
 {
@@ -1331,28 +1331,28 @@ Json
   "mensaje": "Servicio creado exitosamente"
 }
 
-PUT /api/specialists/services/:serviceId
+#### 132. `PUT /api/specialists/services/:serviceId`
 Actualizar un servicio existente.
 Json
 {
   "mensaje": "Servicio actualizado"
 }
 
-DELETE /api/specialists/services/:serviceId
+#### 133. `DELETE /api/specialists/services/:serviceId`
 Eliminar un servicio del catálogo.
 Json
 {
   "mensaje": "Servicio eliminado"
 }
 
-PATCH /api/specialists/services/:serviceId/toggle-featured
+#### 134. `PATCH /api/specialists/services/:serviceId/toggle-featured`
 Destacar o quitar destacado de un servicio.
 Json
 {
   "destacado": true
 }
 
-GET /api/specialists/portfolio
+#### 135. `GET /api/specialists/portfolio`
 Listar trabajos del portafolio (casos realizados con evidencia).
 Json
 [
@@ -1365,14 +1365,14 @@ Json
   }
 ]
 
-POST /api/specialists/portfolio
+#### 136. `POST /api/specialists/portfolio`
 Agregar un trabajo al portafolio.
 Json
 {
   "id": "p-4",
   "mensaje": "Trabajo agregado al portafolio"
 }
-DELETE /api/specialists/portfolio/:itemId
+#### 137. `DELETE /api/specialists/portfolio/:itemId`
 Eliminar un trabajo del portafolio.
 Json
 {
@@ -1380,7 +1380,7 @@ Json
 }
 
 Disponibilidad y agenda (s)
-GET /api/specialists/availability
+#### 138. `GET /api/specialists/availability`
 Obtener configuración de disponibilidad (días, horarios, modalidad).
 Json
 {
@@ -1391,14 +1391,14 @@ Json
   "cobertura": "Santa Cruz de la Sierra"
 }
 
-PUT /api/specialists/availability
+#### 139. `PUT /api/specialists/availability`
 Actualizar configuración de disponibilidad.
 Json
 {
   "mensaje": "Disponibilidad actualizada"
 }
 
-PATCH /api/specialists/availability/status
+#### 140. `PATCH /api/specialists/availability/status`
 Cambiar estado actual (disponible/ocupado/ausente).
 Json
 {
@@ -1406,7 +1406,7 @@ Json
   "tiempoRespuesta": "45 min"
 }
 
-GET /api/specialists/calendar
+#### 141. `GET /api/specialists/calendar`
 Obtener agenda con citas y bloques de tiempo.
 Json
 [
@@ -1421,14 +1421,14 @@ Json
   }
 ]
 
-POST /api/specialists/calendar/blocks
+#### 142. `POST /api/specialists/calendar/blocks`
 Bloquear horario no disponible manualmente.
 Json
 {
   "mensaje": "Bloque agregado a la agenda"
 }
 
-DELETE /api/specialists/calendar/blocks/:blockId
+#### 143. `DELETE /api/specialists/calendar/blocks/:blockId`
 Eliminar un bloque de horario.
 Json
 {
@@ -1437,7 +1437,7 @@ Json
 
 
 Solicitudes y proyectos
-GET /api/specialists/requests
+#### 144. `GET /api/specialists/requests`
 Listar solicitudes de servicio recibidas.
 Json
 [
@@ -1451,7 +1451,7 @@ Json
   }
 ]
 
-PATCH /api/specialists/requests/:requestId/respond
+#### 145. `PATCH /api/specialists/requests/:requestId/respond`
 Aceptar o rechazar una solicitud.
 Json
 {
@@ -1459,7 +1459,7 @@ Json
   "mensaje": "Solicitud aceptada, se notificó al cliente"
 }
 
-GET /api/specialists/projects
+#### 146. `GET /api/specialists/projects`
 Listar proyectos activos del técnico.
 Json
 [
@@ -1472,7 +1472,7 @@ Json
   }
 ]
 
-GET /api/specialists/projects/:projectId
+#### 147. `GET /api/specialists/projects/:projectId`
 Obtener detalle de un proyecto específico.
 Json
 {
@@ -1484,7 +1484,7 @@ Json
   "descripcion": "Limpieza interna, cambio de pasta térmica"
 }
 
-PATCH /api/specialists/projects/:projectId/status
+#### 148. `PATCH /api/specialists/projects/:projectId/status`
 Cambiar estado del proyecto (en_progreso, completado, cancelado).
 Json
 {
@@ -1492,7 +1492,7 @@ Json
   "mensaje": "Proyecto marcado como completado"
 }
 
-GET /api/specialists/projects/history
+#### 149. `GET /api/specialists/projects/history`
 Historial de proyectos finalizados.
 Json
 [
@@ -1506,8 +1506,8 @@ Json
 ]
 
 
-Chat y archivos
-GET /api/specialists/chats
+### Chat y archivos
+#### 150. `GET /api/specialists/chats`
 Listar conversaciones activas del técnico.
 Json
 [
@@ -1520,7 +1520,7 @@ Json
   }
 ]
 
-GET /api/specialists/chats/:chatId
+#### 151. `GET /api/specialists/chats/:chatId`
 Obtener mensajes de una conversación.
 Json
 [
@@ -1533,7 +1533,7 @@ Json
   }
 ]
 
-POST /api/specialists/chats/:chatId/messages
+#### 152. `POST /api/specialists/chats/:chatId/messages`
 Enviar un mensaje en una conversación.
 Json
 {
@@ -1541,14 +1541,14 @@ Json
   "fecha": "2026-04-10T09:32:00Z"
 }
 
-GET /api/specialists/chats/:chatId/files
+#### 153. `GET /api/specialists/chats/:chatId/files`
 Obtener archivos compartidos en una conversación.
 Json
 [
   { "id": "f-1", "nombre": "diagnostico.pdf", "tamano": "2.4 MB", "fecha": "2026-04-09" }
 ]
 
-POST /api/specialists/chats/:chatId/files
+#### 154. `POST /api/specialists/chats/:chatId/files`
 Subir un archivo a la conversación.
 Json
 {
@@ -1556,14 +1556,14 @@ Json
   "url": "https://cdn.techmarket.bo/files/factura-01.pdf"
 }
 
-GET /api/specialists/files
+#### 155. `GET /api/specialists/files`
 Listar archivos propios del técnico (no ligados a chat).
 Json
 [
   { "id": "f-3", "nombre": "certificado_cisco.pdf", "tamano": "1.1 MB", "subido": "2026-03-15" }
 ]
 
-POST /api/specialists/files
+#### 156. `POST /api/specialists/files`
 Subir un archivo al repositorio personal.
 Json
 {
@@ -1571,7 +1571,7 @@ Json
   "mensaje": "Archivo subido correctamente"
 }
 
-DELETE /api/specialists/files/:fileId
+#### 157. `DELETE /api/specialists/files/:fileId`
 Eliminar un archivo del repositorio.
 Json
 {
@@ -1580,7 +1580,7 @@ Json
 
 
 Pagos e ingresos
-GET /api/specialists/wallet
+#### 158. `GET /api/specialists/wallet`
 Obtener saldo disponible y total de ingresos.
 Json
 {
@@ -1589,7 +1589,7 @@ Json
   "enProceso": "Bs 420.000"
 }
 
-GET /api/specialists/transactions
+#### 159. `GET /api/specialists/transactions`
 Listar historial de transacciones (ingresos por servicios).
 Json
 [
@@ -1603,7 +1603,7 @@ Json
   }
 ]
 
-GET /api/specialists/transactions/:transactionId
+#### 160. `GET /api/specialists/transactions/:transactionId`
 Obtener detalle de una transacción.
 Json
 {
@@ -1617,7 +1617,7 @@ Json
   "estado": "completado"
 }
 
-POST /api/specialists/wallet/withdraw
+#### 161. `POST /api/specialists/wallet/withdraw`
 Solicitar retiro de saldo disponible.
 Json
 {
@@ -1626,7 +1626,7 @@ Json
   "fechaEstimada": "2026-04-14"
 }
 
-GET /api/specialists/earnings/summary
+#### 162. `GET /api/specialists/earnings/summary`
 Resumen de ingresos por período (semanal/mensual).
 Json
 {
@@ -1637,8 +1637,8 @@ Json
 }
 
 
-Reseñas y certificaciones
-GET /api/specialists/reviews
+### Reseñas y certificaciones
+#### 163. `GET /api/specialists/reviews`
 Listar reseñas recibidas por el técnico.
 Json
 [
@@ -1652,7 +1652,7 @@ Json
   }
 ]
 
-GET /api/specialists/reviews/:reviewId
+#### 164. `GET /api/specialists/reviews/:reviewId`
 Obtener detalle de una reseña específica.
 Json
 {
@@ -1665,7 +1665,7 @@ Json
   "fecha": "2026-04-08"
 }
 
-POST /api/specialists/reviews/:reviewId/respond
+#### 165. `POST /api/specialists/reviews/:reviewId/respond`
 Responder a una reseña recibida.
 Json
 {
@@ -1673,7 +1673,7 @@ Json
   "mensaje": "Respuesta publicada"
 }
 
-GET /api/specialists/certifications
+#### 166. `GET /api/specialists/certifications`
 Listar certificaciones del técnico.
 Json
 [
@@ -1686,7 +1686,7 @@ Json
   }
 ]
 
-POST /api/specialists/certifications
+#### 167. `POST /api/specialists/certifications`
 Agregar una certificación.
 Json
 {
@@ -1694,13 +1694,13 @@ Json
   "mensaje": "Certificación agregada"
 }
 
-DELETE /api/specialists/certifications/:certId
+#### 168. `DELETE /api/specialists/certifications/:certId`
 Eliminar una certificación.
 Json
 {
   "mensaje": "Certificación eliminada"
 }
-PATCH /api/specialists/certifications/:certId/verify
+#### 169. `PATCH /api/specialists/certifications/:certId/verify`
 Solicitar verificación de certificación por el equipo TechMarket.
 Json
 {
@@ -1711,7 +1711,7 @@ Json
 
 Asistente IA para tarifas y mejoras
 
-POST /api/specialists/ai/query
+#### 170. `POST /api/specialists/ai/query`
 Enviar consulta al asistente IA.
 Json
 {
@@ -1726,7 +1726,7 @@ Json
   }
 }
 
-GET /api/specialists/ai/insights
+#### 171. `GET /api/specialists/ai/insights`
 Obtener insights generados por IA sobre el perfil y operación.
 Json
 {
@@ -1740,7 +1740,7 @@ Json
   "focoSugerido": "Reforzar portafolio y velocidad de respuesta"
 }
 
-POST /api/specialists/ai/pricing-suggestion
+#### 172. `POST /api/specialists/ai/pricing-suggestion`
 Solicitar sugerencia de precios para un servicio.
 Json
 {
@@ -1753,7 +1753,7 @@ Json
   }
 }
 
-POST /api/specialists/ai/improvement-plan
+#### 173. `POST /api/specialists/ai/improvement-plan`
 Solicitar plan de mejora personalizado.
 Json
 {
@@ -1769,7 +1769,7 @@ Json
   }
 }
 
-POST /api/specialists/ai/schedule-optimization
+#### 174. `POST /api/specialists/ai/schedule-optimization`
 Solicitar optimización de agenda y horarios.
 Json
 {
@@ -1781,9 +1781,9 @@ Json
 }
 
 
-6. SISTEMAS GENERALES (30+ endpoints)/
+## 6. SISTEMAS GENERALES (30+ endpoints)
 Búsqueda global
-GET /api/search/global
+#### 175. `GET /api/search/global`
 Buscar contenido en todo TechMarket: productos, servicios, empresas, especialistas, usuarios, comunidades y publicaciones.
 
 Response (200 OK):
@@ -1801,7 +1801,7 @@ json
   ]
 }
 
-GET /api/search/suggestions
+#### 176. `GET /api/search/suggestions`
 Obtener sugerencias de busqueda mientras el usuario escribe.
 
 Response (200 OK):
@@ -1811,7 +1811,7 @@ json
   { "texto": "Laptop Pro 14", "tipo": "producto" }
 ]
 
-GET /api/search/trending
+#### 177. `GET /api/search/trending`
 Listar busquedas populares dentro de la plataforma.
 
 Response (200 OK):
@@ -1821,7 +1821,7 @@ json
   { "texto": "monitor ultrawide", "busquedas": 142 }
 ]
 
-GET /api/search/history
+#### 178. `GET /api/search/history`
 Listar historial de busquedas del usuario autenticado.
 
 Response (200 OK):
@@ -1834,7 +1834,7 @@ json
   }
 ]
 
-POST /api/search/history
+#### 179. `POST /api/search/history`
 Guardar una busqueda realizada por el usuario.
 
 Request:
@@ -1848,16 +1848,16 @@ Response (201 Created):
 json
 { "id": "SRH-001", "mensaje": "Busqueda guardada" }
 
-DELETE /api/search/history/:historyId
+#### 180. `DELETE /api/search/history/:historyId`
 Eliminar una busqueda del historial.
 
 Response (200 OK):
 json
 { "mensaje": "Busqueda eliminada del historial" }
 
-Notificaciones
+### Notificaciones
 
-GET /api/notifications
+#### 181. `GET /api/notifications`
 Listar notificaciones del usuario autenticado.
 
 Response (200 OK):
@@ -1872,35 +1872,35 @@ json
   }
 ]
 
-GET /api/notifications/unread-count
+#### 182. `GET /api/notifications/unread-count`
 Obtener la cantidad de notificaciones no leidas.
 
 Response (200 OK):
 json
 { "noLeidas": 3 }
 
-PUT /api/notifications/:notificationId/read
+#### 183. `PUT /api/notifications/:notificationId/read`
 Marcar una notificacion como leida.
 
 Response (200 OK):
 json
 { "id": "NOT-001", "leida": true }
 
-PUT /api/notifications/read-all
+#### 184. `PUT /api/notifications/read-all`
 Marcar todas las notificaciones como leidas.
 
 Response (200 OK):
 json
 { "mensaje": "Todas las notificaciones marcadas como leidas" }
 
-DELETE /api/notifications/:notificationId
+#### 185. `DELETE /api/notifications/:notificationId`
 Eliminar una notificacion.
 
 Response (200 OK):
 json
 { "mensaje": "Notificacion eliminada" }
 
-GET /api/notifications/preferences
+#### 186. `GET /api/notifications/preferences`
 Obtener preferencias de notificaciones del usuario.
 
 Response (200 OK):
@@ -1911,7 +1911,7 @@ json
   "inApp": true
 }
 
-PUT /api/notifications/preferences
+#### 187. `PUT /api/notifications/preferences`
 Actualizar preferencias de notificaciones.
 
 Request:
@@ -1927,7 +1927,7 @@ json
 { "mensaje": "Preferencias actualizadas" }
 
 Mensajería unificada
-GET /api/conversations
+#### 188. `GET /api/conversations`
 Listar conversaciones del usuario autenticado.
 
 Response (200 OK):
@@ -1941,7 +1941,7 @@ json
   }
 ]
 
-POST /api/conversations
+#### 189. `POST /api/conversations`
 Crear una nueva conversacion.
 
 Request:
@@ -1956,7 +1956,7 @@ Response (201 Created):
 json
 { "id": "CONV-001", "estado": "Abierta" }
 
-GET /api/conversations/:conversationId/messages
+#### 190. `GET /api/conversations/:conversationId/messages`
 Obtener mensajes de una conversacion.
 
 Response (200 OK):
@@ -1970,7 +1970,7 @@ json
   }
 ]
 
-POST /api/conversations/:conversationId/messages
+#### 191. `POST /api/conversations/:conversationId/messages`
 Enviar un mensaje dentro de una conversacion.
 
 Request:
@@ -1985,14 +1985,14 @@ json
   "estado": "enviado"
 }
 
-PUT /api/conversations/:conversationId/read
+#### 192. `PUT /api/conversations/:conversationId/read`
 Marcar una conversacion como leida.
 
 Response (200 OK):
 json
 { "mensaje": "Conversacion marcada como leida" }
 
-DELETE /api/messages/:messageId
+#### 193. `DELETE /api/messages/:messageId`
 Eliminar un mensaje enviado por el usuario.
 
 Response (200 OK):
@@ -2001,7 +2001,7 @@ json
 
 Pagos y transacciones
 
-GET /api/payments/methods
+#### 194. `GET /api/payments/methods`
 Listar metodos de pago guardados.
 
 Response (200 OK):
@@ -2016,7 +2016,7 @@ json
   }
 ]
 
-POST /api/payments/methods
+#### 195. `POST /api/payments/methods`
 Agregar un metodo de pago.
 
 Request:
@@ -2031,14 +2031,14 @@ Response (201 Created):
 json
 { "id": "PM-002", "mensaje": "Metodo de pago agregado" }
 
-DELETE /api/payments/methods/:paymentMethodId
+#### 196. `DELETE /api/payments/methods/:paymentMethodId`
 Eliminar un metodo de pago.
 
 Response (200 OK):
 json
 { "mensaje": "Metodo de pago eliminado" }
 
-POST /api/payments/intents
+#### 197. `POST /api/payments/intents`
 Crear una intencion de pago.
 
 Request:
@@ -2058,7 +2058,7 @@ json
   "monto": 7200
 }
 
-POST /api/payments/confirm
+#### 198. `POST /api/payments/confirm`
 Confirmar un pago.
 
 Request:
@@ -2073,7 +2073,7 @@ json
   "monto": 7200
 }
 
-GET /api/transactions
+#### 199. `GET /api/transactions`
 Listar transacciones del usuario.
 
 Response (200 OK):
@@ -2088,7 +2088,7 @@ json
   }
 ]
 
-GET /api/transactions/:transactionId
+#### 200. `GET /api/transactions/:transactionId`
 Obtener detalle de una transaccion.
 
 Response (200 OK):
@@ -2101,7 +2101,7 @@ json
   "fecha": "2026-04-28T15:42:00Z"
 }
 
-GET /api/invoices
+#### 201. `GET /api/invoices`
 Listar comprobantes o facturas del usuario.
 
 Response (200 OK):
@@ -2115,7 +2115,7 @@ json
   }
 ]
 
-GET /api/invoices/:invoiceId/download
+#### 202. `GET /api/invoices/:invoiceId/download`
 Descargar comprobante o factura.
 
 Response (200 OK):
@@ -2124,7 +2124,7 @@ json
   "downloadUrl": "https://techmarket.bo/invoices/inv-001.pdf"
 }
 
-POST /api/payments/refunds
+#### 203. `POST /api/payments/refunds`
 Solicitar reembolso de una transaccion.
 
 Request:
@@ -2141,7 +2141,7 @@ json
 
 Soporte y reportes
 
-POST /api/support/tickets
+#### 204. `POST /api/support/tickets`
 Crear un ticket de soporte.
 
 Request:
@@ -2156,7 +2156,7 @@ Response (201 Created):
 json
 { "id": "TCK-001", "estado": "abierto" }
 
-GET /api/support/tickets
+#### 205. `GET /api/support/tickets`
 Listar tickets de soporte del usuario.
 
 Response (200 OK):
@@ -2170,7 +2170,7 @@ json
   }
 ]
 
-GET /api/support/tickets/:ticketId
+#### 206. `GET /api/support/tickets/:ticketId`
 Obtener detalle de un ticket.
 
 Response (200 OK):
@@ -2182,7 +2182,7 @@ json
   "estado": "abierto"
 }
 
-POST /api/support/tickets/:ticketId/messages
+#### 207. `POST /api/support/tickets/:ticketId/messages`
 Enviar mensaje dentro de un ticket.
 
 Request:
@@ -2193,7 +2193,7 @@ Response (201 Created):
 json
 { "id": "TMSG-001", "mensaje": "Respuesta enviada" }
 
-PUT /api/support/tickets/:ticketId/status
+#### 208. `PUT /api/support/tickets/:ticketId/status`
 Actualizar estado de un ticket.
 
 Request:
@@ -2204,7 +2204,7 @@ Response (200 OK):
 json
 { "id": "TCK-001", "estado": "cerrado" }
 
-POST /api/reports
+#### 209. `POST /api/reports`
 Reportar un usuario, empresa, publicacion, producto, servicio, mensaje o comunidad.
 
 Request:
@@ -2220,7 +2220,7 @@ Response (201 Created):
 json
 { "id": "REP-001", "estado": "pendiente_revision" }
 
-GET /api/reports
+#### 210. `GET /api/reports`
 Listar reportes creados por el usuario.
 
 Response (200 OK):
@@ -2234,7 +2234,7 @@ json
   }
 ]
 
-GET /api/reports/:reportId
+#### 211. `GET /api/reports/:reportId`
 Obtener detalle de un reporte.
 
 Response (200 OK):
@@ -2247,7 +2247,7 @@ json
 }
 
 Configuración (países, ciudades, monedas)
-GET /api/config/countries
+#### 212. `GET /api/config/countries`
 Listar paises disponibles.
 
 Response (200 OK):
@@ -2261,7 +2261,7 @@ json
   }
 ]
 
-GET /api/config/countries/:countryCode/cities
+#### 213. `GET /api/config/countries/:countryCode/cities`
 Listar ciudades disponibles por pais.
 
 Response (200 OK):
@@ -2271,7 +2271,7 @@ json
   { "id": "CITY-LPZ", "nombre": "La Paz" }
 ]
 
-GET /api/config/currencies
+#### 214. `GET /api/config/currencies`
 Listar monedas soportadas.
 
 Response (200 OK):
@@ -2281,7 +2281,7 @@ json
   { "codigo": "USD", "nombre": "Dolar estadounidense", "simbolo": "$" }
 ]
 
-GET /api/config/categories
+#### 215. `GET /api/config/categories`
 Listar categorias generales de productos y servicios.
 
 Response (200 OK):
@@ -2296,7 +2296,7 @@ json
   }
 ]
 
-GET /api/config/user-types
+#### 216. `GET /api/config/user-types`
 Listar tipos de usuario permitidos.
 
 Response (200 OK):
@@ -2309,7 +2309,7 @@ json
   { "id": "admin", "nombre": "Administrador" }
 ]
 
-GET /api/config/platform
+#### 217. `GET /api/config/platform`
 Obtener configuracion publica de la plataforma.
 
 Response (200 OK):
@@ -2321,7 +2321,7 @@ json
   "soporteEmail": "soporte@techmarket.bo"
 }
 
-GET /api/config/payment-options
+#### 218. `GET /api/config/payment-options`
 Listar formas de pago disponibles.
 
 Response (200 OK):
@@ -2333,7 +2333,7 @@ json
 ]
 
 Admin y moderación
-GET /api/admin/dashboard
+#### 219. `GET /api/admin/dashboard`
 Obtener resumen general de la plataforma.
 
 Response (200 OK):
@@ -2345,7 +2345,7 @@ json
   "transaccionesHoy": 37
 }
 
-GET /api/admin/users
+#### 220. `GET /api/admin/users`
 Listar usuarios registrados con filtros administrativos.
 
 Response (200 OK):
@@ -2360,7 +2360,7 @@ json
   }
 ]
 
-PUT /api/admin/users/:userId/status
+#### 221. `PUT /api/admin/users/:userId/status`
 Actualizar estado de un usuario.
 
 Request:
@@ -2374,7 +2374,7 @@ Response (200 OK):
 json
 { "id": "USR-001", "estado": "suspendido" }
 
-GET /api/admin/reports
+#### 222. `GET /api/admin/reports`
 Listar reportes pendientes de revision.
 
 Response (200 OK):
@@ -2388,7 +2388,7 @@ json
   }
 ]
 
-PUT /api/admin/reports/:reportId/status
+#### 223. `PUT /api/admin/reports/:reportId/status`
 Actualizar estado de un reporte.
 
 Request:
@@ -2402,7 +2402,7 @@ Response (200 OK):
 json
 { "id": "REP-001", "estado": "resuelto" }
 
-GET /api/admin/moderation/queue
+#### 224. `GET /api/admin/moderation/queue`
 Listar contenido pendiente de moderacion.
 
 Response (200 OK):
@@ -2416,7 +2416,7 @@ json
   }
 ]
 
-POST /api/admin/moderation/actions
+#### 225. `POST /api/admin/moderation/actions`
 Ejecutar una accion de moderacion.
 
 Request:
@@ -2432,7 +2432,7 @@ Response (201 Created):
 json
 { "id": "ACT-001", "accion": "ocultar" }
 
-GET /api/admin/audit-logs
+#### 226. `GET /api/admin/audit-logs`
 Consultar historial de acciones administrativas.
 
 Response (200 OK):
@@ -2445,4 +2445,3 @@ json
     "fecha": "2026-04-28T17:10:00Z"
   }
 ]
-

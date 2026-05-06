@@ -15,4 +15,32 @@ public record AuthTokenResponse(
         List<String> scopes,
         boolean otpRequired,
         String otpChallengeId,
-        long otpExpiresIn) {}
+        long otpExpiresIn) {
+
+    public AuthTokenResponse(
+            String accessToken,
+            String refreshToken,
+            String tokenType,
+            long expiresIn,
+            long refreshExpiresIn,
+            String tenantId,
+            Long userId,
+            String username,
+            List<String> roles,
+            List<String> scopes) {
+        this(
+                accessToken,
+                refreshToken,
+                tokenType,
+                expiresIn,
+                refreshExpiresIn,
+                tenantId,
+                userId,
+                username,
+                roles,
+                scopes,
+                false,
+                null,
+                0);
+    }
+}

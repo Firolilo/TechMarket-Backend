@@ -11,6 +11,7 @@ import com.techmarket.iamservice.application.dto.MessageResponse;
 import com.techmarket.iamservice.application.dto.RefreshEndpointResponse;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
 import com.techmarket.iamservice.application.dto.RegisterUserRequest;
+import com.techmarket.iamservice.application.dto.VerifyOtpRequest;
 import com.techmarket.iamservice.application.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,7 +23,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.Instant;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -88,25 +88,6 @@ public class AuthController {
         return ResponseEntity.ok(toLoginEndpointResponse(response));
     }
 
-    @PostMapping("/auth/register")
-    public ResponseEntity<?> register(
-            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
-            @Valid @RequestBody RegisterRequest request) {
-        AuthTokenResponse response = authService.register(tenantId, request);
-        if (!request.endpointContract() || response.otpRequired()) {
-            return ResponseEntity.ok(response);
-        }
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(
-                        new RegisterEndpointResponse(
-                                formatUserId(response.userId()),
-                                request.email(),
-                                request.nombre(),
-                                request.tipo(),
-                                "Pendiente verificacion",
-                                "Verificar email enviado a " + request.email()));
-    }
-
     @PostMapping("/auth/verify-otp")
     public ResponseEntity<AuthTokenResponse> verifyOtp(
             @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
@@ -160,6 +141,15 @@ public class AuthController {
     public ResponseEntity<AuthTokenResponse> refresh(
             @Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refresh(request));
+    }
+
+    @PostMapping("/auth/refresh-token")
+    public ResponseEntity<RefreshEndpointResponse> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        AuthTokenResponse response = authService.refresh(request);
+        return ResponseEntity.ok(
+                new RefreshEndpointResponse(
+                        response.accessToken(), response.refreshToken(), response.expiresIn()));
     }
 
     @Operation(
@@ -242,13 +232,4 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/auth/logout-all")
-    @Operation(security = {@SecurityRequirement(name = "bearer-jwt")})
-    public ResponseEntity<Void> logoutAll(
-            Authentication authentication,
-            @Parameter(hidden = true) @RequestHeader(value = "Authorization", required = false)
-                    String authorizationHeader) {
-        authService.logoutAll(authentication, authorizationHeader);
-        return ResponseEntity.noContent().build();
-    }
 }
