@@ -173,9 +173,7 @@ public class AuthService {
                 || credential.getOtpCodeHash() == null
                 || credential.getOtpExpiresAt() == null) {
             throw new AuthServiceException(
-                    "IAM_INVALID_OTP",
-                    HttpStatus.UNAUTHORIZED,
-                    "OTP challenge is invalid");
+                    "IAM_INVALID_OTP", HttpStatus.UNAUTHORIZED, "OTP challenge is invalid");
         }
 
         if (credential.getOtpExpiresAt().isBefore(now)) {
@@ -270,7 +268,9 @@ public class AuthService {
             RefreshTokenRequest request,
             Authentication authentication,
             String authorizationHeader) {
-        if (request != null && request.refreshToken() != null && !request.refreshToken().isBlank()) {
+        if (request != null
+                && request.refreshToken() != null
+                && !request.refreshToken().isBlank()) {
             JwtTokenService.RefreshTokenClaims refreshClaims =
                     jwtTokenService.parseRefreshToken(request.refreshToken());
 
@@ -500,7 +500,8 @@ public class AuthService {
         String challengeId = UUID.randomUUID().toString();
         String otpCode = generateOtpCode();
         LocalDateTime expiresAt =
-                LocalDateTime.now(ZoneOffset.UTC).plusMinutes(Math.max(1, otpProperties.expiresMinutes()));
+                LocalDateTime.now(ZoneOffset.UTC)
+                        .plusMinutes(Math.max(1, otpProperties.expiresMinutes()));
 
         credential.beginOtpChallenge(passwordEncoder.encode(otpCode), challengeId, expiresAt);
         userCredentialRepository.save(credential);
@@ -567,9 +568,7 @@ public class AuthService {
         }
         if (Boolean.FALSE.equals(request.terminos())) {
             throw new AuthServiceException(
-                    "IAM_TERMS_REQUIRED",
-                    HttpStatus.BAD_REQUEST,
-                    "Terms must be accepted");
+                    "IAM_TERMS_REQUIRED", HttpStatus.BAD_REQUEST, "Terms must be accepted");
         }
     }
 

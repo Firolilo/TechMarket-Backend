@@ -245,6 +245,7 @@ json
     ]
   }
 ]
+
 GET /api/marketplace/categories/:categoryId/products 
 Listar productos de una categoría específica.
 

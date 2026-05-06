@@ -108,7 +108,8 @@ public class UserCredentialEntity {
         return otpAttempts;
     }
 
-    public void beginOtpChallenge(String otpCodeHash, String otpChallengeId, LocalDateTime otpExpiresAt) {
+    public void beginOtpChallenge(
+            String otpCodeHash, String otpChallengeId, LocalDateTime otpExpiresAt) {
         this.otpCodeHash = otpCodeHash;
         this.otpChallengeId = otpChallengeId;
         this.otpExpiresAt = otpExpiresAt;

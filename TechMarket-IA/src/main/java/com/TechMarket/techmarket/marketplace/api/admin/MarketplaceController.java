@@ -3,6 +3,7 @@ package com.techmarket.techmarket.marketplace.api.admin;
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.entity.ListingJpaEntity;
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.repository.ListingSpringDataRepository;
 import com.techmarket.techmarket.marketplace.api.admin.response.CategoryTreeResponse;
+import com.techmarket.techmarket.marketplace.api.admin.response.CompanyDetailResponse;
 import com.techmarket.techmarket.marketplace.api.admin.response.CompanySummaryResponse;
 import com.techmarket.techmarket.marketplace.api.admin.response.ProductDetailResponse;
 import com.techmarket.techmarket.marketplace.api.admin.response.ProductPageResponse;
@@ -45,11 +46,15 @@ public class MarketplaceController {
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "pagina", defaultValue = "1") int pagina) {
-        List<ListingJpaEntity> listings = listingRepository.findAll().stream()
-                .filter(listing -> matchesSearch(listing, search))
-                .filter(listing -> matchesCategory(listing, category))
-                .sorted(Comparator.comparing(ListingJpaEntity::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+        List<ListingJpaEntity> listings =
+                listingRepository.findAll().stream()
+                        .filter(listing -> matchesSearch(listing, search))
+                        .filter(listing -> matchesCategory(listing, category))
+                        .sorted(
+                                Comparator.comparing(
+                                        ListingJpaEntity::getCreatedAt,
+                                        Comparator.nullsLast(Comparator.reverseOrder())))
+                        .toList();
         return toPage(listings, pagina);
     }
 
@@ -96,6 +101,26 @@ public class MarketplaceController {
         return tenantRepository.findAll().stream().map(this::toCompanySummary).toList();
     }
 
+    @GetMapping("/companies/{companyId}")
+    public CompanyDetailResponse company(@PathVariable String companyId) {
+        TenantJpaEntity tenant = findTenant(parsePrefixedUuid(companyId, "EMP-"));
+        return new CompanyDetailResponse(
+                formatCompanyId(tenant.getId()),
+                tenant.getBusinessName(),
+                null,
+                tenant.getCreatedAt() == null ? null : tenant.getCreatedAt().toLocalDate(),
+                0);
+    }
+
+    @GetMapping("/companies/{companyId}/products")
+    public ProductPageResponse companyProducts(
+            @PathVariable String companyId,
+            @RequestParam(value = "pagina", defaultValue = "1") int pagina) {
+        UUID tenantId = parsePrefixedUuid(companyId, "EMP-");
+        findTenant(tenantId);
+        return toPage(listingRepository.findAllByTenantId(tenantId), pagina);
+    }
+
     private ProductPageResponse toPage(List<ListingJpaEntity> listings, int pagina) {
         int safePage = Math.max(1, pagina);
         return new ProductPageResponse(
@@ -116,7 +141,8 @@ public class MarketplaceController {
                 categoryRepository.findAllByParentCategoryId(category.getId()).stream()
                         .map(this::toCategoryTree)
                         .toList();
-        return new CategoryTreeResponse(formatCategoryId(category.getId()), category.getName(), children);
+        return new CategoryTreeResponse(
+                formatCategoryId(category.getId()), category.getName(), children);
     }
 
     private CompanySummaryResponse toCompanySummary(TenantJpaEntity tenant) {
@@ -127,11 +153,19 @@ public class MarketplaceController {
                 formatCompanyId(tenant.getId()), tenant.getBusinessName(), null, 0);
     }
 
+    private TenantJpaEntity findTenant(UUID tenantId) {
+        return tenantRepository
+                .findById(tenantId)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+    }
+
     private boolean matchesSearch(ListingJpaEntity listing, String search) {
         if (search == null || search.isBlank()) {
             return true;
         }
-        String text = (listing.getTitle() == null ? "" : listing.getTitle()).toLowerCase(Locale.ROOT);
+        String text =
+                (listing.getTitle() == null ? "" : listing.getTitle()).toLowerCase(Locale.ROOT);
         return text.contains(search.trim().toLowerCase(Locale.ROOT));
     }
 

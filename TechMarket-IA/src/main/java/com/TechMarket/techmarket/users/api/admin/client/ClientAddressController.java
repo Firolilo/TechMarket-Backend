@@ -36,7 +36,9 @@ public class ClientAddressController {
     public List<ClientAddressResponse> addresses(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         UUID currentUserId = parseUserId(userId);
-        return repository.findAllByUserIdOrderByDefaultAddressDescCreatedAtAsc(currentUserId).stream()
+        return repository
+                .findAllByUserIdOrderByDefaultAddressDescCreatedAtAsc(currentUserId)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }

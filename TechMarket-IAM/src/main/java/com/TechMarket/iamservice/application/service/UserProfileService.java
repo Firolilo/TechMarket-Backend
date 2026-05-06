@@ -22,7 +22,8 @@ public class UserProfileService {
     private final PrincipalAccessService principalAccessService;
 
     public UserProfileService(
-            TenantUserRepository tenantUserRepository, PrincipalAccessService principalAccessService) {
+            TenantUserRepository tenantUserRepository,
+            PrincipalAccessService principalAccessService) {
         this.tenantUserRepository = tenantUserRepository;
         this.principalAccessService = principalAccessService;
     }

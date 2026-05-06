@@ -79,9 +79,12 @@ class AuthFlowContractTest {
                                 .content(
                                         objectMapper.writeValueAsString(
                                                 Map.of(
-                                                        "username", "buyer.otp",
-                                                        "otpChallengeId", challengeId,
-                                                        "otpCode", deliveredOtp.get()))))
+                                                        "username",
+                                                        "buyer.otp",
+                                                        "otpChallengeId",
+                                                        challengeId,
+                                                        "otpCode",
+                                                        deliveredOtp.get()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.otpRequired").value(false))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
