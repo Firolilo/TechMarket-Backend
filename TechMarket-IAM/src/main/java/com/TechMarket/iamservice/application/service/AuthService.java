@@ -2,12 +2,15 @@ package com.techmarket.iamservice.application.service;
 
 import com.techmarket.iamservice.api.exception.ErrorCodes;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
+import com.techmarket.iamservice.application.dto.ForgotPasswordRequest;
 import com.techmarket.iamservice.application.dto.LoginRequest;
 import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
 import com.techmarket.iamservice.application.dto.RegisterUserRequest;
+import com.techmarket.iamservice.application.dto.VerifyOtpRequest;
 import com.techmarket.iamservice.application.exception.AuthServiceException;
 import com.techmarket.iamservice.application.model.IamConstants;
 import com.techmarket.iamservice.application.model.UserScopeType;
+import com.techmarket.iamservice.config.security.OtpProperties;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
@@ -22,9 +25,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,6 +49,32 @@ public class AuthService {
     private final AccessTokenRevocationService accessTokenRevocationService;
     private final UserScopeRepository userScopeRepository;
     private final AuditTrailService auditTrailService;
+    private final OtpProperties otpProperties;
+    private final OtpDeliveryService otpDeliveryService;
+
+    @Autowired
+    public AuthService(
+            TenantUserRepository tenantUserRepository,
+            UserCredentialRepository userCredentialRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            PasswordEncoder passwordEncoder,
+            JwtTokenService jwtTokenService,
+            AccessTokenRevocationService accessTokenRevocationService,
+            UserScopeRepository userScopeRepository,
+            AuditTrailService auditTrailService,
+            OtpProperties otpProperties,
+            OtpDeliveryService otpDeliveryService) {
+        this.tenantUserRepository = tenantUserRepository;
+        this.userCredentialRepository = userCredentialRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenService = jwtTokenService;
+        this.accessTokenRevocationService = accessTokenRevocationService;
+        this.userScopeRepository = userScopeRepository;
+        this.auditTrailService = auditTrailService;
+        this.otpProperties = otpProperties;
+        this.otpDeliveryService = otpDeliveryService;
+    }
 
     public AuthService(
             TenantUserRepository tenantUserRepository,
@@ -53,14 +85,17 @@ public class AuthService {
             AccessTokenRevocationService accessTokenRevocationService,
             UserScopeRepository userScopeRepository,
             AuditTrailService auditTrailService) {
-        this.tenantUserRepository = tenantUserRepository;
-        this.userCredentialRepository = userCredentialRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtTokenService = jwtTokenService;
-        this.accessTokenRevocationService = accessTokenRevocationService;
-        this.userScopeRepository = userScopeRepository;
-        this.auditTrailService = auditTrailService;
+        this(
+                tenantUserRepository,
+                userCredentialRepository,
+                refreshTokenRepository,
+                passwordEncoder,
+                jwtTokenService,
+                accessTokenRevocationService,
+                userScopeRepository,
+                auditTrailService,
+                new OtpProperties(true, 6, 5, 5),
+                (tenantId, user, otpCode, challengeId) -> {});
     }
 
     @Transactional
@@ -69,7 +104,7 @@ public class AuthService {
 
         UserEntity user =
                 tenantUserRepository
-                        .findByTenantIdAndUsername(normalizedTenantId, request.username())
+                        .findByTenantIdAndUsername(normalizedTenantId, request.loginIdentifier())
                         .orElseThrow(
                                 () ->
                                         new AuthServiceException(
@@ -101,9 +136,89 @@ public class AuthService {
                     "User is inactive for this tenant");
         }
 
+        if (credential.isOtpEnabled()) {
+            return createOtpChallenge(user, credential, normalizedTenantId, "AUTH_LOGIN_CHALLENGE");
+        }
+
         AuthTokenResponse response = issueTokenPair(user, normalizedTenantId);
         auditTrailService.record(
                 "AUTH_LOGIN",
+                "User",
+                user.getId().toString(),
+                normalizedTenantId,
+                user.getId().toString());
+        return response;
+    }
+
+    @Transactional
+    public AuthTokenResponse verifyOtp(String tenantId, VerifyOtpRequest request) {
+        String normalizedTenantId = normalizeTenantId(tenantId);
+
+        UserEntity user =
+                tenantUserRepository
+                        .findByTenantIdAndUsername(normalizedTenantId, request.username())
+                        .orElseThrow(
+                                () ->
+                                        new AuthServiceException(
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid username or password"));
+
+        UserCredentialEntity credential =
+                userCredentialRepository
+                        .findByUserIdAndTenantId(user.getId(), normalizedTenantId)
+                        .orElseThrow(
+                                () ->
+                                        new AuthServiceException(
+                                                ErrorCodes.IAM_INVALID_CREDENTIALS,
+                                                HttpStatus.UNAUTHORIZED,
+                                                "Invalid username or password"));
+
+        if (!credential.isOtpEnabled()) {
+            throw new AuthServiceException(
+                    "IAM_OTP_NOT_ENABLED",
+                    HttpStatus.BAD_REQUEST,
+                    "OTP is not enabled for this account");
+        }
+
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        if (credential.getOtpChallengeId() == null
+                || !credential.getOtpChallengeId().equals(request.otpChallengeId())
+                || credential.getOtpCodeHash() == null
+                || credential.getOtpExpiresAt() == null) {
+            throw new AuthServiceException(
+                    "IAM_INVALID_OTP", HttpStatus.UNAUTHORIZED, "OTP challenge is invalid");
+        }
+
+        if (credential.getOtpExpiresAt().isBefore(now)) {
+            credential.clearOtpChallenge();
+            userCredentialRepository.save(credential);
+            throw new AuthServiceException(
+                    "IAM_OTP_EXPIRED", HttpStatus.UNAUTHORIZED, "OTP challenge expired");
+        }
+
+        if (credential.getOtpAttempts() >= otpProperties.maxAttempts()) {
+            credential.clearOtpChallenge();
+            userCredentialRepository.save(credential);
+            throw new AuthServiceException(
+                    "IAM_OTP_MAX_ATTEMPTS",
+                    HttpStatus.UNAUTHORIZED,
+                    "OTP maximum attempts exceeded");
+        }
+
+        if (!passwordEncoder.matches(request.otpCode(), credential.getOtpCodeHash())) {
+            credential.registerOtpAttempt();
+            userCredentialRepository.save(credential);
+            throw new AuthServiceException(
+                    "IAM_INVALID_OTP", HttpStatus.UNAUTHORIZED, "OTP code is invalid");
+        }
+
+        credential.clearOtpChallenge();
+        userCredentialRepository.save(credential);
+
+        AuthTokenResponse response = issueTokenPair(user, normalizedTenantId);
+        auditTrailService.record(
+                "AUTH_OTP_VERIFIED",
                 "User",
                 user.getId().toString(),
                 normalizedTenantId,
@@ -164,6 +279,11 @@ public class AuthService {
         return issueTokenPair(savedUser, IamConstants.GLOBAL_TENANT_ID);
     }
 
+    @Transactional(readOnly = true)
+    public void forgotPassword(ForgotPasswordRequest request) {
+        normalizeEmail(request.email());
+    }
+
     @Transactional
     public AuthTokenResponse refresh(RefreshTokenRequest request) {
         JwtTokenService.RefreshTokenClaims refreshClaims =
@@ -217,17 +337,21 @@ public class AuthService {
             RefreshTokenRequest request,
             Authentication authentication,
             String authorizationHeader) {
-        JwtTokenService.RefreshTokenClaims refreshClaims =
-                jwtTokenService.parseRefreshToken(request.refreshToken());
+        if (request != null
+                && request.refreshToken() != null
+                && !request.refreshToken().isBlank()) {
+            JwtTokenService.RefreshTokenClaims refreshClaims =
+                    jwtTokenService.parseRefreshToken(request.refreshToken());
 
-        refreshTokenRepository
-                .findByTokenIdAndTenantIdAndRevokedFalse(
-                        refreshClaims.tokenId(), refreshClaims.tenantId())
-                .ifPresent(
-                        token -> {
-                            token.revoke();
-                            refreshTokenRepository.save(token);
-                        });
+            refreshTokenRepository
+                    .findByTokenIdAndTenantIdAndRevokedFalse(
+                            refreshClaims.tokenId(), refreshClaims.tenantId())
+                    .ifPresent(
+                            token -> {
+                                token.revoke();
+                                refreshTokenRepository.save(token);
+                            });
+        }
 
         if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
             String tokenId = jwtAuthenticationToken.getToken().getId();
@@ -320,7 +444,56 @@ public class AuthService {
                 user.getId(),
                 user.getUsername(),
                 roles,
-                userScopes);
+                userScopes,
+                false,
+                null,
+                0);
+    }
+
+    private AuthTokenResponse createOtpChallenge(
+            UserEntity user,
+            UserCredentialEntity credential,
+            String tenantId,
+            String auditAction) {
+        String challengeId = UUID.randomUUID().toString();
+        String otpCode = generateOtpCode();
+        LocalDateTime expiresAt =
+                LocalDateTime.now(ZoneOffset.UTC)
+                        .plusMinutes(Math.max(1, otpProperties.expiresMinutes()));
+
+        credential.beginOtpChallenge(passwordEncoder.encode(otpCode), challengeId, expiresAt);
+        userCredentialRepository.save(credential);
+        otpDeliveryService.deliver(tenantId, user, otpCode, challengeId);
+        auditTrailService.record(
+                auditAction, "User", user.getId().toString(), tenantId, user.getId().toString());
+
+        long otpExpiresIn =
+                Math.max(
+                        1,
+                        expiresAt.toEpochSecond(ZoneOffset.UTC)
+                                - LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC));
+
+        return new AuthTokenResponse(
+                null,
+                null,
+                "OTP",
+                0,
+                0,
+                tenantId,
+                user.getId(),
+                user.getUsername(),
+                user.getRoles().stream().map(RoleEntity::getName).sorted().toList(),
+                resolveUserScopes(user.getId(), tenantId),
+                true,
+                challengeId,
+                otpExpiresIn);
+    }
+
+    private String generateOtpCode() {
+        int length = Math.max(4, otpProperties.codeLength());
+        int bound = (int) Math.pow(10, length);
+        int value = ThreadLocalRandom.current().nextInt(bound);
+        return String.format(Locale.ROOT, "%0" + length + "d", value);
     }
 
     private List<String> resolveUserScopes(Long userId, String tenantId) {

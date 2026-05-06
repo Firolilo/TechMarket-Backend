@@ -26,6 +26,9 @@ public class ListingJpaEntity {
     @Column(name = "title")
     private String title;
 
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "base_price")
     private BigDecimal basePrice;
 
@@ -79,6 +82,14 @@ public class ListingJpaEntity {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BigDecimal getBasePrice() {

@@ -25,6 +25,11 @@ security:
     secret: ${IAM_JWT_SECRET:dev-secret-key-change-me-please-32-bytes-minimum}
     access-token-minutes: ${IAM_ACCESS_TOKEN_MINUTES:15}
     refresh-token-days: ${IAM_REFRESH_TOKEN_DAYS:7}
+  otp:
+    enabled-by-default: ${IAM_OTP_ENABLED_BY_DEFAULT:true}
+    code-length: ${IAM_OTP_CODE_LENGTH:6}
+    expires-minutes: ${IAM_OTP_EXPIRES_MINUTES:5}
+    max-attempts: ${IAM_OTP_MAX_ATTEMPTS:5}
 
 iam:
   tenant-header: X-Tenant-Id
