@@ -22,6 +22,9 @@ public class ClientChatJpaEntity {
     @Column(name = "customer_user_id")
     private UUID customerUserId;
 
+    @Column(name = "assigned_technician_user_id")
+    private UUID assignedTechnicianUserId;
+
     @Column(name = "ticket_type")
     private String ticketType;
 
@@ -67,6 +70,14 @@ public class ClientChatJpaEntity {
 
     public void setCustomerUserId(UUID customerUserId) {
         this.customerUserId = customerUserId;
+    }
+
+    public UUID getAssignedTechnicianUserId() {
+        return assignedTechnicianUserId;
+    }
+
+    public void setAssignedTechnicianUserId(UUID assignedTechnicianUserId) {
+        this.assignedTechnicianUserId = assignedTechnicianUserId;
     }
 
     public String getTicketType() {
