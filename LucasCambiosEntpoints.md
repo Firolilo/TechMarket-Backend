@@ -4,11 +4,11 @@ Fecha: 2026-05-06
 
 ## Resumen general
 
-Se implemento el bloque de endpoints 126 al 170 del contrato `endpoint.md`, correspondiente al modulo de especialistas en `TechMarket-IA`.
+Se implemento el bloque de endpoints 126 al 180 del contrato `endpoint.md`, correspondiente al modulo de especialistas y busqueda general en `TechMarket-IA`.
 
 La implementacion quedo bajo rutas `/api/specialists/**`, con persistencia real en base de datos, controllers dentro de paquetes `api.admin` para cumplir la prueba de arquitectura de IA, y uso del header `X-User-Id` como contexto autenticado local mientras no esta integrada la seguridad de IAM.
 
-No se implementaron endpoints 171 en adelante. Tampoco se toco el rango Ambassador 56-125.
+No se implementaron endpoints 181 en adelante. Tampoco se toco el rango Ambassador 56-125.
 
 ## Endpoints implementados
 
@@ -259,6 +259,49 @@ No se implementaron endpoints 171 en adelante. Tampoco se toco el rango Ambassad
   - Persiste historial simple en `specialist_ai_queries`.
   - No llama a un proveedor externo de IA por ahora.
 
+- `171. GET /api/specialists/ai/insights`
+  - Devuelve radar de insights operativos.
+  - Respuesta deterministica sin proveedor externo.
+
+- `172. POST /api/specialists/ai/pricing-suggestion`
+  - Sugiere precio a partir del precio actual enviado.
+  - Calcula rango minimo, maximo y precio recomendado.
+
+- `173. POST /api/specialists/ai/improvement-plan`
+  - Devuelve plan de mejora para el area solicitada.
+  - Respuesta deterministica con objetivo, acciones y tiempo estimado.
+
+- `174. POST /api/specialists/ai/schedule-optimization`
+  - Devuelve sugerencia para optimizar agenda y plan sugerido.
+  - No modifica agenda; solo entrega recomendacion.
+
+### Busqueda general
+
+- `175. GET /api/search/global`
+  - Busca por `q` en productos/listings, empresas, servicios de especialistas y comunidades.
+  - Lee tablas existentes con `SearchJdbcRepository`.
+  - Responde `total` y `resultados`.
+
+- `176. GET /api/search/suggestions`
+  - Devuelve sugerencias por `q`.
+  - Si no llega `q`, usa tendencias persistidas.
+
+- `177. GET /api/search/trending`
+  - Lista busquedas populares desde `search_trends`.
+  - Si no hay datos persistidos, devuelve tendencias por defecto.
+
+- `178. GET /api/search/history`
+  - Lista historial de busquedas del usuario autenticado.
+  - Usa header `X-User-Id`.
+
+- `179. POST /api/search/history`
+  - Guarda una busqueda del usuario autenticado.
+  - Persiste en `search_history` e incrementa `search_trends`.
+
+- `180. DELETE /api/search/history/{historyId}`
+  - Elimina una busqueda propia del historial.
+  - Acepta `SRH-{uuid}` o UUID crudo.
+
 ## Persistencia agregada
 
 Se agregaron las migraciones:
@@ -267,6 +310,7 @@ Se agregaron las migraciones:
 - `TechMarket-IA/src/main/resources/db/migration/V78__specialist_calendar_blocks.sql`
 - `TechMarket-IA/src/main/resources/db/migration/V79__specialist_files_and_transactions.sql`
 - `TechMarket-IA/src/main/resources/db/migration/V80__specialist_withdrawals_certifications_ai_reviews.sql`
+- `TechMarket-IA/src/main/resources/db/migration/V81__global_search_history.sql`
 
 Tablas nuevas:
 
@@ -316,6 +360,14 @@ Tambien se agrego `ticket_attachments.file_size` para responder el tamano de arc
 
 Tambien se agregaron `reviews.technician_response` y `reviews.technician_response_at`.
 
+- `search_history`
+  - Historial de busquedas por usuario.
+  - Campos principales: `id`, `user_id`, `query_text`, `result_type`, `searched_at`.
+
+- `search_trends`
+  - Terminos populares de busqueda.
+  - Campos principales: `id`, `query_text`, `search_count`, `updated_at`.
+
 Indices agregados:
 
 - `idx_specialist_services_user_id`
@@ -328,6 +380,8 @@ Indices agregados:
 - `idx_specialist_withdrawals_user_id`
 - `idx_specialist_certifications_user_id`
 - `idx_specialist_ai_queries_user_id`
+- `idx_search_history_user_date`
+- `idx_search_trends_count`
 
 ## Codigo agregado
 
@@ -339,6 +393,10 @@ Indices agregados:
   - Devuelve `400` si el UUID es invalido.
   - Devuelve `404` si el usuario no existe.
   - Formatea IDs `TEC-`, `SERV-`, `PORT-`, `BLK-`, `REQ-`, `PROJ-`, `CHT-`, `MSG-`, `FILE-`, `TX-` y `CERT-`.
+
+- `SearchIdentitySupport`
+  - Valida `X-User-Id` para historial de busqueda.
+  - Permite parsear IDs `SRH-`.
   - Permite parsear IDs prefijados o UUID crudos.
 
 - `SpecialistJsonListMapper`
@@ -361,6 +419,8 @@ Indices agregados:
 - `SpecialistServiceAppointmentJpaEntity`
 - `SpecialistReviewJpaEntity`
   - `ClientChatAttachmentJpaEntity` reutiliza `ticket_attachments` para archivos de chat.
+- `SearchHistoryJpaEntity`
+- `SearchTrendJpaEntity`
 
 Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
 
@@ -383,6 +443,9 @@ Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
 - `SpecialistReviewStatsSpringDataRepository`
 - `SpecialistReviewStatsProjection`
   - `ClientChatAttachmentSpringDataRepository` reutiliza adjuntos de tickets.
+- `SearchHistorySpringDataRepository`
+- `SearchTrendSpringDataRepository`
+- `SearchJdbcRepository`
 
 ### Controllers
 
@@ -423,7 +486,10 @@ Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
   - Maneja certificaciones y solicitud de verificacion.
 
 - `SpecialistAiController`
-  - Maneja consulta operativa deterministica del asistente IA.
+  - Maneja consulta, insights, pricing, mejora y optimizacion de agenda con respuestas deterministicas.
+
+- `SearchController`
+  - Maneja busqueda global, sugerencias, tendencias e historial de busqueda.
 
 Todos los controllers quedaron bajo:
 
@@ -495,6 +561,8 @@ Casos cubiertos:
 - `GET /api/specialists/wallet` devuelve montos agregados.
 - `POST /api/specialists/wallet/withdraw` persiste solicitud de retiro.
 - `POST /api/specialists/ai/query` devuelve plan de accion y persiste consulta.
+- `POST /api/specialists/ai/pricing-suggestion` calcula sugerencia de precio.
+- `POST /api/search/history` guarda historial e incrementa tendencias.
 
 ## Documentacion actualizada
 
