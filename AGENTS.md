@@ -34,6 +34,8 @@ Endpoints 9-55 are implemented in `TechMarket-IA`. Client-facing controllers mus
 
 Endpoints 56-125 belong to the Ambassador module (`/api/ambassadors/**`) and are intentionally ignored for now. Do not implement that range unless the user explicitly asks to resume Ambassador work.
 
+Endpoints 126-140 are implemented in `TechMarket-IA` for specialist profile, services, portfolio, and availability under `/api/specialists/**`. Like the client endpoints, they use the `X-User-Id` header as the authenticated specialist context until IAM security integration is wired locally. Specialist controllers must also stay under packages containing `api.admin` to satisfy the IA architecture test.
+
 Implemented IA endpoint groups:
 
 - 9-15: client profile and addresses under `/api/clients/profile` and `/api/clients/addresses`.
@@ -43,8 +45,11 @@ Implemented IA endpoint groups:
 - 37-40: client chats and chat messages.
 - 41-50: chat read marker, product/company favorites, and client communities join/leave.
 - 51-55: community posts and client notifications read/read-all/delete.
+- 126-140: specialist profile, stats, profile photo URL, services, portfolio, and availability/status.
 
 IA persistence additions for those ranges include Flyway migrations `V72__client_addresses.sql`, `V73__client_cart_and_orders.sql`, `V74__client_reviews_and_chat_support.sql`, `V75__client_favorites_and_communities.sql`, and `V76__client_community_posts_and_notification_links.sql`. Reviews reuse the existing `reviews` table with `listing_id` and `updated_at` added by `V74`; chats reuse `tickets` and `ticket_messages` with `ticket_type = 'CHAT'`; product/company favorites reuse `favorites`; communities use `communities` and `community_memberships`; community posts reuse `feed_posts`; notifications reuse `notifications`.
+
+Specialist persistence for endpoints 126-140 is added by `V77__specialist_profile_services_portfolio_availability.sql`. Specialist profiles, services, portfolio items, and availability use dedicated `specialist_*` tables; stats read completed work from `service_appointments.assigned_technician_user_id` and review totals/averages from `reviews.ticket_id` linked to those appointments.
 
 ID formatting conventions used by the implemented endpoints:
 
@@ -62,6 +67,9 @@ ID formatting conventions used by the implemented endpoints:
 - Communities: `COM-{uuid}`
 - Community posts: `POST-{uuid}`
 - Notifications: `NOT-{uuid}`
+- Specialists: `TEC-{uuid}`
+- Specialist services: `SERV-{uuid}`
+- Specialist portfolio items: `PORT-{uuid}`
 
 Known verification status: `mvn test -DskipTests -Dspotless.check.skip=true` passes in both `TechMarket-IA` and `TechMarket-IAM` after the endpoint work. Full `mvn test` currently fails in this environment because Mockito/ByteBuddy cannot self-attach under Java 25, and `spotless:check` fails because the configured `google-java-format` is incompatible with the current JDK. Prefer Java 21 for full local verification.
 
