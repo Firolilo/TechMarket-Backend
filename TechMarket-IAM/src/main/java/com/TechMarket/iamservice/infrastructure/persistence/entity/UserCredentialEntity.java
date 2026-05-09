@@ -41,6 +41,21 @@ public class UserCredentialEntity {
     @Column(name = "last_modified_at")
     private LocalDateTime lastModifiedAt;
 
+    @Column(name = "otp_enabled", nullable = false)
+    private boolean otpEnabled;
+
+    @Column(name = "otp_code_hash", length = 255)
+    private String otpCodeHash;
+
+    @Column(name = "otp_challenge_id", length = 120)
+    private String otpChallengeId;
+
+    @Column(name = "otp_expires_at")
+    private LocalDateTime otpExpiresAt;
+
+    @Column(name = "otp_attempts", nullable = false)
+    private int otpAttempts;
+
     protected UserCredentialEntity() {}
 
     public UserCredentialEntity(Long userId, String tenantId, String passwordHash) {
@@ -67,6 +82,49 @@ public class UserCredentialEntity {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public boolean isOtpEnabled() {
+        return otpEnabled;
+    }
+
+    public void setOtpEnabled(boolean otpEnabled) {
+        this.otpEnabled = otpEnabled;
+    }
+
+    public String getOtpCodeHash() {
+        return otpCodeHash;
+    }
+
+    public String getOtpChallengeId() {
+        return otpChallengeId;
+    }
+
+    public LocalDateTime getOtpExpiresAt() {
+        return otpExpiresAt;
+    }
+
+    public int getOtpAttempts() {
+        return otpAttempts;
+    }
+
+    public void beginOtpChallenge(
+            String otpCodeHash, String otpChallengeId, LocalDateTime otpExpiresAt) {
+        this.otpCodeHash = otpCodeHash;
+        this.otpChallengeId = otpChallengeId;
+        this.otpExpiresAt = otpExpiresAt;
+        this.otpAttempts = 0;
+    }
+
+    public void registerOtpAttempt() {
+        this.otpAttempts += 1;
+    }
+
+    public void clearOtpChallenge() {
+        this.otpCodeHash = null;
+        this.otpChallengeId = null;
+        this.otpExpiresAt = null;
+        this.otpAttempts = 0;
     }
 
     @jakarta.persistence.PrePersist
