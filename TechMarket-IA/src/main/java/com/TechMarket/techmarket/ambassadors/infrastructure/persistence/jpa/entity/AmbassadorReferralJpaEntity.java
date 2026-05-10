@@ -28,6 +28,27 @@ public class AmbassadorReferralJpaEntity {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "referral_type")
+    private String referralType;
+
+    @Column(name = "contact_name")
+    private String contactName;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "last_activity_at")
+    private OffsetDateTime lastActivityAt;
+
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
@@ -77,6 +98,62 @@ public class AmbassadorReferralJpaEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getReferralType() {
+        return referralType;
+    }
+
+    public void setReferralType(String referralType) {
+        this.referralType = referralType;
+    }
+
+    public String getContactName() {
+        return contactName;
+    }
+
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public OffsetDateTime getLastActivityAt() {
+        return lastActivityAt;
+    }
+
+    public void setLastActivityAt(OffsetDateTime lastActivityAt) {
+        this.lastActivityAt = lastActivityAt;
     }
 
     public OffsetDateTime getCreatedAt() {

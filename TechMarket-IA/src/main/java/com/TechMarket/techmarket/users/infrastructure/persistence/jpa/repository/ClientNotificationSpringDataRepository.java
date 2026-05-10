@@ -13,5 +13,7 @@ public interface ClientNotificationSpringDataRepository
 
     List<ClientNotificationJpaEntity> findAllByUserIdAndReadFalse(UUID userId);
 
+    long countByUserIdAndReadFalse(UUID userId);
+
     Optional<ClientNotificationJpaEntity> findByIdAndUserId(UUID id, UUID userId);
 }

@@ -31,6 +31,12 @@ public class ClientChatJpaEntity {
     @Column(name = "subject")
     private String subject;
 
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "priority")
+    private String priority;
+
     @Column(name = "status")
     private String status;
 
@@ -94,6 +100,22 @@ public class ClientChatJpaEntity {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
     }
 
     public String getStatus() {
