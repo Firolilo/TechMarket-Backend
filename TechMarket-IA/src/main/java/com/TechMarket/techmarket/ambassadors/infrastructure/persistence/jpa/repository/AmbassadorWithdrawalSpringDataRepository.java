@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AmbassadorWithdrawalSpringDataRepository
         extends JpaRepository<AmbassadorWithdrawalJpaEntity, UUID> {
+    List<AmbassadorWithdrawalJpaEntity> findAllByAmbassadorId(UUID ambassadorId);
+
     List<AmbassadorWithdrawalJpaEntity> findAllByAmbassadorIdOrderByRequestedAtDesc(
             UUID ambassadorId);
 }

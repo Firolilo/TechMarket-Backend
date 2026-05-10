@@ -1,4 +1,4 @@
-package com.techmarket.techmarket.ambassadors.api;
+package com.techmarket.techmarket.ambassadors.api.admin;
 
 import com.techmarket.techmarket.ambassadors.api.response.AmbassadorCommissionResponse;
 import com.techmarket.techmarket.ambassadors.api.response.AmbassadorReferralResponse;

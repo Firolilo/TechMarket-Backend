@@ -731,8 +731,8 @@ public class AmbassadorPortalController {
         AmbassadorWithdrawalJpaEntity withdrawal = new AmbassadorWithdrawalJpaEntity();
         withdrawal.setId(UUID.randomUUID());
         withdrawal.setAmbassadorId(ambassador.getId());
-        withdrawal.setAmount(request.monto());
-        withdrawal.setPayoutMethodId(request.metodoPagoId());
+        withdrawal.setAmount(parseAmount(request.monto()));
+        withdrawal.setCurrency("Bs");
         withdrawal.setStatus("pendiente");
         withdrawal.setRequestedAt(OffsetDateTime.now());
         withdrawal.setEstimatedAt(LocalDate.now().plusDays(4));
@@ -1496,6 +1496,10 @@ public class AmbassadorPortalController {
         } catch (NumberFormatException ex) {
             return BigDecimal.ZERO;
         }
+    }
+
+    private BigDecimal parseAmount(BigDecimal amount) {
+        return amount == null ? BigDecimal.ZERO : amount;
     }
 
     private String formatMoney(BigDecimal amount) {

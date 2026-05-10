@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 /// Endpoints de Ingresos para el módulo Embajador.
 /// Cubre comisiones, wallet, retiros y pagos (endpoints 95–104).
 @RestController
-@RequestMapping("/api/ambassadors")
+@RequestMapping("/api/ambassadors/earnings")
 public class AmbassadorEarningsController {
 
     private final AmbassadorIdentitySupport identitySupport;

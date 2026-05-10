@@ -34,6 +34,8 @@ Endpoints 9-55 are implemented in `TechMarket-IA`. Client-facing controllers mus
 
 Endpoints 56-125 are implemented in `TechMarket-IA` for the Ambassador module under `/api/ambassadors/**`. Ambassador endpoints use the `X-User-Id` header as authenticated ambassador context until IAM security integration is wired locally. Ambassador controllers implemented for this contract must stay under packages containing `api.admin`; the older legacy `ambassadors.api.AmbassadorController` still exists separately.
 
+Additional Ambassador routes currently exist outside the numbered `endpoint.md` contract: `/api/ambassadors/missions/**`, `/api/ambassadors/history/**`, and `/api/ambassadors/earnings/**`. They are namespaced separately to avoid conflicting with the numbered contract endpoints owned by `AmbassadorPortalController`.
+
 Endpoints 126-174 are implemented in `TechMarket-IA` for specialist profile, services, portfolio, availability, calendar, requests, projects, history, chats, files, wallet, transactions, withdrawals, earnings, reviews, certifications, and deterministic AI assistant endpoints under `/api/specialists/**`. Like the client endpoints, they use the `X-User-Id` header as the authenticated specialist context until IAM security integration is wired locally. Specialist controllers must also stay under packages containing `api.admin` to satisfy the IA architecture test.
 
 Endpoints 175-180 are implemented in `TechMarket-IA` for general search under `/api/search/**`. Global search reads listings, tenants, specialist services, and communities through a JDBC search repository. Search history uses the `X-User-Id` header as authenticated user context.
@@ -92,6 +94,8 @@ Ambassador persistence for endpoints 91-100 is added by `V86__ambassador_commiss
 Ambassador persistence for endpoints 101-115 is added by `V87__ambassador_payout_methods_network_chats.sql` plus existing chat tables. Payout history reuses `ambassador_withdrawals`; payout methods use `ambassador_payout_methods`; ambassador network uses `ambassadors.sponsor_ambassador_id`; invitations use `ambassador_invitations`; chats reuse `tickets`, `ticket_messages`, and `chat_read_receipts` with `ticket_type = 'AMBASSADOR_CHAT'`.
 
 Ambassador endpoints 116-125 reuse the existing ambassador data model. Reports aggregate `ambassador_referral_links`, `ambassador_leads`, `ambassador_referrals`, and `ambassador_commissions`; report export returns a deterministic download URL; ambassador AI endpoints are deterministic responses computed from lead/referral context and do not require new persistence.
+
+Additional Ambassador persistence includes `V91__ambassador_missions.sql` for ambassador missions. Compatibility migrations added after the main endpoint work were renumbered to avoid Flyway duplicate version failures: `V88__leads_lead_score_integer.sql`, `V89__search_history_compatibility.sql`, `V90__fix_tenants_tax_id_type.sql`, and `V91__ambassador_missions.sql`.
 
 Specialist persistence for endpoints 126-140 is added by `V77__specialist_profile_services_portfolio_availability.sql`. Specialist profiles, services, portfolio items, and availability use dedicated `specialist_*` tables; stats read completed work from `service_appointments.assigned_technician_user_id` and review totals/averages from `reviews.ticket_id` linked to those appointments.
 

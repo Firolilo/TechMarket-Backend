@@ -569,7 +569,7 @@ json
 
 ## 4. MÓDULO EMBAJADOR (50+ endpoints)
 
-> Nota temporal: los endpoints del módulo Embajador se ignorarán momentáneamente en la implementación. Este bloque corresponde a los endpoints 56 al 125.
+> Bloque implementado en `TechMarket-IA` para los endpoints 56 al 125 bajo `/api/ambassadors/**`.
 
 ### Perfil y configuración
 #### 56. `GET /api/ambassadors/profile`

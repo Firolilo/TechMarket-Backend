@@ -10,6 +10,8 @@ La implementacion quedo bajo rutas `/api/ambassadors/**`, `/api/specialists/**` 
 
 El rango Ambassador 56-125 queda completo.
 
+Revision posterior: se detectaron endpoints adicionales de embajadores fuera del contrato numerado (`/api/ambassadors/missions/**`, `/api/ambassadors/history/**` y `/api/ambassadors/earnings/**`). Se dejaron bajo namespace propio para no duplicar rutas con los endpoints 56-125 implementados en `AmbassadorPortalController`.
+
 ## Endpoints implementados
 
 ### Embajador: perfil y configuracion
@@ -1056,6 +1058,14 @@ Se agrego el cierre del bloque admin y moderacion en `TechMarket-IA`.
   - No agregan migracion nueva.
   - Reportes agregan datos existentes de links, leads, referidos y comisiones.
   - IA de embajador usa respuestas deterministicas con contexto de leads/referidos.
+
+- Migraciones adicionales revisadas
+  - Se renumeraron migraciones duplicadas para evitar fallos de Flyway:
+    - `V88__leads_lead_score_integer.sql`
+    - `V89__search_history_compatibility.sql`
+    - `V90__fix_tenants_tax_id_type.sql`
+    - `V91__ambassador_missions.sql`
+  - `V91__ambassador_missions.sql` agrega `ambassador_missions`.
 
 ## Documentacion actualizada
 

@@ -14,8 +14,8 @@ CREATE INDEX IF NOT EXISTS idx_ambassador_commission_disputes_ambassador_id
 CREATE TABLE IF NOT EXISTS ambassador_withdrawals (
     id UUID PRIMARY KEY,
     ambassador_id UUID NOT NULL,
-    amount VARCHAR(255) NOT NULL,
-    payout_method_id VARCHAR(255),
+    amount NUMERIC(14,2) NOT NULL,
+    currency VARCHAR(16) NOT NULL DEFAULT 'Bs',
     status VARCHAR(255) NOT NULL,
     requested_at TIMESTAMPTZ,
     estimated_at DATE

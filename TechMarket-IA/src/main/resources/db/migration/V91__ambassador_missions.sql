@@ -13,13 +13,3 @@ CREATE TABLE IF NOT EXISTS ambassador_missions (
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ
 );
-
-CREATE TABLE IF NOT EXISTS ambassador_withdrawals (
-    id UUID PRIMARY KEY,
-    ambassador_id UUID NOT NULL,
-    amount NUMERIC(14,2) NOT NULL,
-    currency VARCHAR(16) NOT NULL DEFAULT 'Bs',
-    status VARCHAR(64) NOT NULL,
-    requested_at TIMESTAMPTZ,
-    estimated_at DATE
-);
