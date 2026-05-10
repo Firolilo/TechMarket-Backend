@@ -11,6 +11,7 @@ public record AuthTokenResponse(
         String tenantId,
         Long userId,
         String username,
+        String tipo,
         List<String> roles,
         List<String> scopes,
         boolean otpRequired,
@@ -26,6 +27,7 @@ public record AuthTokenResponse(
             String tenantId,
             Long userId,
             String username,
+            String tipo,
             List<String> roles,
             List<String> scopes) {
         this(
@@ -37,6 +39,7 @@ public record AuthTokenResponse(
                 tenantId,
                 userId,
                 username,
+                tipo,
                 roles,
                 scopes,
                 false,
