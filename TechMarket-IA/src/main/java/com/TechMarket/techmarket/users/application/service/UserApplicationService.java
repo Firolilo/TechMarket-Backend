@@ -27,6 +27,7 @@ public class UserApplicationService {
                         command.firstName(),
                         command.lastName(),
                         command.email(),
+                        null,
                         command.status(),
                         now,
                         now);

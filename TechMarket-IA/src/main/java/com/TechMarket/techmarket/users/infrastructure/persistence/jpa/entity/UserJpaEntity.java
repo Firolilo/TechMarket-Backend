@@ -25,6 +25,9 @@ public class UserJpaEntity {
     @Column(name = "phone")
     private String phone;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     @Column(name = "status")
     private String status;
 
@@ -72,6 +75,14 @@ public class UserJpaEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public String getStatus() {

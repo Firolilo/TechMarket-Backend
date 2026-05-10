@@ -12,6 +12,8 @@ public interface ClientChatMessageSpringDataRepository
 
     List<ClientChatMessageJpaEntity> findAllByTicketIdOrderByCreatedAtAsc(UUID ticketId);
 
+    Optional<ClientChatMessageJpaEntity> findByIdAndAuthorUserId(UUID id, UUID authorUserId);
+
     Optional<ClientChatMessageJpaEntity> findTopByTicketIdOrderByCreatedAtDesc(UUID ticketId);
 
     long countByTicketIdAndAuthorUserIdNot(UUID ticketId, UUID authorUserId);

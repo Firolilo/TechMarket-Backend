@@ -458,10 +458,7 @@ public class AuthService {
     }
 
     private AuthTokenResponse createOtpChallenge(
-            UserEntity user,
-            UserCredentialEntity credential,
-            String tenantId,
-            String auditAction) {
+            UserEntity user, UserCredentialEntity credential, String tenantId, String auditAction) {
         String challengeId = UUID.randomUUID().toString();
         String otpCode = generateOtpCode();
         LocalDateTime expiresAt =
@@ -596,11 +593,10 @@ public class AuthService {
             case "cliente", "client", "customer" -> "cliente";
             case "empresa", "company", "tenant" -> "empresa";
             case "especialista", "specialist", "technician" -> "especialista";
-            default ->
-                    throw new AuthServiceException(
-                            "IAM_USER_TYPE_INVALID",
-                            HttpStatus.BAD_REQUEST,
-                            "tipo must be cliente, empresa or especialista");
+            default -> throw new AuthServiceException(
+                    "IAM_USER_TYPE_INVALID",
+                    HttpStatus.BAD_REQUEST,
+                    "tipo must be cliente, empresa or especialista");
         };
     }
 

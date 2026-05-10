@@ -77,7 +77,10 @@ public class SearchController {
     public List<SearchTrendingResponse> trending() {
         List<SearchTrendingResponse> persisted =
                 trendRepository.findTop10ByOrderBySearchCountDescUpdatedAtDesc().stream()
-                        .map(trend -> new SearchTrendingResponse(trend.getQueryText(), trend.getSearchCount()))
+                        .map(
+                                trend ->
+                                        new SearchTrendingResponse(
+                                                trend.getQueryText(), trend.getSearchCount()))
                         .toList();
         if (!persisted.isEmpty()) {
             return persisted;
@@ -123,7 +126,9 @@ public class SearchController {
                 historyRepository
                         .findByIdAndUserId(id, currentUserId)
                         .orElseThrow(
-                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Search history not found"));
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Search history not found"));
         historyRepository.delete(history);
         return new SearchMessageResponse("Busqueda eliminada del historial");
     }

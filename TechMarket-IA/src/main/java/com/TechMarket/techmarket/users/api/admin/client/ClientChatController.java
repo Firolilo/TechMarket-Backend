@@ -146,7 +146,9 @@ public class ClientChatController {
 
     private ChatSummaryResponse toChatSummary(ClientChatJpaEntity chat, UUID currentUserId) {
         TenantJpaEntity tenant =
-                chat.getTenantId() == null ? null : tenantRepository.findById(chat.getTenantId()).orElse(null);
+                chat.getTenantId() == null
+                        ? null
+                        : tenantRepository.findById(chat.getTenantId()).orElse(null);
         String lastMessage =
                 messageRepository
                         .findTopByTicketIdOrderByCreatedAtDesc(chat.getId())

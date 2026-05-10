@@ -1,7 +1,14 @@
 package com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository;
 
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserSpringDataRepository extends JpaRepository<UserJpaEntity, UUID> {}
+public interface UserSpringDataRepository extends JpaRepository<UserJpaEntity, UUID> {
+
+    Optional<UserJpaEntity> findByEmail(String email);
+
+    List<UserJpaEntity> findAllByOrderByCreatedAtDesc();
+}

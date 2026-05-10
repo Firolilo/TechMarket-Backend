@@ -157,7 +157,9 @@ public class MarketplaceController {
         return tenantRepository
                 .findById(tenantId)
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Company not found"));
     }
 
     private boolean matchesSearch(ListingJpaEntity listing, String search) {

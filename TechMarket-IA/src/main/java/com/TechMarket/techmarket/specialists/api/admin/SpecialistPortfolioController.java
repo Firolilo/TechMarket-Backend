@@ -78,8 +78,7 @@ public class SpecialistPortfolioController {
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Portfolio item not found"));
+                                                HttpStatus.NOT_FOUND, "Portfolio item not found"));
         portfolioRepository.delete(item);
         return new MessageResponse("Trabajo eliminado del portafolio");
     }

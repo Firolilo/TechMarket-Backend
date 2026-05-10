@@ -143,7 +143,8 @@ public class SpecialistChatController {
         ClientChatMessageJpaEntity lastMessage =
                 messageRepository.findTopByTicketIdOrderByCreatedAtDesc(chat.getId()).orElse(null);
         String messageBody = lastMessage == null ? chat.getSubject() : lastMessage.getMessageBody();
-        OffsetDateTime lastActivity = lastMessage == null ? chat.getCreatedAt() : lastMessage.getCreatedAt();
+        OffsetDateTime lastActivity =
+                lastMessage == null ? chat.getCreatedAt() : lastMessage.getCreatedAt();
         return new SpecialistChatSummaryResponse(
                 identitySupport.formatChatId(chat.getId()),
                 clientName(chat.getCustomerUserId()),

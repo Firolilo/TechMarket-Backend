@@ -11,5 +11,6 @@ public interface CommunityMembershipSpringDataRepository
 
     List<CommunityMembershipJpaEntity> findAllByUserId(UUID userId);
 
-    Optional<CommunityMembershipJpaEntity> findByCommunityIdAndUserId(UUID communityId, UUID userId);
+    Optional<CommunityMembershipJpaEntity> findByCommunityIdAndUserId(
+            UUID communityId, UUID userId);
 }
