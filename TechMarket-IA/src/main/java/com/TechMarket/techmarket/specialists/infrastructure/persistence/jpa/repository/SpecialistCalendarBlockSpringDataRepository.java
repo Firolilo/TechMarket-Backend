@@ -9,7 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SpecialistCalendarBlockSpringDataRepository
         extends JpaRepository<SpecialistCalendarBlockJpaEntity, UUID> {
 
-    List<SpecialistCalendarBlockJpaEntity> findAllByUserIdOrderByBlockDateAscStartTimeAsc(UUID userId);
+    List<SpecialistCalendarBlockJpaEntity> findAllByUserIdOrderByBlockDateAscStartTimeAsc(
+            UUID userId);
 
     Optional<SpecialistCalendarBlockJpaEntity> findByIdAndUserId(UUID id, UUID userId);
 }

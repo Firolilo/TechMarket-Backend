@@ -12,23 +12,5 @@ public interface AmbassadorCommissionSpringDataRepository
 
     List<AmbassadorCommissionJpaEntity> findByAmbassadorId(UUID ambassadorId);
 
-    Optional<AmbassadorCommissionJpaEntity> findByIdAndAmbassadorId(UUID id, UUID ambassadorId);
-
-    default BigDecimal sumAmountByAmbassadorId(UUID ambassadorId) {
-        return findByAmbassadorId(ambassadorId).stream()
-                .map(AmbassadorCommissionJpaEntity::getAmount)
-                .map(this::parseAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal parseAmount(String amount) {
-        if (amount == null || amount.isBlank()) {
-            return BigDecimal.ZERO;
-        }
-        try {
-            return new BigDecimal(amount.replace("Bs", "").replace(",", "").trim());
-        } catch (NumberFormatException ex) {
-            return BigDecimal.ZERO;
-        }
-    }
+    List<AmbassadorCommissionJpaEntity> findAllByAmbassadorIdOrderByGeneratedAtDesc(UUID ambassadorId);
 }

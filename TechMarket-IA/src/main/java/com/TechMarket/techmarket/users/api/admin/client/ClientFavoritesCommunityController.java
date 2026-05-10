@@ -108,7 +108,9 @@ public class ClientFavoritesCommunityController {
             @PathVariable String productId) {
         UUID currentUserId = parseUserId(userId);
         UUID listingId = parsePrefixedUuid(productId, "PROD-");
-        favoriteRepository.findByUserIdAndListingId(currentUserId, listingId).ifPresent(favoriteRepository::delete);
+        favoriteRepository
+                .findByUserIdAndListingId(currentUserId, listingId)
+                .ifPresent(favoriteRepository::delete);
         return new MessageResponse("Removido de favoritos");
     }
 
@@ -228,16 +230,23 @@ public class ClientFavoritesCommunityController {
 
     private ProductSummaryResponse toProductSummary(ListingJpaEntity listing) {
         return new ProductSummaryResponse(
-                formatProductId(listing.getId()), listing.getTitle(), listing.getBasePrice(), null, 0);
+                formatProductId(listing.getId()),
+                listing.getTitle(),
+                listing.getBasePrice(),
+                null,
+                0);
     }
 
     private CompanySummaryResponse toCompanySummary(TenantJpaEntity tenant) {
-        return new CompanySummaryResponse(formatCompanyId(tenant.getId()), tenant.getBusinessName(), null, 0);
+        return new CompanySummaryResponse(
+                formatCompanyId(tenant.getId()), tenant.getBusinessName(), null, 0);
     }
 
     private CommunityResponse toCommunityResponse(CommunityJpaEntity community) {
         return new CommunityResponse(
-                formatCommunityId(community.getId()), community.getName(), community.getMembersCount());
+                formatCommunityId(community.getId()),
+                community.getName(),
+                community.getMembersCount());
     }
 
     private CommunityPostResponse toCommunityPostResponse(CommunityPostJpaEntity post) {
@@ -262,7 +271,9 @@ public class ClientFavoritesCommunityController {
         return communityRepository
                 .findById(parsePrefixedUuid(communityId, "COM-"))
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Community not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Community not found"));
     }
 
     private UUID parseUserId(String userId) {
@@ -303,5 +314,4 @@ public class ClientFavoritesCommunityController {
     private String formatPostId(UUID id) {
         return "POST-" + id;
     }
-
 }

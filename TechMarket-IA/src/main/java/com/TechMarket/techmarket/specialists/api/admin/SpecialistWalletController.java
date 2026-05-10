@@ -71,7 +71,9 @@ public class SpecialistWalletController {
         withdrawal.setEstimatedAt(estimatedAt);
         withdrawalRepository.save(withdrawal);
         return new WithdrawalResponse(
-                formatMoney(request.monto(), "Bs"), "Solicitud de retiro enviada", estimatedAt.toString());
+                formatMoney(request.monto(), "Bs"),
+                "Solicitud de retiro enviada",
+                estimatedAt.toString());
     }
 
     @GetMapping("/earnings/summary")
@@ -83,19 +85,22 @@ public class SpecialistWalletController {
         BigDecimal average =
                 completedServices == 0
                         ? BigDecimal.ZERO
-                        : safeAmount(total).divide(BigDecimal.valueOf(completedServices), 2, RoundingMode.HALF_UP);
+                        : safeAmount(total)
+                                .divide(
+                                        BigDecimal.valueOf(completedServices),
+                                        2,
+                                        RoundingMode.HALF_UP);
         return new SpecialistEarningsSummaryResponse(
-                "mensual",
-                formatMoney(total, "Bs"),
-                completedServices,
-                formatMoney(average, "Bs"));
+                "mensual", formatMoney(total, "Bs"), completedServices, formatMoney(average, "Bs"));
     }
 
     @GetMapping("/transactions")
     public List<SpecialistTransactionResponse> transactions(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         UUID currentUserId = identitySupport.requireUserId(userId);
-        return transactionRepository.findAllByUserIdOrderByTransactionDateDesc(currentUserId).stream()
+        return transactionRepository
+                .findAllByUserIdOrderByTransactionDateDesc(currentUserId)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }

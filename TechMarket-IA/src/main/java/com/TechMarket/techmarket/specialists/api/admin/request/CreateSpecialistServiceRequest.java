@@ -10,8 +10,7 @@ public record CreateSpecialistServiceRequest(
         @NotBlank(message = "nombre is required")
                 @Size(max = 255, message = "nombre must have at most 255 chars")
                 String nombre,
-        @Size(max = 255, message = "descripcion must have at most 255 chars")
-                String descripcion,
+        @Size(max = 255, message = "descripcion must have at most 255 chars") String descripcion,
         @NotNull(message = "precio is required")
                 @DecimalMin(value = "0.00", message = "precio must be positive")
                 BigDecimal precio,

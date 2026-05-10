@@ -46,7 +46,9 @@ public class MarketplaceReviewController {
 
     private ProductReviewResponse toProductReviewResponse(ClientReviewJpaEntity review) {
         UserJpaEntity user =
-                review.getUserId() == null ? null : userRepository.findById(review.getUserId()).orElse(null);
+                review.getUserId() == null
+                        ? null
+                        : userRepository.findById(review.getUserId()).orElse(null);
         return new ProductReviewResponse(
                 formatReviewId(review.getId()),
                 new ReviewCustomerResponse(customerName(user), null),
