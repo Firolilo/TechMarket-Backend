@@ -250,6 +250,7 @@ ALTER TABLE ambassadors ADD CONSTRAINT uq_ambassadors_referral_code UNIQUE (refe
 ALTER TABLE reviews ADD CONSTRAINT chk_reviews_rating_range CHECK (rating >= 1 AND rating <= 5);
 ALTER TABLE quotes ADD CONSTRAINT chk_quotes_total_non_negative CHECK (total_amount >= 0);
 ALTER TABLE invoices ADD CONSTRAINT chk_invoices_total_non_negative CHECK (total_amount >= 0);
+ALTER TABLE payments ALTER COLUMN amount TYPE NUMERIC(14,2) USING NULLIF(amount, '')::NUMERIC(14,2);
 ALTER TABLE payments ADD CONSTRAINT chk_payments_amount_non_negative CHECK (amount >= 0);
 
 -- indexes for common lookup columns

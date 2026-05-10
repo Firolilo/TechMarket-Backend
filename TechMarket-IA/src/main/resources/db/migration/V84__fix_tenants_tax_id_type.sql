@@ -1,0 +1,2 @@
+ALTER TABLE tenants
+    ALTER COLUMN tax_id TYPE VARCHAR(255) USING tax_id::TEXT;

@@ -1,0 +1,3 @@
+ALTER TABLE search_history
+    ADD COLUMN IF NOT EXISTS result_type VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS searched_at TIMESTAMPTZ;
