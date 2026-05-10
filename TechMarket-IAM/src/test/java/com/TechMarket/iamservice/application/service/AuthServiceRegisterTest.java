@@ -11,12 +11,15 @@ import static org.mockito.Mockito.when;
 import com.techmarket.iamservice.application.dto.AuthTokenResponse;
 import com.techmarket.iamservice.application.dto.RegisterUserRequest;
 import com.techmarket.iamservice.application.model.IamConstants;
+import com.techmarket.iamservice.infrastructure.persistence.entity.RoleEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
+import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserCredentialRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserScopeRepository;
 import java.time.Instant;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +38,7 @@ class AuthServiceRegisterTest {
     @Mock private JwtTokenService jwtTokenService;
     @Mock private AccessTokenRevocationService accessTokenRevocationService;
     @Mock private UserScopeRepository userScopeRepository;
+    @Mock private TenantRoleRepository tenantRoleRepository;
     @Mock private AuditTrailService auditTrailService;
 
     private AuthService authService;
@@ -50,6 +54,7 @@ class AuthServiceRegisterTest {
                         jwtTokenService,
                         accessTokenRevocationService,
                         userScopeRepository,
+                        tenantRoleRepository,
                         auditTrailService);
     }
 
@@ -60,7 +65,7 @@ class AuthServiceRegisterTest {
                         "usuario@example.com",
                         "SecurePass123!",
                         "SecurePass123!",
-                        "cliente",
+                        "especialista",
                         "Juan",
                         "Pérez",
                         "+56912345678",
@@ -74,6 +79,9 @@ class AuthServiceRegisterTest {
         when(tenantUserRepository.existsByTenantIdAndUsername(
                         IamConstants.GLOBAL_TENANT_ID, "usuario@example.com"))
                 .thenReturn(false);
+        when(tenantRoleRepository.findByNameIgnoreCaseAndTenantId(
+                        "especialista", IamConstants.GLOBAL_TENANT_ID))
+                .thenReturn(Optional.of(role("especialista")));
         when(tenantUserRepository.save(any(UserEntity.class)))
                 .thenAnswer(
                         invocation -> {
@@ -113,7 +121,10 @@ class AuthServiceRegisterTest {
         assertThat(savedUser.getPhone()).isEqualTo("+56912345678");
         assertThat(savedUser.getCountry()).isEqualTo("Bolivia");
         assertThat(savedUser.getCity()).isEqualTo("Santa Cruz");
-        assertThat(savedUser.getUserType()).isEqualTo("cliente");
+        assertThat(savedUser.getUserType()).isEqualTo("especialista");
+        assertThat(savedUser.getRoles())
+                .extracting(RoleEntity::getName)
+                .containsExactly("especialista");
         assertThat(savedUser.isTermsAccepted()).isTrue();
 
         assertThat(response.accessToken()).isEqualTo("access-token");
@@ -121,6 +132,12 @@ class AuthServiceRegisterTest {
         assertThat(response.tenantId()).isEqualTo(IamConstants.GLOBAL_TENANT_ID);
         assertThat(response.userId()).isEqualTo(77L);
         assertThat(response.username()).isEqualTo("usuario@example.com");
-        assertThat(response.roles()).isEmpty();
+        assertThat(response.roles()).containsExactly("especialista");
+    }
+
+    private RoleEntity role(String name) {
+        RoleEntity role = new RoleEntity(name, "Rol " + name);
+        role.setTenantId(IamConstants.GLOBAL_TENANT_ID);
+        return role;
     }
 }
