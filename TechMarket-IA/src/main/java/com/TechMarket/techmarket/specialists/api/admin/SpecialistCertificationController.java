@@ -100,10 +100,13 @@ public class SpecialistCertificationController {
         return certificationRepository
                 .findByIdAndUserId(id, currentUserId)
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certification not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Certification not found"));
     }
 
-    private SpecialistCertificationResponse toResponse(SpecialistCertificationJpaEntity certification) {
+    private SpecialistCertificationResponse toResponse(
+            SpecialistCertificationJpaEntity certification) {
         return new SpecialistCertificationResponse(
                 identitySupport.formatCertificationId(certification.getId()),
                 certification.getName(),

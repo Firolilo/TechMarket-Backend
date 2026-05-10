@@ -34,8 +34,7 @@ public class SpecialistAvailabilityController {
             List.of("lunes", "martes", "miercoles", "jueves", "viernes", "sabado");
     private static final List<String> DEFAULT_MODALITIES =
             List.of("presencial", "remoto", "domicilio");
-    private static final Set<String> ALLOWED_STATUSES =
-            Set.of("disponible", "ocupado", "ausente");
+    private static final Set<String> ALLOWED_STATUSES = Set.of("disponible", "ocupado", "ausente");
 
     private final SpecialistIdentitySupport identitySupport;
     private final SpecialistJsonListMapper jsonListMapper;
@@ -118,18 +117,21 @@ public class SpecialistAvailabilityController {
                             availability.setDaysJson(jsonListMapper.toJson(DEFAULT_DAYS));
                             availability.setStartTime("08:00");
                             availability.setEndTime("18:00");
-                            availability.setModalitiesJson(jsonListMapper.toJson(DEFAULT_MODALITIES));
+                            availability.setModalitiesJson(
+                                    jsonListMapper.toJson(DEFAULT_MODALITIES));
                             availability.setCreatedAt(now);
                             availability.setUpdatedAt(now);
                             return availability;
                         });
     }
 
-    private SpecialistAvailabilityResponse toResponse(SpecialistAvailabilityJpaEntity availability) {
+    private SpecialistAvailabilityResponse toResponse(
+            SpecialistAvailabilityJpaEntity availability) {
         return new SpecialistAvailabilityResponse(
                 availability.getStatus(),
                 jsonListMapper.fromJson(availability.getDaysJson()),
-                new SpecialistScheduleResponse(availability.getStartTime(), availability.getEndTime()),
+                new SpecialistScheduleResponse(
+                        availability.getStartTime(), availability.getEndTime()),
                 jsonListMapper.fromJson(availability.getModalitiesJson()),
                 availability.getCoverage());
     }

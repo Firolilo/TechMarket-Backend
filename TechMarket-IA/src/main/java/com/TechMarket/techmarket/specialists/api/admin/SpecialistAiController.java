@@ -86,8 +86,10 @@ public class SpecialistAiController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @Valid @RequestBody PricingSuggestionRequest request) {
         identitySupport.requireUserId(userId);
-        BigDecimal current = request.precioActual() == null ? new BigDecimal("120.00") : request.precioActual();
-        BigDecimal recommended = current.multiply(new BigDecimal("1.12")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal current =
+                request.precioActual() == null ? new BigDecimal("120.00") : request.precioActual();
+        BigDecimal recommended =
+                current.multiply(new BigDecimal("1.12")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal min = current.multiply(new BigDecimal("0.92")).setScale(2, RoundingMode.HALF_UP);
         BigDecimal max = current.multiply(new BigDecimal("1.25")).setScale(2, RoundingMode.HALF_UP);
         return new PricingSuggestionResponse(

@@ -18,12 +18,12 @@ import com.techmarket.techmarket.specialists.application.service.SpecialistJsonL
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistCalendarBlockJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistFileJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistPortfolioItemJpaEntity;
-import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceAppointmentJpaEntity;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistTransactionJpaEntity;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAiQuerySpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAppointmentSummaryProjection;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAvailabilitySpringDataRepository;
-import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAiQuerySpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistCalendarBlockSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistCertificationSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistFileSpringDataRepository;
@@ -39,11 +39,11 @@ import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repo
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatAttachmentJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatMessageJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatAttachmentSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatMessageSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatReadReceiptSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatSpringDataRepository;
-import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -60,22 +60,21 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(
-        {
-            SpecialistProfileController.class,
-            SpecialistServiceController.class,
-            SpecialistPortfolioController.class,
-            SpecialistAvailabilityController.class,
-            SpecialistCalendarController.class,
-            SpecialistRequestController.class,
-            SpecialistProjectController.class,
-            SpecialistChatController.class,
-            SpecialistFileController.class,
-            SpecialistWalletController.class,
-            SpecialistReviewController.class,
-            SpecialistCertificationController.class,
-            SpecialistAiController.class
-        })
+@WebMvcTest({
+    SpecialistProfileController.class,
+    SpecialistServiceController.class,
+    SpecialistPortfolioController.class,
+    SpecialistAvailabilityController.class,
+    SpecialistCalendarController.class,
+    SpecialistRequestController.class,
+    SpecialistProjectController.class,
+    SpecialistChatController.class,
+    SpecialistFileController.class,
+    SpecialistWalletController.class,
+    SpecialistReviewController.class,
+    SpecialistCertificationController.class,
+    SpecialistAiController.class
+})
 @Import({SpecialistIdentitySupport.class, SpecialistJsonListMapper.class})
 class SpecialistControllerTest {
 
@@ -156,18 +155,19 @@ class SpecialistControllerTest {
                         post("/api/specialists/profile/photo")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put(
-                                                "url",
-                                                "https://cdn.techmarket.bo/specialists/tec-avatar.jpg");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put(
+                                                                "url",
+                                                                "https://cdn.techmarket.bo/specialists/tec-avatar.jpg");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(
                         jsonPath("$.url")
-                                .value(
-                                        "https://cdn.techmarket.bo/specialists/tec-avatar.jpg"));
+                                .value("https://cdn.techmarket.bo/specialists/tec-avatar.jpg"));
     }
 
     @Test
@@ -198,11 +198,13 @@ class SpecialistControllerTest {
                         put("/api/specialists/services/SERV-" + serviceId)
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("nombre", "Diagnostico avanzado");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("nombre", "Diagnostico avanzado");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Servicio actualizado"));
     }
@@ -217,11 +219,13 @@ class SpecialistControllerTest {
                         put("/api/specialists/services/" + serviceId)
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("nombre", "Otro");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("nombre", "Otro");
+                                                    }
+                                                })))
                 .andExpect(status().isNotFound());
     }
 
@@ -230,9 +234,12 @@ class SpecialistControllerTest {
         mockUser();
         UUID serviceId = UUID.randomUUID();
         SpecialistServiceJpaEntity service = service(serviceId);
-        when(serviceRepository.findByIdAndUserId(serviceId, USER_ID)).thenReturn(Optional.of(service));
+        when(serviceRepository.findByIdAndUserId(serviceId, USER_ID))
+                .thenReturn(Optional.of(service));
 
-        mockMvc.perform(delete("/api/specialists/services/SERV-" + serviceId).header("X-User-Id", USER_ID))
+        mockMvc.perform(
+                        delete("/api/specialists/services/SERV-" + serviceId)
+                                .header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Servicio eliminado"));
 
@@ -246,7 +253,9 @@ class SpecialistControllerTest {
         SpecialistPortfolioItemJpaEntity item = portfolioItem(itemId);
         when(portfolioRepository.findByIdAndUserId(itemId, USER_ID)).thenReturn(Optional.of(item));
 
-        mockMvc.perform(delete("/api/specialists/portfolio/PORT-" + itemId).header("X-User-Id", USER_ID))
+        mockMvc.perform(
+                        delete("/api/specialists/portfolio/PORT-" + itemId)
+                                .header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Trabajo eliminado del portafolio"));
 
@@ -257,7 +266,8 @@ class SpecialistControllerTest {
     void updateAvailability_shouldPersistConfiguration() throws Exception {
         mockUser();
         when(availabilityRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
-        when(availabilityRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(availabilityRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         LinkedHashMap<String, Object> payload = new LinkedHashMap<>();
         payload.put("estado", "disponible");
@@ -285,12 +295,14 @@ class SpecialistControllerTest {
                         patch("/api/specialists/availability/status")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("estado", "viajando");
-                                        put("tiempoRespuesta", "45 min");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("estado", "viajando");
+                                                        put("tiempoRespuesta", "45 min");
+                                                    }
+                                                })))
                 .andExpect(status().isBadRequest());
     }
 
@@ -315,20 +327,23 @@ class SpecialistControllerTest {
     @Test
     void createCalendarBlock_shouldPersistOwnedBlock() throws Exception {
         mockUser();
-        when(calendarBlockRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(calendarBlockRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         mockMvc.perform(
                         post("/api/specialists/calendar/blocks")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("fecha", "2026-04-10");
-                                        put("hora", "10:00");
-                                        put("fin", "11:00");
-                                        put("motivo", "Visita tecnica");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("fecha", "2026-04-10");
+                                                        put("hora", "10:00");
+                                                        put("fin", "11:00");
+                                                        put("motivo", "Visita tecnica");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Bloque agregado a la agenda"));
     }
@@ -345,11 +360,13 @@ class SpecialistControllerTest {
                         patch("/api/specialists/requests/REQ-" + requestId + "/respond")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("accion", "aceptar");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("accion", "aceptar");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accion").value("aceptada"));
     }
@@ -366,11 +383,13 @@ class SpecialistControllerTest {
                         patch("/api/specialists/projects/PROJ-" + projectId + "/status")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("estado", "completado");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("estado", "completado");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("completado"))
                 .andExpect(jsonPath("$.mensaje").value("Proyecto marcado como completado"));
@@ -390,7 +409,8 @@ class SpecialistControllerTest {
                 .thenReturn(Optional.of(message));
         when(chatReadReceiptRepository.findByTicketIdAndUserId(chatId, USER_ID))
                 .thenReturn(Optional.empty());
-        when(chatMessageRepository.countByTicketIdAndAuthorUserIdNot(chatId, USER_ID)).thenReturn(2L);
+        when(chatMessageRepository.countByTicketIdAndAuthorUserIdNot(chatId, USER_ID))
+                .thenReturn(2L);
         when(userRepository.findById(clientId)).thenReturn(Optional.of(client(clientId)));
 
         mockMvc.perform(get("/api/specialists/chats").header("X-User-Id", USER_ID))
@@ -420,19 +440,24 @@ class SpecialistControllerTest {
     @Test
     void createSpecialistFile_shouldPersistOwnedFile() throws Exception {
         mockUser();
-        when(specialistFileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(specialistFileRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         mockMvc.perform(
                         post("/api/specialists/files")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("url", "https://cdn.techmarket.bo/files/certificado.pdf");
-                                        put("nombre", "certificado.pdf");
-                                        put("tamano", "1.1 MB");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put(
+                                                                "url",
+                                                                "https://cdn.techmarket.bo/files/certificado.pdf");
+                                                        put("nombre", "certificado.pdf");
+                                                        put("tamano", "1.1 MB");
+                                                    }
+                                                })))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", startsWith("FILE-")))
                 .andExpect(jsonPath("$.mensaje").value("Archivo subido correctamente"));
@@ -441,9 +466,12 @@ class SpecialistControllerTest {
     @Test
     void wallet_shouldReturnAggregatedAmounts() throws Exception {
         mockUser();
-        when(transactionRepository.sumAvailableByUserId(USER_ID)).thenReturn(new BigDecimal("108.00"));
-        when(transactionRepository.sumCompletedGrossByUserId(USER_ID)).thenReturn(new BigDecimal("120.00"));
-        when(transactionRepository.sumInProcessByUserId(USER_ID)).thenReturn(new BigDecimal("50.00"));
+        when(transactionRepository.sumAvailableByUserId(USER_ID))
+                .thenReturn(new BigDecimal("108.00"));
+        when(transactionRepository.sumCompletedGrossByUserId(USER_ID))
+                .thenReturn(new BigDecimal("120.00"));
+        when(transactionRepository.sumInProcessByUserId(USER_ID))
+                .thenReturn(new BigDecimal("50.00"));
 
         mockMvc.perform(get("/api/specialists/wallet").header("X-User-Id", USER_ID))
                 .andExpect(status().isOk())
@@ -461,11 +489,13 @@ class SpecialistControllerTest {
                         post("/api/specialists/wallet/withdraw")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("monto", new BigDecimal("500.00"));
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put("monto", new BigDecimal("500.00"));
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.monto").value("Bs 500.00"))
                 .andExpect(jsonPath("$.mensaje").value("Solicitud de retiro enviada"));
@@ -480,11 +510,15 @@ class SpecialistControllerTest {
                         post("/api/specialists/ai/query")
                                 .header("X-User-Id", USER_ID)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(json(new LinkedHashMap<>() {
-                                    {
-                                        put("consulta", "Que servicios debo priorizar?");
-                                    }
-                                })))
+                                .content(
+                                        json(
+                                                new LinkedHashMap<>() {
+                                                    {
+                                                        put(
+                                                                "consulta",
+                                                                "Que servicios debo priorizar?");
+                                                    }
+                                                })))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.consulta").value("Que servicios debo priorizar?"))
                 .andExpect(jsonPath("$.respuesta.foco").value("disponibilidad"));
@@ -526,7 +560,8 @@ class SpecialistControllerTest {
     }
 
     private SpecialistServiceAppointmentJpaEntity appointment(UUID id) {
-        SpecialistServiceAppointmentJpaEntity appointment = new SpecialistServiceAppointmentJpaEntity();
+        SpecialistServiceAppointmentJpaEntity appointment =
+                new SpecialistServiceAppointmentJpaEntity();
         appointment.setId(id);
         appointment.setAssignedTechnicianUserId(USER_ID);
         appointment.setStatus("pendiente");

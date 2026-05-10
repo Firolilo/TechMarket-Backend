@@ -26,7 +26,11 @@ public class SearchJdbcRepository {
     }
 
     public List<String> suggestions(String query) {
-        return search(query).stream().map(GlobalSearchItemResponse::titulo).distinct().limit(8).toList();
+        return search(query).stream()
+                .map(GlobalSearchItemResponse::titulo)
+                .distinct()
+                .limit(8)
+                .toList();
     }
 
     private List<GlobalSearchItemResponse> searchListings(String pattern) {

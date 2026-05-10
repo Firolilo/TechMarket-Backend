@@ -107,7 +107,8 @@ public class ClientCartOrderController {
             @PathVariable String itemId,
             @Valid @RequestBody UpdateCartItemRequest request) {
         UUID currentUserId = parseUserId(userId);
-        ClientCartItemJpaEntity item = findCartItem(parsePrefixedUuid(itemId, "ITEM-"), currentUserId);
+        ClientCartItemJpaEntity item =
+                findCartItem(parsePrefixedUuid(itemId, "ITEM-"), currentUserId);
         item.setQuantity(request.cantidad());
         item.setUpdatedAt(OffsetDateTime.now());
         cartItemRepository.save(item);
@@ -119,7 +120,8 @@ public class ClientCartOrderController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String itemId) {
         UUID currentUserId = parseUserId(userId);
-        ClientCartItemJpaEntity item = findCartItem(parsePrefixedUuid(itemId, "ITEM-"), currentUserId);
+        ClientCartItemJpaEntity item =
+                findCartItem(parsePrefixedUuid(itemId, "ITEM-"), currentUserId);
         cartItemRepository.delete(item);
         return toCartResponse(currentUserId);
     }
@@ -248,14 +250,19 @@ public class ClientCartOrderController {
 
     private OrderSummaryResponse toOrderSummary(ClientOrderJpaEntity order) {
         return new OrderSummaryResponse(
-                formatOrderId(order.getId()), order.getCreatedAt(), order.getStatus(), order.getTotal());
+                formatOrderId(order.getId()),
+                order.getCreatedAt(),
+                order.getStatus(),
+                order.getTotal());
     }
 
     private ClientCartItemJpaEntity findCartItem(UUID itemId, UUID userId) {
         return cartItemRepository
                 .findByIdAndUserId(itemId, userId)
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cart item not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Cart item not found"));
     }
 
     private BigDecimal subtotal(List<ClientCartItemJpaEntity> items) {
