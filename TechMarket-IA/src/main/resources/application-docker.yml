@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${TECHMARKET_IA_DB_URL:jdbc:postgresql://localhost:5435/TECHMARKET_ia}
+    url: ${TECHMARKET_IA_DB_URL:jdbc:postgresql://localhost:5434/TECHMARKET_ia}
     username: ${TECHMARKET_IA_DB_USERNAME:TECHMARKET_ia_user}
     password: ${TECHMARKET_IA_DB_PASSWORD:TECHMARKET_ia_password}
   jpa:
@@ -9,4 +9,3 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-    validate-on-migrate: false

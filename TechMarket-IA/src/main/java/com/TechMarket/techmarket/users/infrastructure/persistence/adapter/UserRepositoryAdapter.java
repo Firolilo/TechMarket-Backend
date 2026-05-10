@@ -29,4 +29,9 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     public Optional<User> findById(UUID id) {
         return springDataRepository.findById(id).map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return springDataRepository.findByEmail(email).map(mapper::toDomain);
+    }
 }
