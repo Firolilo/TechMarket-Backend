@@ -11,5 +11,10 @@ public interface ClientChatSpringDataRepository extends JpaRepository<ClientChat
     List<ClientChatJpaEntity> findAllByCustomerUserIdAndTicketTypeOrderByCreatedAtDesc(
             UUID customerUserId, String ticketType);
 
+    List<ClientChatJpaEntity> findAllByAssignedTechnicianUserIdAndTicketTypeOrderByCreatedAtDesc(
+            UUID assignedTechnicianUserId, String ticketType);
+
     Optional<ClientChatJpaEntity> findByIdAndCustomerUserId(UUID id, UUID customerUserId);
+
+    Optional<ClientChatJpaEntity> findByIdAndAssignedTechnicianUserId(UUID id, UUID assignedTechnicianUserId);
 }

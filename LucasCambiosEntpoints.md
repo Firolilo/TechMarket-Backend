@@ -4,11 +4,11 @@ Fecha: 2026-05-06
 
 ## Resumen general
 
-Se implemento el bloque de endpoints 126 al 140 del contrato `endpoint.md`, correspondiente al modulo de especialistas en `TechMarket-IA`.
+Se implemento el bloque de endpoints 126 al 180 del contrato `endpoint.md`, correspondiente al modulo de especialistas y busqueda general en `TechMarket-IA`.
 
 La implementacion quedo bajo rutas `/api/specialists/**`, con persistencia real en base de datos, controllers dentro de paquetes `api.admin` para cumplir la prueba de arquitectura de IA, y uso del header `X-User-Id` como contexto autenticado local mientras no esta integrada la seguridad de IAM.
 
-No se implementaron endpoints 141 en adelante. Tampoco se toco el rango Ambassador 56-125.
+No se implementaron endpoints 181 en adelante. Tampoco se toco el rango Ambassador 56-125.
 
 ## Endpoints implementados
 
@@ -112,11 +112,205 @@ No se implementaron endpoints 141 en adelante. Tampoco se toco el rango Ambassad
   - Valida `estado` contra `disponible`, `ocupado` y `ausente`.
   - Responde `{ "estado": "...", "tiempoRespuesta": "..." }`.
 
+### Agenda del especialista
+
+- `141. GET /api/specialists/calendar`
+  - Devuelve citas asignadas al tecnico y bloques manuales de agenda.
+  - Las citas se leen desde `service_appointments` enlazadas con `tickets` y `users`.
+  - Los bloques manuales se leen desde `specialist_calendar_blocks`.
+
+- `142. POST /api/specialists/calendar/blocks`
+  - Crea un bloque no disponible para el tecnico autenticado.
+  - Acepta `fecha`, `hora`, `fin` y `motivo`.
+  - Responde `{ "mensaje": "Bloque agregado a la agenda" }`.
+
+- `143. DELETE /api/specialists/calendar/blocks/{blockId}`
+  - Elimina un bloque manual propio.
+  - Acepta `BLK-{uuid}` o UUID crudo.
+  - Responde `{ "mensaje": "Bloque eliminado" }`.
+
+### Solicitudes y proyectos del especialista
+
+- `144. GET /api/specialists/requests`
+  - Lista solicitudes pendientes asignadas al tecnico autenticado.
+  - Lee `service_appointments` con estados pendientes.
+  - Responde con `REQ-{uuid}`, cliente, servicio, fecha, estado y urgencia.
+
+- `145. PATCH /api/specialists/requests/{requestId}/respond`
+  - Acepta o rechaza una solicitud propia.
+  - Acepta acciones `aceptar`/`aceptada` o `rechazar`/`rechazada`.
+  - Actualiza `service_appointments.status`.
+
+- `146. GET /api/specialists/projects`
+  - Lista proyectos activos del tecnico.
+  - Lee citas con estados aceptados, confirmados o en progreso.
+
+- `147. GET /api/specialists/projects/{projectId}`
+  - Devuelve detalle de un proyecto propio.
+  - Incluye cliente, telefono, servicio, fecha, estado y descripcion.
+
+- `148. PATCH /api/specialists/projects/{projectId}/status`
+  - Cambia estado de proyecto a `en_progreso`, `completado` o `cancelado`.
+  - Actualiza `service_appointments.status`.
+
+- `149. GET /api/specialists/projects/history`
+  - Lista proyectos finalizados o cancelados.
+  - Reutiliza `service_appointments` y devuelve IDs `PROJ-{uuid}`.
+
+### Chats del especialista
+
+- `150. GET /api/specialists/chats`
+  - Lista conversaciones activas asignadas al tecnico.
+  - Reutiliza `tickets`, `ticket_messages` y `chat_read_receipts`.
+  - Filtra por `tickets.assigned_technician_user_id` y `ticket_type = CHAT`.
+
+- `151. GET /api/specialists/chats/{chatId}`
+  - Obtiene mensajes de una conversacion asignada al tecnico.
+  - Acepta `CHT-{uuid}` o UUID crudo.
+  - Lee desde `ticket_messages`.
+
+- `152. POST /api/specialists/chats/{chatId}/messages`
+  - Envia mensaje como tecnico en una conversacion asignada.
+  - Persiste en `ticket_messages`.
+  - Responde con `MSG-{uuid}` y fecha.
+
+- `153. GET /api/specialists/chats/{chatId}/files`
+  - Lista archivos compartidos en una conversacion.
+  - Reutiliza `ticket_attachments`.
+
+- `154. POST /api/specialists/chats/{chatId}/files`
+  - Registra un archivo compartido en la conversacion.
+  - Acepta `url`, `nombre`, `tipo` y `tamano`.
+  - Responde con `FILE-{uuid}` y URL.
+
+### Archivos personales del especialista
+
+- `155. GET /api/specialists/files`
+  - Lista archivos propios del tecnico autenticado.
+  - Lee desde `specialist_files`.
+
+- `156. POST /api/specialists/files`
+  - Registra un archivo en el repositorio personal del tecnico.
+  - Acepta `url`, `nombre`, `tipo` y `tamano`.
+  - Responde con `FILE-{uuid}` y mensaje de exito.
+
+- `157. DELETE /api/specialists/files/{fileId}`
+  - Elimina un archivo propio.
+  - Acepta `FILE-{uuid}` o UUID crudo.
+  - Responde `{ "mensaje": "Archivo eliminado" }`.
+
+### Wallet y transacciones del especialista
+
+- `158. GET /api/specialists/wallet`
+  - Devuelve saldo disponible, ingresos totales y monto en proceso.
+  - Calcula totales desde `specialist_transactions`.
+
+- `159. GET /api/specialists/transactions`
+  - Lista historial de transacciones del tecnico.
+  - Filtra por `user_id` y ordena por fecha descendente.
+
+- `160. GET /api/specialists/transactions/{transactionId}`
+  - Devuelve detalle de una transaccion propia.
+  - Incluye monto, comision de plataforma y neto.
+
+- `161. POST /api/specialists/wallet/withdraw`
+  - Solicita retiro de saldo disponible.
+  - Persiste la solicitud en `specialist_withdrawals`.
+  - Responde monto, mensaje y fecha estimada.
+
+- `162. GET /api/specialists/earnings/summary`
+  - Devuelve resumen mensual de ingresos.
+  - Calcula total, servicios realizados y promedio desde `specialist_transactions`.
+
+### Resenas y certificaciones del especialista
+
+- `163. GET /api/specialists/reviews`
+  - Lista resenas recibidas por el tecnico.
+  - Lee `reviews` enlazado con `service_appointments`, `tickets` y `users`.
+
+- `164. GET /api/specialists/reviews/{reviewId}`
+  - Devuelve detalle de una resena propia.
+  - Incluye respuesta del tecnico si existe.
+
+- `165. POST /api/specialists/reviews/{reviewId}/respond`
+  - Responde una resena recibida.
+  - Persiste `reviews.technician_response` y `technician_response_at`.
+
+- `166. GET /api/specialists/certifications`
+  - Lista certificaciones del tecnico.
+  - Lee desde `specialist_certifications`.
+
+- `167. POST /api/specialists/certifications`
+  - Agrega una certificacion.
+  - Acepta `nombre`, `institucion`, `fechaObtencion` y `archivoUrl`.
+
+- `168. DELETE /api/specialists/certifications/{certId}`
+  - Elimina una certificacion propia.
+  - Acepta `CERT-{uuid}` o UUID crudo.
+
+- `169. PATCH /api/specialists/certifications/{certId}/verify`
+  - Cambia la certificacion a `en_verificacion`.
+  - Responde mensaje de envio para verificacion.
+
+### Asistente IA del especialista
+
+- `170. POST /api/specialists/ai/query`
+  - Devuelve una respuesta deterministica de asistencia operativa.
+  - Persiste historial simple en `specialist_ai_queries`.
+  - No llama a un proveedor externo de IA por ahora.
+
+- `171. GET /api/specialists/ai/insights`
+  - Devuelve radar de insights operativos.
+  - Respuesta deterministica sin proveedor externo.
+
+- `172. POST /api/specialists/ai/pricing-suggestion`
+  - Sugiere precio a partir del precio actual enviado.
+  - Calcula rango minimo, maximo y precio recomendado.
+
+- `173. POST /api/specialists/ai/improvement-plan`
+  - Devuelve plan de mejora para el area solicitada.
+  - Respuesta deterministica con objetivo, acciones y tiempo estimado.
+
+- `174. POST /api/specialists/ai/schedule-optimization`
+  - Devuelve sugerencia para optimizar agenda y plan sugerido.
+  - No modifica agenda; solo entrega recomendacion.
+
+### Busqueda general
+
+- `175. GET /api/search/global`
+  - Busca por `q` en productos/listings, empresas, servicios de especialistas y comunidades.
+  - Lee tablas existentes con `SearchJdbcRepository`.
+  - Responde `total` y `resultados`.
+
+- `176. GET /api/search/suggestions`
+  - Devuelve sugerencias por `q`.
+  - Si no llega `q`, usa tendencias persistidas.
+
+- `177. GET /api/search/trending`
+  - Lista busquedas populares desde `search_trends`.
+  - Si no hay datos persistidos, devuelve tendencias por defecto.
+
+- `178. GET /api/search/history`
+  - Lista historial de busquedas del usuario autenticado.
+  - Usa header `X-User-Id`.
+
+- `179. POST /api/search/history`
+  - Guarda una busqueda del usuario autenticado.
+  - Persiste en `search_history` e incrementa `search_trends`.
+
+- `180. DELETE /api/search/history/{historyId}`
+  - Elimina una busqueda propia del historial.
+  - Acepta `SRH-{uuid}` o UUID crudo.
+
 ## Persistencia agregada
 
-Se agrego la migracion:
+Se agregaron las migraciones:
 
 - `TechMarket-IA/src/main/resources/db/migration/V77__specialist_profile_services_portfolio_availability.sql`
+- `TechMarket-IA/src/main/resources/db/migration/V78__specialist_calendar_blocks.sql`
+- `TechMarket-IA/src/main/resources/db/migration/V79__specialist_files_and_transactions.sql`
+- `TechMarket-IA/src/main/resources/db/migration/V80__specialist_withdrawals_certifications_ai_reviews.sql`
+- `TechMarket-IA/src/main/resources/db/migration/V81__global_search_history.sql`
 
 Tablas nuevas:
 
@@ -138,12 +332,56 @@ Tablas nuevas:
   - Campos principales: `id`, `user_id`, `status`, `days_json`, `start_time`, `end_time`, `modalities_json`, `coverage`, `response_time`, timestamps.
   - Tiene constraint unico por `user_id`.
 
+- `specialist_calendar_blocks`
+  - Bloques manuales de agenda no disponible por tecnico.
+  - Campos principales: `id`, `user_id`, `block_date`, `start_time`, `end_time`, `reason`, timestamps.
+
+- `specialist_files`
+  - Repositorio personal de archivos del tecnico.
+  - Campos principales: `id`, `user_id`, `file_url`, `file_name`, `file_type`, `file_size`, timestamps.
+
+- `specialist_transactions`
+  - Historial de ingresos del tecnico.
+  - Campos principales: `id`, `user_id`, `service_name`, `client_name`, `amount`, `platform_commission`, `currency`, `status`, `transaction_date`, timestamps.
+
+Tambien se agrego `ticket_attachments.file_size` para responder el tamano de archivos compartidos en chat.
+
+- `specialist_withdrawals`
+  - Solicitudes de retiro del tecnico.
+  - Campos principales: `id`, `user_id`, `amount`, `currency`, `status`, `requested_at`, `estimated_at`.
+
+- `specialist_certifications`
+  - Certificaciones del tecnico.
+  - Campos principales: `id`, `user_id`, `name`, `institution`, `obtained_at`, `file_url`, `status`, timestamps.
+
+- `specialist_ai_queries`
+  - Historial simple de consultas al asistente IA.
+  - Campos principales: `id`, `user_id`, `query_text`, `focus`, `response_summary`, `created_at`.
+
+Tambien se agregaron `reviews.technician_response` y `reviews.technician_response_at`.
+
+- `search_history`
+  - Historial de busquedas por usuario.
+  - Campos principales: `id`, `user_id`, `query_text`, `result_type`, `searched_at`.
+
+- `search_trends`
+  - Terminos populares de busqueda.
+  - Campos principales: `id`, `query_text`, `search_count`, `updated_at`.
+
 Indices agregados:
 
 - `idx_specialist_services_user_id`
 - `idx_specialist_portfolio_items_user_id`
 - `idx_service_appointments_technician_status`
 - `idx_reviews_ticket_id`
+- `idx_specialist_calendar_blocks_user_date`
+- `idx_specialist_files_user_id`
+- `idx_specialist_transactions_user_date`
+- `idx_specialist_withdrawals_user_id`
+- `idx_specialist_certifications_user_id`
+- `idx_specialist_ai_queries_user_id`
+- `idx_search_history_user_date`
+- `idx_search_trends_count`
 
 ## Codigo agregado
 
@@ -154,7 +392,11 @@ Indices agregados:
   - Devuelve `401` si falta el header.
   - Devuelve `400` si el UUID es invalido.
   - Devuelve `404` si el usuario no existe.
-  - Formatea IDs `TEC-`, `SERV-` y `PORT-`.
+  - Formatea IDs `TEC-`, `SERV-`, `PORT-`, `BLK-`, `REQ-`, `PROJ-`, `CHT-`, `MSG-`, `FILE-`, `TX-` y `CERT-`.
+
+- `SearchIdentitySupport`
+  - Valida `X-User-Id` para historial de busqueda.
+  - Permite parsear IDs `SRH-`.
   - Permite parsear IDs prefijados o UUID crudos.
 
 - `SpecialistJsonListMapper`
@@ -168,8 +410,17 @@ Indices agregados:
 - `SpecialistServiceJpaEntity`
 - `SpecialistPortfolioItemJpaEntity`
 - `SpecialistAvailabilityJpaEntity`
+- `SpecialistCalendarBlockJpaEntity`
+- `SpecialistFileJpaEntity`
+- `SpecialistTransactionJpaEntity`
+- `SpecialistWithdrawalJpaEntity`
+- `SpecialistCertificationJpaEntity`
+- `SpecialistAiQueryJpaEntity`
 - `SpecialistServiceAppointmentJpaEntity`
 - `SpecialistReviewJpaEntity`
+  - `ClientChatAttachmentJpaEntity` reutiliza `ticket_attachments` para archivos de chat.
+- `SearchHistoryJpaEntity`
+- `SearchTrendJpaEntity`
 
 Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
 
@@ -179,9 +430,22 @@ Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
 - `SpecialistServiceSpringDataRepository`
 - `SpecialistPortfolioItemSpringDataRepository`
 - `SpecialistAvailabilitySpringDataRepository`
+- `SpecialistCalendarBlockSpringDataRepository`
+- `SpecialistFileSpringDataRepository`
+- `SpecialistTransactionSpringDataRepository`
+- `SpecialistWithdrawalSpringDataRepository`
+- `SpecialistCertificationSpringDataRepository`
+- `SpecialistAiQuerySpringDataRepository`
+- `SpecialistReviewSpringDataRepository`
+- `SpecialistReviewProjection`
 - `SpecialistServiceAppointmentSpringDataRepository`
+- `SpecialistAppointmentSummaryProjection`
 - `SpecialistReviewStatsSpringDataRepository`
 - `SpecialistReviewStatsProjection`
+  - `ClientChatAttachmentSpringDataRepository` reutiliza adjuntos de tickets.
+- `SearchHistorySpringDataRepository`
+- `SearchTrendSpringDataRepository`
+- `SearchJdbcRepository`
 
 ### Controllers
 
@@ -196,6 +460,36 @@ Las dos ultimas entidades se usan para lectura de KPIs sobre tablas existentes.
 
 - `SpecialistAvailabilityController`
   - Maneja consulta, actualizacion y cambio de estado de disponibilidad.
+
+- `SpecialistCalendarController`
+  - Maneja agenda y bloques manuales.
+
+- `SpecialistRequestController`
+  - Maneja listado y respuesta de solicitudes.
+
+- `SpecialistProjectController`
+  - Maneja proyectos activos, detalle, estado e historial.
+
+- `SpecialistChatController`
+  - Maneja listado de chats activos, mensajes y archivos compartidos.
+
+- `SpecialistFileController`
+  - Maneja archivos personales del tecnico.
+
+- `SpecialistWalletController`
+  - Maneja wallet, retiros, resumen de ingresos y transacciones del tecnico.
+
+- `SpecialistReviewController`
+  - Maneja resenas recibidas y respuestas del tecnico.
+
+- `SpecialistCertificationController`
+  - Maneja certificaciones y solicitud de verificacion.
+
+- `SpecialistAiController`
+  - Maneja consulta, insights, pricing, mejora y optimizacion de agenda con respuestas deterministicas.
+
+- `SearchController`
+  - Maneja busqueda global, sugerencias, tendencias e historial de busqueda.
 
 Todos los controllers quedaron bajo:
 
@@ -257,6 +551,18 @@ Casos cubiertos:
 - `DELETE /api/specialists/portfolio/{itemId}` elimina item propio.
 - `PUT /api/specialists/availability` persiste configuracion.
 - `PATCH /api/specialists/availability/status` rechaza estado invalido.
+- `GET /api/specialists/calendar` devuelve citas y bloques manuales.
+- `POST /api/specialists/calendar/blocks` persiste bloque propio.
+- `PATCH /api/specialists/requests/{requestId}/respond` acepta solicitud propia.
+- `PATCH /api/specialists/projects/{projectId}/status` cambia estado permitido.
+- `GET /api/specialists/chats` lista chats asignados con conteo de no leidos.
+- `GET /api/specialists/chats/{chatId}` lista mensajes de chat asignado.
+- `POST /api/specialists/files` persiste archivo propio.
+- `GET /api/specialists/wallet` devuelve montos agregados.
+- `POST /api/specialists/wallet/withdraw` persiste solicitud de retiro.
+- `POST /api/specialists/ai/query` devuelve plan de accion y persiste consulta.
+- `POST /api/specialists/ai/pricing-suggestion` calcula sugerencia de precio.
+- `POST /api/search/history` guarda historial e incrementa tendencias.
 
 ## Documentacion actualizada
 

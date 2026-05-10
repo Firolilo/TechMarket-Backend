@@ -34,7 +34,9 @@ Endpoints 9-55 are implemented in `TechMarket-IA`. Client-facing controllers mus
 
 Endpoints 56-125 belong to the Ambassador module (`/api/ambassadors/**`) and are intentionally ignored for now. Do not implement that range unless the user explicitly asks to resume Ambassador work.
 
-Endpoints 126-140 are implemented in `TechMarket-IA` for specialist profile, services, portfolio, and availability under `/api/specialists/**`. Like the client endpoints, they use the `X-User-Id` header as the authenticated specialist context until IAM security integration is wired locally. Specialist controllers must also stay under packages containing `api.admin` to satisfy the IA architecture test.
+Endpoints 126-174 are implemented in `TechMarket-IA` for specialist profile, services, portfolio, availability, calendar, requests, projects, history, chats, files, wallet, transactions, withdrawals, earnings, reviews, certifications, and deterministic AI assistant endpoints under `/api/specialists/**`. Like the client endpoints, they use the `X-User-Id` header as the authenticated specialist context until IAM security integration is wired locally. Specialist controllers must also stay under packages containing `api.admin` to satisfy the IA architecture test.
+
+Endpoints 175-180 are implemented in `TechMarket-IA` for general search under `/api/search/**`. Global search reads listings, tenants, specialist services, and communities through a JDBC search repository. Search history uses the `X-User-Id` header as authenticated user context.
 
 Implemented IA endpoint groups:
 
@@ -46,10 +48,23 @@ Implemented IA endpoint groups:
 - 41-50: chat read marker, product/company favorites, and client communities join/leave.
 - 51-55: community posts and client notifications read/read-all/delete.
 - 126-140: specialist profile, stats, profile photo URL, services, portfolio, and availability/status.
+- 141-150: specialist calendar, manual calendar blocks, service requests, project list/detail/status/history, and active chats.
+- 151-160: specialist chat messages/files, personal files, wallet summary, and transaction list/detail.
+- 161-170: specialist withdrawal requests, earnings summary, received reviews/replies, certifications/verification, and deterministic AI query response.
+- 171-174: specialist AI insights, pricing suggestion, improvement plan, and schedule optimization.
+- 175-180: global search, suggestions, trending searches, and authenticated search history create/list/delete.
 
 IA persistence additions for those ranges include Flyway migrations `V72__client_addresses.sql`, `V73__client_cart_and_orders.sql`, `V74__client_reviews_and_chat_support.sql`, `V75__client_favorites_and_communities.sql`, and `V76__client_community_posts_and_notification_links.sql`. Reviews reuse the existing `reviews` table with `listing_id` and `updated_at` added by `V74`; chats reuse `tickets` and `ticket_messages` with `ticket_type = 'CHAT'`; product/company favorites reuse `favorites`; communities use `communities` and `community_memberships`; community posts reuse `feed_posts`; notifications reuse `notifications`.
 
 Specialist persistence for endpoints 126-140 is added by `V77__specialist_profile_services_portfolio_availability.sql`. Specialist profiles, services, portfolio items, and availability use dedicated `specialist_*` tables; stats read completed work from `service_appointments.assigned_technician_user_id` and review totals/averages from `reviews.ticket_id` linked to those appointments.
+
+Specialist persistence for endpoints 141-150 is added by `V78__specialist_calendar_blocks.sql` plus existing operational tables. Calendar blocks use `specialist_calendar_blocks`; calendar, requests, projects, and history read/update `service_appointments` joined with `tickets` and `users`; specialist chats reuse `tickets`, `ticket_messages`, and `chat_read_receipts` with `assigned_technician_user_id`.
+
+Specialist persistence for endpoints 151-160 is added by `V79__specialist_files_and_transactions.sql` plus existing chat tables. Specialist chat messages reuse `ticket_messages`; chat files reuse `ticket_attachments` with an added `file_size` column; personal files use `specialist_files`; wallet and transaction endpoints use `specialist_transactions`.
+
+Specialist persistence for endpoints 161-170 is added by `V80__specialist_withdrawals_certifications_ai_reviews.sql`. Withdrawals use `specialist_withdrawals`; certifications use `specialist_certifications`; AI query history uses `specialist_ai_queries`; review replies add `technician_response` and `technician_response_at` to `reviews` while review lists/details still join `reviews`, `service_appointments`, `tickets`, and `users`.
+
+Search persistence for endpoints 175-180 is added by `V81__global_search_history.sql`. Search history uses `search_history`; trending terms use `search_trends`; global search itself reads existing platform tables and does not duplicate indexed content.
 
 ID formatting conventions used by the implemented endpoints:
 
@@ -70,6 +85,13 @@ ID formatting conventions used by the implemented endpoints:
 - Specialists: `TEC-{uuid}`
 - Specialist services: `SERV-{uuid}`
 - Specialist portfolio items: `PORT-{uuid}`
+- Specialist calendar blocks: `BLK-{uuid}`
+- Specialist requests: `REQ-{uuid}`
+- Specialist projects: `PROJ-{uuid}`
+- Specialist files/chat attachments: `FILE-{uuid}`
+- Specialist transactions: `TX-{uuid}`
+- Specialist certifications: `CERT-{uuid}`
+- Search history: `SRH-{uuid}`
 
 Known verification status: `mvn test -DskipTests -Dspotless.check.skip=true` passes in both `TechMarket-IA` and `TechMarket-IAM` after the endpoint work. Full `mvn test` currently fails in this environment because Mockito/ByteBuddy cannot self-attach under Java 25, and `spotless:check` fails because the configured `google-java-format` is incompatible with the current JDK. Prefer Java 21 for full local verification.
 

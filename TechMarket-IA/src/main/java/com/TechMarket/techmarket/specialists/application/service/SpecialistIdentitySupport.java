@@ -52,6 +52,38 @@ public class SpecialistIdentitySupport {
         return "PORT-" + id;
     }
 
+    public String formatCalendarBlockId(UUID id) {
+        return "BLK-" + id;
+    }
+
+    public String formatRequestId(UUID id) {
+        return "REQ-" + id;
+    }
+
+    public String formatProjectId(UUID id) {
+        return "PROJ-" + id;
+    }
+
+    public String formatChatId(UUID id) {
+        return "CHT-" + id;
+    }
+
+    public String formatMessageId(UUID id) {
+        return "MSG-" + id;
+    }
+
+    public String formatFileId(UUID id) {
+        return "FILE-" + id;
+    }
+
+    public String formatTransactionId(UUID id) {
+        return "TX-" + id;
+    }
+
+    public String formatCertificationId(UUID id) {
+        return "CERT-" + id;
+    }
+
     private UUID parseUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "X-User-Id is required");
