@@ -9,4 +9,6 @@ public interface AmbassadorCommissionSpringDataRepository
         extends JpaRepository<AmbassadorCommissionJpaEntity, UUID> {
 
     List<AmbassadorCommissionJpaEntity> findByAmbassadorId(UUID ambassadorId);
+
+    List<AmbassadorCommissionJpaEntity> findAllByAmbassadorIdOrderByGeneratedAtDesc(UUID ambassadorId);
 }
