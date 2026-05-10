@@ -17,6 +17,7 @@ import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentia
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserScopeEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
+import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserCredentialRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserScopeRepository;
@@ -48,6 +49,7 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final AccessTokenRevocationService accessTokenRevocationService;
     private final UserScopeRepository userScopeRepository;
+    private final TenantRoleRepository tenantRoleRepository;
     private final AuditTrailService auditTrailService;
     private final OtpProperties otpProperties;
     private final OtpDeliveryService otpDeliveryService;
@@ -61,6 +63,7 @@ public class AuthService {
             JwtTokenService jwtTokenService,
             AccessTokenRevocationService accessTokenRevocationService,
             UserScopeRepository userScopeRepository,
+            TenantRoleRepository tenantRoleRepository,
             AuditTrailService auditTrailService,
             OtpProperties otpProperties,
             OtpDeliveryService otpDeliveryService) {
@@ -71,6 +74,7 @@ public class AuthService {
         this.jwtTokenService = jwtTokenService;
         this.accessTokenRevocationService = accessTokenRevocationService;
         this.userScopeRepository = userScopeRepository;
+        this.tenantRoleRepository = tenantRoleRepository;
         this.auditTrailService = auditTrailService;
         this.otpProperties = otpProperties;
         this.otpDeliveryService = otpDeliveryService;
@@ -84,6 +88,7 @@ public class AuthService {
             JwtTokenService jwtTokenService,
             AccessTokenRevocationService accessTokenRevocationService,
             UserScopeRepository userScopeRepository,
+            TenantRoleRepository tenantRoleRepository,
             AuditTrailService auditTrailService) {
         this(
                 tenantUserRepository,
@@ -93,6 +98,7 @@ public class AuthService {
                 jwtTokenService,
                 accessTokenRevocationService,
                 userScopeRepository,
+                tenantRoleRepository,
                 auditTrailService,
                 new OtpProperties(true, 6, 5, 5),
                 (tenantId, user, otpCode, challengeId) -> {});
@@ -250,9 +256,10 @@ public class AuthService {
         user.setPhone(trimToNull(request.telefono()));
         user.setCountry(trimToNull(request.pais()));
         user.setCity(trimToNull(request.ciudad()));
-        user.setUserType(trimToNull(request.tipo()));
+        String userType = normalizeUserType(request.tipo());
+        user.setUserType(userType);
         user.setTermsAccepted(request.terminos());
-        user.assignRoles(Set.of());
+        user.assignRoles(Set.of(resolvePublicRegistrationRole(userType)));
 
         UserEntity savedUser = tenantUserRepository.save(user);
 
@@ -562,6 +569,39 @@ public class AuthService {
             }
         }
         return new ArrayList<>(scopes);
+    }
+
+    private RoleEntity resolvePublicRegistrationRole(String userType) {
+        return tenantRoleRepository
+                .findByNameIgnoreCaseAndTenantId(userType, IamConstants.GLOBAL_TENANT_ID)
+                .orElseGet(
+                        () -> {
+                            RoleEntity role =
+                                    new RoleEntity(
+                                            userType, "Rol público para usuarios tipo " + userType);
+                            role.setTenantId(IamConstants.GLOBAL_TENANT_ID);
+                            role.setHierarchyLevel(IamConstants.DEFAULT_HIERARCHY_LEVEL);
+                            return tenantRoleRepository.save(role);
+                        });
+    }
+
+    private String normalizeUserType(String userType) {
+        String normalized = trimToNull(userType);
+        if (normalized == null) {
+            throw new AuthServiceException(
+                    "IAM_USER_TYPE_REQUIRED", HttpStatus.BAD_REQUEST, "tipo is required");
+        }
+        normalized = normalized.toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "cliente", "client", "customer" -> "cliente";
+            case "empresa", "company", "tenant" -> "empresa";
+            case "especialista", "specialist", "technician" -> "especialista";
+            default ->
+                    throw new AuthServiceException(
+                            "IAM_USER_TYPE_INVALID",
+                            HttpStatus.BAD_REQUEST,
+                            "tipo must be cliente, empresa or especialista");
+        };
     }
 
     private String normalizeScopeToken(String token) {

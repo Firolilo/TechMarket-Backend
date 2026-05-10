@@ -8,6 +8,7 @@ import com.techmarket.iamservice.application.dto.RefreshTokenRequest;
 import com.techmarket.iamservice.application.model.IamConstants;
 import com.techmarket.iamservice.infrastructure.persistence.entity.RefreshTokenEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.RefreshTokenRepository;
+import com.techmarket.iamservice.infrastructure.persistence.repository.TenantRoleRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserCredentialRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserScopeRepository;
@@ -34,6 +35,7 @@ class AuthServiceLogoutTest {
     @Mock private JwtTokenService jwtTokenService;
     @Mock private AccessTokenRevocationService accessTokenRevocationService;
     @Mock private UserScopeRepository userScopeRepository;
+    @Mock private TenantRoleRepository tenantRoleRepository;
     @Mock private AuditTrailService auditTrailService;
 
     private AuthService authService;
@@ -49,6 +51,7 @@ class AuthServiceLogoutTest {
                         jwtTokenService,
                         accessTokenRevocationService,
                         userScopeRepository,
+                        tenantRoleRepository,
                         auditTrailService);
     }
 
