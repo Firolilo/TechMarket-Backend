@@ -11,7 +11,8 @@ public interface ClientFavoriteSpringDataRepository
 
     List<ClientFavoriteJpaEntity> findAllByUserIdAndListingIdIsNotNull(UUID userId);
 
-    List<ClientFavoriteJpaEntity> findAllByUserIdAndTenantIdIsNotNullAndListingIdIsNull(UUID userId);
+    List<ClientFavoriteJpaEntity> findAllByUserIdAndTenantIdIsNotNullAndListingIdIsNull(
+            UUID userId);
 
     Optional<ClientFavoriteJpaEntity> findByUserIdAndListingId(UUID userId, UUID listingId);
 

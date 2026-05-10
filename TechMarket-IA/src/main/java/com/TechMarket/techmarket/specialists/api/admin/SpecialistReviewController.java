@@ -57,7 +57,9 @@ public class SpecialistReviewController {
                 reviewRepository
                         .findByIdAndTechnicianUserId(id, currentUserId)
                         .orElseThrow(
-                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Review not found"));
         return toDetailResponse(review);
     }
 
@@ -73,7 +75,9 @@ public class SpecialistReviewController {
                 reviewRepository
                         .findEntityByIdAndTechnicianUserId(id, currentUserId)
                         .orElseThrow(
-                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Review not found"));
         review.setTechnicianResponse(request.respuesta());
         review.setTechnicianResponseAt(OffsetDateTime.now());
         reviewRepository.save(review);

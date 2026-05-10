@@ -4,5 +4,4 @@ import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 
 public record PricingSuggestionRequest(
-        @NotBlank(message = "servicio is required") String servicio,
-        BigDecimal precioActual) {}
+        @NotBlank(message = "servicio is required") String servicio, BigDecimal precioActual) {}

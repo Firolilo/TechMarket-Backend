@@ -231,5 +231,4 @@ public class AuthController {
         authService.logoutAll(authentication, authorizationHeader);
         return ResponseEntity.noContent().build();
     }
-
 }

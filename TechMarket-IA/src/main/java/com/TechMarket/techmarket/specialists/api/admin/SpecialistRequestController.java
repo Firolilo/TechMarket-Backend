@@ -89,10 +89,14 @@ public class SpecialistRequestController {
 
     private String normalizeAction(String action) {
         String normalized = action.trim().toLowerCase(Locale.ROOT);
-        if ("aceptar".equals(normalized) || "aceptada".equals(normalized) || "aceptado".equals(normalized)) {
+        if ("aceptar".equals(normalized)
+                || "aceptada".equals(normalized)
+                || "aceptado".equals(normalized)) {
             return "aceptada";
         }
-        if ("rechazar".equals(normalized) || "rechazada".equals(normalized) || "rechazado".equals(normalized)) {
+        if ("rechazar".equals(normalized)
+                || "rechazada".equals(normalized)
+                || "rechazado".equals(normalized)) {
             return "rechazada";
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accion is invalid");

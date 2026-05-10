@@ -55,7 +55,8 @@ public class SpecialistProfileController {
     public SpecialistProfileResponse profile(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         UserJpaEntity user = identitySupport.requireUser(userId);
-        SpecialistProfileJpaEntity profile = profileRepository.findByUserId(user.getId()).orElse(null);
+        SpecialistProfileJpaEntity profile =
+                profileRepository.findByUserId(user.getId()).orElse(null);
         return toProfileResponse(user, profile, statsFor(user.getId()).calificacionPromedio());
     }
 
@@ -110,9 +111,10 @@ public class SpecialistProfileController {
         long completed = appointmentRepository.countCompletedByTechnicianUserId(userId);
         SpecialistReviewStatsProjection reviewStats =
                 reviewStatsRepository.findStatsByTechnicianUserId(userId);
-        long totalReviews = reviewStats == null || reviewStats.getTotalReviews() == null
-                ? 0
-                : reviewStats.getTotalReviews();
+        long totalReviews =
+                reviewStats == null || reviewStats.getTotalReviews() == null
+                        ? 0
+                        : reviewStats.getTotalReviews();
         BigDecimal averageRating = reviewStats == null ? null : reviewStats.getAverageRating();
         return new SpecialistProfileStatsResponse(
                 completed, totalReviews, normalizeAverage(averageRating));

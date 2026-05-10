@@ -106,7 +106,8 @@ public class SpecialistCalendarController {
                 appointment.getLocation() == null ? null : "domicilio");
     }
 
-    private SpecialistCalendarEntryResponse toBlockResponse(SpecialistCalendarBlockJpaEntity block) {
+    private SpecialistCalendarEntryResponse toBlockResponse(
+            SpecialistCalendarBlockJpaEntity block) {
         return new SpecialistCalendarEntryResponse(
                 identitySupport.formatCalendarBlockId(block.getId()),
                 "Bloqueado",

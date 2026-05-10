@@ -16,5 +16,6 @@ public interface ClientChatSpringDataRepository extends JpaRepository<ClientChat
 
     Optional<ClientChatJpaEntity> findByIdAndCustomerUserId(UUID id, UUID customerUserId);
 
-    Optional<ClientChatJpaEntity> findByIdAndAssignedTechnicianUserId(UUID id, UUID assignedTechnicianUserId);
+    Optional<ClientChatJpaEntity> findByIdAndAssignedTechnicianUserId(
+            UUID id, UUID assignedTechnicianUserId);
 }

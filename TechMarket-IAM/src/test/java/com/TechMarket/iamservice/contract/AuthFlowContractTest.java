@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techmarket.iamservice.application.service.OtpDeliveryService;
-import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.entity.UserCredentialEntity;
+import com.techmarket.iamservice.infrastructure.persistence.entity.UserEntity;
 import com.techmarket.iamservice.infrastructure.persistence.repository.TenantUserRepository;
 import com.techmarket.iamservice.infrastructure.persistence.repository.UserCredentialRepository;
 import java.util.Map;
