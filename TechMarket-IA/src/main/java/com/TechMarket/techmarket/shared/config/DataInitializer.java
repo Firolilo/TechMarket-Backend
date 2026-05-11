@@ -3,11 +3,16 @@ package com.techmarket.techmarket.shared.config;
 import com.techmarket.techmarket.ambassadors.domain.model.Ambassador;
 import com.techmarket.techmarket.ambassadors.domain.port.AmbassadorRepositoryPort;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionJpaEntity;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorMissionJpaEntity;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorOpportunityJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorReferralJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorCommissionSpringDataRepository;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorMissionSpringDataRepository;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorOpportunitySpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorReferralSpringDataRepository;
 import com.techmarket.techmarket.users.domain.model.User;
 import com.techmarket.techmarket.users.domain.port.UserRepositoryPort;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +34,8 @@ public class DataInitializer implements CommandLineRunner {
     private final AmbassadorRepositoryPort ambassadorRepository;
     private final AmbassadorReferralSpringDataRepository referralRepo;
     private final AmbassadorCommissionSpringDataRepository commissionRepo;
+    private final AmbassadorOpportunitySpringDataRepository opportunityRepo;
+    private final AmbassadorMissionSpringDataRepository missionRepo;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(
@@ -36,11 +43,15 @@ public class DataInitializer implements CommandLineRunner {
             AmbassadorRepositoryPort ambassadorRepository,
             AmbassadorReferralSpringDataRepository referralRepo,
             AmbassadorCommissionSpringDataRepository commissionRepo,
+            AmbassadorOpportunitySpringDataRepository opportunityRepo,
+            AmbassadorMissionSpringDataRepository missionRepo,
             PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.ambassadorRepository = ambassadorRepository;
         this.referralRepo = referralRepo;
         this.commissionRepo = commissionRepo;
+        this.opportunityRepo = opportunityRepo;
+        this.missionRepo = missionRepo;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -72,8 +83,10 @@ public class DataInitializer implements CommandLineRunner {
         ambassadorRepository.save(ambassador);
 
         seedReferralsAndCommissions(ambassadorId, now);
+        seedOpportunities(ambassadorId, now);
+        seedMissions(ambassadorId, now);
 
-        log.info("Seed completo: admin@gmail.com, ambassador={}, referrals+commissions creados.", ambassadorId);
+        log.info("Seed completo: admin@gmail.com, ambassador={}, referrals+commissions+opportunities+missions creados.", ambassadorId);
     }
 
     private void seedReferralsAndCommissions(UUID ambassadorId, OffsetDateTime now) {
@@ -207,4 +220,134 @@ public class DataInitializer implements CommandLineRunner {
     private record CommissionSeed(
             UUID referralId, String amount, String eventType,
             String referenceType, String attributionType, OffsetDateTime date) {}
+
+    private void seedOpportunities(UUID ambassadorId, OffsetDateTime now) {
+        List<AmbassadorOpportunityJpaEntity> opps = List.of(
+            opportunity(ambassadorId,
+                "HARDWARE", "Equipetrol, Santa Cruz",
+                "Alta demanda de equipos de oficina en empresas nuevas del área. Zona con crecimiento empresarial acelerado y baja penetración de proveedores TI.",
+                "alto", "Demanda no cubierta", "nueva", false,
+                now.minusDays(2)),
+            opportunity(ambassadorId,
+                "SOFTWARE", "Plan 3000, Santa Cruz",
+                "3 empresas de logística buscan software de gestión sin proveedor actual. Necesidad crítica de ERP básico detectada en búsquedas recientes.",
+                "alto", "Búsqueda activa detectada", "nueva", true,
+                now.minusDays(5)),
+            opportunity(ambassadorId,
+                "SERVICES", "Sopocachi, La Paz",
+                "Demanda creciente de soporte técnico en zona empresarial. Varios negocios con equipos sin contrato de mantenimiento activo.",
+                "medio", "Tendencia de mercado", "enSeguimiento", false,
+                now.minusDays(8)),
+            opportunity(ambassadorId,
+                "HARDWARE", "Miraflores, La Paz",
+                "Nuevas oficinas en construcción requieren equipamiento tecnológico completo. Oportunidad de entrada temprana antes de apertura.",
+                "medio", "Nuevas aperturas", "nueva", false,
+                now.minusDays(12)),
+            opportunity(ambassadorId,
+                "SOFTWARE", "Cochabamba Centro",
+                "Empresas comerciales sin sistema de facturación electrónica. Requisito regulatorio inminente genera urgencia de adopción.",
+                "alto", "Obligación regulatoria", "nueva", true,
+                now.minusDays(15)),
+            opportunity(ambassadorId,
+                "SERVICES", "Calacoto, La Paz",
+                "Zona residencial premium con demanda de mantenimiento tecnológico para home offices. Mercado con capacidad de pago alta.",
+                "bajo", "Demanda estacional", "atendida", false,
+                now.minusDays(20))
+        );
+        opportunityRepo.saveAll(opps);
+    }
+
+    private AmbassadorOpportunityJpaEntity opportunity(
+            UUID ambassadorId, String type, String zone, String description,
+            String potential, String dataSource, String status, boolean isSaved,
+            OffsetDateTime detectedAt) {
+        AmbassadorOpportunityJpaEntity e = new AmbassadorOpportunityJpaEntity();
+        e.setId(UUID.randomUUID());
+        e.setAmbassadorId(ambassadorId);
+        e.setOpportunityType(type);
+        e.setZone(zone);
+        e.setDescription(description);
+        e.setPotential(potential);
+        e.setDataSource(dataSource);
+        e.setStatus(status);
+        e.setSaved(isSaved);
+        e.setDetectedAt(detectedAt);
+        e.setUpdatedAt(detectedAt);
+        return e;
+    }
+
+    private void seedMissions(UUID ambassadorId, OffsetDateTime now) {
+        List<AmbassadorMissionJpaEntity> missions = List.of(
+            mission(ambassadorId,
+                "Registra tu primer referido",
+                "Invita a una empresa a registrarse en TechMarket usando tu código de embajador.",
+                "Comisión de Bs 50 al confirmar el registro",
+                "hardware", "alta", "completada",
+                "Busca prospectos en tu red|Envía tu código de referido|Confirma el registro en plataforma",
+                "Referido confirmado y activo en plataforma",
+                BigDecimal.ONE, now.minusMonths(3)),
+            mission(ambassadorId,
+                "Completa tu perfil de embajador",
+                "Agrega foto, descripción profesional y configura tu método de pago preferido.",
+                "Acceso a comisiones avanzadas y tier Plata",
+                "software", "normal", "completada",
+                "Agrega foto de perfil|Escribe tu descripción|Configura método de pago",
+                "Perfil completado al 100%",
+                BigDecimal.ONE, now.minusMonths(2)),
+            mission(ambassadorId,
+                "Refiere 3 empresas de hardware",
+                "Trae al menos 3 negocios del sector tecnológico en hardware para ampliar tu red de nivel 1.",
+                "Bono de Bs 200 al completar los 3 referidos",
+                "hardware", "alta", "enProgreso",
+                "Identifica 3 negocios de hardware en tu zona|Preséntales TechMarket|Confirma sus registros activos",
+                "3 referidos de hardware con estado ACTIVE",
+                new BigDecimal("0.66"), now.minusMonths(1)),
+            mission(ambassadorId,
+                "Activa un referido en software",
+                "Ayuda a una empresa de software a completar su proceso de onboarding en la plataforma.",
+                "Comisión extra del 2% en sus primeras 3 renovaciones",
+                "software", "normal", "enProgreso",
+                "Selecciona un prospecto de software|Guía el proceso de onboarding|Confirma la activación completa",
+                "Referido con onboarding al 100% y primer pago procesado",
+                new BigDecimal("0.50"), now.minusWeeks(3)),
+            mission(ambassadorId,
+                "Capta 2 clientes de servicios técnicos",
+                "Refiere empresas que necesiten soporte o mantenimiento tecnológico continuo.",
+                "Bs 30 por cliente activo + 5% en contratos anuales",
+                "servicios", "normal", "disponible",
+                "Identifica empresas con necesidad de soporte|Presenta el catálogo de servicios TechMarket|Acompaña la firma del primer contrato",
+                "2 referidos de servicios con contrato activo",
+                null, now.minusWeeks(1)),
+            mission(ambassadorId,
+                "Genera Bs 5.000 en comisiones",
+                "Alcanza Bs 5.000 acumulados en comisiones confirmadas para subir al tier Oro.",
+                "Ascenso a tier Oro + acceso a panel avanzado de métricas",
+                "servicios", "alta", "disponible",
+                "Revisa tu progreso en el dashboard|Enfócate en referidos de alto impacto|Mantén actividad constante",
+                "Bs 5.000 en comisiones confirmadas acumuladas",
+                null, now.minusDays(5))
+        );
+        missionRepo.saveAll(missions);
+    }
+
+    private AmbassadorMissionJpaEntity mission(
+            UUID ambassadorId, String title, String description, String benefit,
+            String type, String priority, String status,
+            String steps, String criteria, BigDecimal progress, OffsetDateTime createdAt) {
+        AmbassadorMissionJpaEntity e = new AmbassadorMissionJpaEntity();
+        e.setId(UUID.randomUUID());
+        e.setAmbassadorId(ambassadorId);
+        e.setTitle(title);
+        e.setDescription(description);
+        e.setBenefit(benefit);
+        e.setMissionType(type);
+        e.setPriority(priority);
+        e.setStatus(status);
+        e.setSteps(steps);
+        e.setCompletionCriteria(criteria);
+        e.setProgress(progress);
+        e.setCreatedAt(createdAt);
+        e.setUpdatedAt(createdAt);
+        return e;
+    }
 }

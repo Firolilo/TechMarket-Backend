@@ -83,7 +83,7 @@ public class AmbassadorHistoryController {
                 withdrawalRepository.findAllByAmbassadorIdOrderByRequestedAtDesc(ambassadorId);
 
         for (Map.Entry<String, List<AmbassadorCommissionJpaEntity>> entry : grouped.entrySet()) {
-            String periodo = entry.getKey();
+            String weekLabel = entry.getKey();
             List<AmbassadorCommissionJpaEntity> group = entry.getValue();
             double income = group.stream().mapToDouble(c -> parseAmount(c.getAmount())).sum();
             double impact = income * 20.0;
@@ -109,7 +109,7 @@ public class AmbassadorHistoryController {
 
             result.add(
                     new AmbassadorHistoryPeriodResponse(
-                            periodo, impact, income, estado, paymentDate));
+                            weekLabel, impact, income, estado, paymentDate));
         }
         return result;
     }

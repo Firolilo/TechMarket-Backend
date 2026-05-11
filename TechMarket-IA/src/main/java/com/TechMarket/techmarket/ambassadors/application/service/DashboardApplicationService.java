@@ -121,36 +121,41 @@ public class DashboardApplicationService {
                 levelBreakdown);
     }
 
-    public List<ActivityItemResponse> getRecentActivity(UUID userId) {
+    public List<ActivityItemResponse> getRecentActivity(UUID userId, int limit) {
         Ambassador ambassador = findAmbassador(userId);
         List<AmbassadorCommissionJpaEntity> commissions =
                 commissionRepo.findAllByAmbassadorIdOrderByGeneratedAtDesc(ambassador.id());
         List<AmbassadorReferralJpaEntity> referrals =
                 referralRepo.findByAmbassadorId(ambassador.id());
 
-        Map<UUID, String> referralNames =
-                referrals.stream()
-                        .collect(
-                                Collectors.toMap(
-                                        AmbassadorReferralJpaEntity::getId,
-                                        r -> r.getName() != null ? r.getName() : "Empresa"));
+        Map<UUID, String> referralNames = referrals.stream()
+                .collect(Collectors.toMap(
+                        AmbassadorReferralJpaEntity::getId,
+                        r -> r.getName() != null ? r.getName() : "Empresa"));
+        Map<UUID, String> referralTypes = referrals.stream()
+                .collect(Collectors.toMap(
+                        AmbassadorReferralJpaEntity::getId,
+                        r -> r.getReferralType() != null ? r.getReferralType() : "SERVICES"));
 
         return commissions.stream()
-                .limit(10)
-                .map(
-                        c -> {
-                            String name =
-                                    c.getAmbassadorReferralId() != null
-                                            ? referralNames.getOrDefault(
-                                                    c.getAmbassadorReferralId(), "Referido")
-                                            : "Referido";
-                            double amount = parseAmount(c.getAmount());
-                            return new ActivityItemResponse(
-                                    labelForEvent(c.getEventType()),
-                                    name,
-                                    c.getGeneratedAt(),
-                                    amount > 0 ? amount : null);
-                        })
+                .limit(limit)
+                .map(c -> {
+                    String name = c.getAmbassadorReferralId() != null
+                            ? referralNames.getOrDefault(c.getAmbassadorReferralId(), "Referido")
+                            : "Referido";
+                    String refType = c.getAmbassadorReferralId() != null
+                            ? referralTypes.getOrDefault(c.getAmbassadorReferralId(), "SERVICES")
+                            : "SERVICES";
+                    double amount = parseAmount(c.getAmount());
+                    int lvl = levelFrom(c.getAttributionType());
+                    return new ActivityItemResponse(
+                            labelForEvent(c.getEventType()),
+                            name,
+                            c.getGeneratedAt(),
+                            amount > 0 ? amount : null,
+                            refType,
+                            lvl);
+                })
                 .toList();
     }
 
