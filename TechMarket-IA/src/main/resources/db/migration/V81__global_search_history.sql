@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS search_trends (
 );
 
 CREATE INDEX IF NOT EXISTS idx_search_history_user_date
-    ON search_history (user_id, searched_at);
+    ON search_history (user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_search_trends_count
     ON search_trends (search_count);
