@@ -6,6 +6,7 @@ import com.techmarket.techmarket.ambassadors.application.service.AmbassadorIdent
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorCommissionSpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorWithdrawalSpringDataRepository;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /// Endpoints de Historial para el módulo Embajador.
@@ -36,13 +38,30 @@ public class AmbassadorHistoryController {
         this.withdrawalRepository = withdrawalRepository;
     }
 
-    // ── GET /api/ambassadors/history ───────────────────────────────────────
+    // ── GET /api/ambassadors/history?periodo=4semanas|mes|trimestre ───────
     @GetMapping
     public List<AmbassadorHistoryPeriodResponse> listHistory(
-            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestParam(required = false) String periodo) {
         UUID ambassadorId = identitySupport.requireAmbassadorId(userId);
         List<AmbassadorCommissionJpaEntity> commissions =
                 commissionRepository.findAllByAmbassadorIdOrderByGeneratedAtDesc(ambassadorId);
+
+        if (periodo != null && !periodo.isBlank()) {
+            OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime cutoff = switch (periodo.toLowerCase()) {
+                case "4semanas" -> now.minusWeeks(4);
+                case "mes"      -> now.minusMonths(1);
+                case "trimestre" -> now.minusMonths(3);
+                default -> null;
+            };
+            if (cutoff != null) {
+                final OffsetDateTime from = cutoff;
+                commissions = commissions.stream()
+                        .filter(c -> c.getGeneratedAt() != null && !c.getGeneratedAt().isBefore(from))
+                        .toList();
+            }
+        }
 
         if (commissions.isEmpty()) {
             return buildDefaultHistory();
