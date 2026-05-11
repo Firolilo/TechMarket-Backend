@@ -593,10 +593,11 @@ public class AuthService {
             case "cliente", "client", "customer" -> "cliente";
             case "empresa", "company", "tenant" -> "empresa";
             case "especialista", "specialist", "technician" -> "especialista";
+                        case "embajador", "ambassador" -> "embajador";
             default -> throw new AuthServiceException(
                     "IAM_USER_TYPE_INVALID",
                     HttpStatus.BAD_REQUEST,
-                    "tipo must be cliente, empresa or especialista");
+                                        "tipo must be cliente, empresa, especialista or embajador");
         };
     }
 
