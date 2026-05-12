@@ -31,6 +31,9 @@ services:
       TECHMARKET_IA_DB_URL: jdbc:postgresql://TECHMARKET-ia-postgres:5432/TECHMARKET_ia
       TECHMARKET_IA_DB_USERNAME: TECHMARKET_ia_user
       TECHMARKET_IA_DB_PASSWORD: TECHMARKET_ia_password
+      IAM_JWT_ISSUER: iam-service
+      IAM_JWT_SECRET: replace-with-strong-32-byte-secret-value
+      JWT_TRUSTED_ISSUERS: iam-service,TECHMARKET-ia
     ports:
       - "8092:8082"
 

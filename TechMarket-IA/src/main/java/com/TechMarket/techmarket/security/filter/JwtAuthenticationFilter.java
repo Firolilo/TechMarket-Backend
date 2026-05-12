@@ -7,7 +7,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,10 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = extractToken(request);
         if (token != null && jwtTokenProvider.isTokenValid(token)) {
             Claims claims = jwtTokenProvider.parseToken(token);
-            String role = claims.get("role", String.class);
-            String authority = "ROLE_" + (role != null ? role : "USER");
-            List<SimpleGrantedAuthority> authorities =
-                    List.of(new SimpleGrantedAuthority(authority));
+            List<SimpleGrantedAuthority> authorities = extractAuthorities(claims);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             claims.getSubject(), null, authorities);
@@ -48,5 +47,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return header.substring(7);
         }
         return null;
+    }
+
+    private List<SimpleGrantedAuthority> extractAuthorities(Claims claims) {
+        String role = claims.get("role", String.class);
+        if (role != null && !role.isBlank()) {
+            return List.of(new SimpleGrantedAuthority(formatRole(role)));
+        }
+
+        Object roles = claims.get("roles");
+        if (roles instanceof Collection<?> roleCollection && !roleCollection.isEmpty()) {
+            return roleCollection.stream()
+                    .map(String::valueOf)
+                    .filter(value -> !value.isBlank())
+                    .map(this::formatRole)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+        }
+
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    private String formatRole(String role) {
+        String normalized = role.trim().toUpperCase(Locale.ROOT);
+        return normalized.startsWith("ROLE_") ? normalized : "ROLE_" + normalized;
     }
 }

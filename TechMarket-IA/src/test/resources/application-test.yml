@@ -9,3 +9,11 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+
+app:
+  jwt:
+    secret: test-shared-iam-secret-value-32-bytes-minimum
+    issuer: TECHMARKET-ia
+    trusted-issuers: iam-service,TECHMARKET-ia
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000

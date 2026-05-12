@@ -1,6 +1,7 @@
 package com.techmarket.techmarket.security.config;
 
 import com.techmarket.techmarket.security.filter.JwtAuthenticationFilter;
+import com.techmarket.techmarket.security.filter.UserHeaderConsistencyFilter;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,9 +22,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private final UserHeaderConsistencyFilter userHeaderConsistencyFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtFilter,
+            UserHeaderConsistencyFilter userHeaderConsistencyFilter) {
         this.jwtFilter = jwtFilter;
+        this.userHeaderConsistencyFilter = userHeaderConsistencyFilter;
     }
 
     @Bean
@@ -48,7 +53,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(userHeaderConsistencyFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
