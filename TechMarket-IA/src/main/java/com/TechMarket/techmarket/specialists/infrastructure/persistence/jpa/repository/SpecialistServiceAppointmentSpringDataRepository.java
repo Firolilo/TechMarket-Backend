@@ -23,11 +23,13 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     @Query(
             value =
-                    "SELECT sa.id AS id, sa.ticket_id AS ticketId, "
-                            + "u.first_name AS customerFirstName, u.last_name AS customerLastName, "
-                            + "u.phone AS customerPhone, t.subject AS serviceName, "
+                    "SELECT sa.id AS id, sa.ticket_id AS \"ticketId\", "
+                            + "u.first_name AS \"customerFirstName\", u.last_name AS \"customerLastName\", "
+                            + "u.phone AS \"customerPhone\", t.subject AS \"serviceName\", "
                             + "t.description AS description, t.priority AS priority, "
-                            + "sa.status AS status, sa.start_at AS startAt, "
+                            + "sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
                             + "sa.location AS location, sa.notes AS notes "
                             + "FROM service_appointments sa "
                             + "LEFT JOIN tickets t ON t.id = sa.ticket_id "
@@ -40,11 +42,13 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     @Query(
             value =
-                    "SELECT sa.id AS id, sa.ticket_id AS ticketId, "
-                            + "u.first_name AS customerFirstName, u.last_name AS customerLastName, "
-                            + "u.phone AS customerPhone, t.subject AS serviceName, "
+                    "SELECT sa.id AS id, sa.ticket_id AS \"ticketId\", "
+                            + "u.first_name AS \"customerFirstName\", u.last_name AS \"customerLastName\", "
+                            + "u.phone AS \"customerPhone\", t.subject AS \"serviceName\", "
                             + "t.description AS description, t.priority AS priority, "
-                            + "sa.status AS status, sa.start_at AS startAt, "
+                            + "sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
                             + "sa.location AS location, sa.notes AS notes "
                             + "FROM service_appointments sa "
                             + "LEFT JOIN tickets t ON t.id = sa.ticket_id "
@@ -59,11 +63,13 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     @Query(
             value =
-                    "SELECT sa.id AS id, sa.ticket_id AS ticketId, "
-                            + "u.first_name AS customerFirstName, u.last_name AS customerLastName, "
-                            + "u.phone AS customerPhone, t.subject AS serviceName, "
+                    "SELECT sa.id AS id, sa.ticket_id AS \"ticketId\", "
+                            + "u.first_name AS \"customerFirstName\", u.last_name AS \"customerLastName\", "
+                            + "u.phone AS \"customerPhone\", t.subject AS \"serviceName\", "
                             + "t.description AS description, t.priority AS priority, "
-                            + "sa.status AS status, sa.start_at AS startAt, "
+                            + "sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
                             + "sa.location AS location, sa.notes AS notes "
                             + "FROM service_appointments sa "
                             + "LEFT JOIN tickets t ON t.id = sa.ticket_id "
@@ -79,11 +85,13 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     @Query(
             value =
-                    "SELECT sa.id AS id, sa.ticket_id AS ticketId, "
-                            + "u.first_name AS customerFirstName, u.last_name AS customerLastName, "
-                            + "u.phone AS customerPhone, t.subject AS serviceName, "
+                    "SELECT sa.id AS id, sa.ticket_id AS \"ticketId\", "
+                            + "u.first_name AS \"customerFirstName\", u.last_name AS \"customerLastName\", "
+                            + "u.phone AS \"customerPhone\", t.subject AS \"serviceName\", "
                             + "t.description AS description, t.priority AS priority, "
-                            + "sa.status AS status, sa.start_at AS startAt, "
+                            + "sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
                             + "sa.location AS location, sa.notes AS notes "
                             + "FROM service_appointments sa "
                             + "LEFT JOIN tickets t ON t.id = sa.ticket_id "
@@ -99,11 +107,13 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     @Query(
             value =
-                    "SELECT sa.id AS id, sa.ticket_id AS ticketId, "
-                            + "u.first_name AS customerFirstName, u.last_name AS customerLastName, "
-                            + "u.phone AS customerPhone, t.subject AS serviceName, "
+                    "SELECT sa.id AS id, sa.ticket_id AS \"ticketId\", "
+                            + "u.first_name AS \"customerFirstName\", u.last_name AS \"customerLastName\", "
+                            + "u.phone AS \"customerPhone\", t.subject AS \"serviceName\", "
                             + "t.description AS description, t.priority AS priority, "
-                            + "sa.status AS status, sa.start_at AS startAt, "
+                            + "sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
                             + "sa.location AS location, sa.notes AS notes "
                             + "FROM service_appointments sa "
                             + "LEFT JOIN tickets t ON t.id = sa.ticket_id "

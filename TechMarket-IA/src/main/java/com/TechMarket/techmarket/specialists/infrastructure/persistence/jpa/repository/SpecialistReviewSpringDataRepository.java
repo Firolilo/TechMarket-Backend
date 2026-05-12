@@ -13,10 +13,12 @@ public interface SpecialistReviewSpringDataRepository
 
     @Query(
             value =
-                    "SELECT r.id AS id, u.first_name AS customerFirstName, "
-                            + "u.last_name AS customerLastName, r.rating AS rating, "
-                            + "r.comment AS comment, r.technician_response AS technicianResponse, "
-                            + "t.subject AS serviceName, r.created_at AS createdAt "
+                    "SELECT r.id AS id, u.first_name AS \"customerFirstName\", "
+                            + "u.last_name AS \"customerLastName\", r.rating AS rating, "
+                            + "r.comment AS comment, r.technician_response AS \"technicianResponse\", "
+                            + "t.subject AS \"serviceName\", "
+                            + "to_char(r.created_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"createdAt\" "
                             + "FROM reviews r "
                             + "JOIN service_appointments sa ON sa.ticket_id = r.ticket_id "
                             + "LEFT JOIN users u ON u.id = r.user_id "
@@ -28,10 +30,12 @@ public interface SpecialistReviewSpringDataRepository
 
     @Query(
             value =
-                    "SELECT r.id AS id, u.first_name AS customerFirstName, "
-                            + "u.last_name AS customerLastName, r.rating AS rating, "
-                            + "r.comment AS comment, r.technician_response AS technicianResponse, "
-                            + "t.subject AS serviceName, r.created_at AS createdAt "
+                    "SELECT r.id AS id, u.first_name AS \"customerFirstName\", "
+                            + "u.last_name AS \"customerLastName\", r.rating AS rating, "
+                            + "r.comment AS comment, r.technician_response AS \"technicianResponse\", "
+                            + "t.subject AS \"serviceName\", "
+                            + "to_char(r.created_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"createdAt\" "
                             + "FROM reviews r "
                             + "JOIN service_appointments sa ON sa.ticket_id = r.ticket_id "
                             + "LEFT JOIN users u ON u.id = r.user_id "

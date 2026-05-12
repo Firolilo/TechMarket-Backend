@@ -6,4 +6,5 @@ public record SpecialistReviewResponse(
         int estrellas,
         String comentario,
         String servicio,
-        String fecha) {}
+        String fecha,
+        String respuestaTecnico) {}
