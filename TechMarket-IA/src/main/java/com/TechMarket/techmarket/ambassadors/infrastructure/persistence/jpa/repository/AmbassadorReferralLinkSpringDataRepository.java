@@ -14,4 +14,6 @@ public interface AmbassadorReferralLinkSpringDataRepository
     List<AmbassadorReferralLinkJpaEntity> findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(UUID ambassadorId);
 
     Optional<AmbassadorReferralLinkJpaEntity> findByIdAndAmbassadorId(UUID id, UUID ambassadorId);
+
+    Optional<AmbassadorReferralLinkJpaEntity> findByCode(String code);
 }

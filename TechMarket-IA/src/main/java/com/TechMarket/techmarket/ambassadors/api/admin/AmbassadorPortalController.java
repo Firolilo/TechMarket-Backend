@@ -49,10 +49,15 @@ import java.math.RoundingMode;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
@@ -97,6 +102,7 @@ public class AmbassadorPortalController {
     private final ClientChatReadReceiptSpringDataRepository readReceiptRepository;
     private final UserSpringDataRepository userRepository;
     private final TenantSpringDataRepository tenantRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public AmbassadorPortalController(
             AmbassadorSpringDataRepository ambassadorRepository,
@@ -119,7 +125,8 @@ public class AmbassadorPortalController {
             ClientChatMessageSpringDataRepository chatMessageRepository,
             ClientChatReadReceiptSpringDataRepository readReceiptRepository,
             UserSpringDataRepository userRepository,
-            TenantSpringDataRepository tenantRepository) {
+            TenantSpringDataRepository tenantRepository,
+            JdbcTemplate jdbcTemplate) {
         this.ambassadorRepository = ambassadorRepository;
         this.referralRepository = referralRepository;
         this.commissionRepository = commissionRepository;
@@ -141,6 +148,7 @@ public class AmbassadorPortalController {
         this.readReceiptRepository = readReceiptRepository;
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @GetMapping("/profile")
@@ -247,6 +255,30 @@ public class AmbassadorPortalController {
         link.setUpdatedAt(link.getCreatedAt());
         AmbassadorReferralLinkJpaEntity saved = referralLinkRepository.save(link);
         return new CreateReferralLinkResponse(formatReferralLinkId(saved.getId()), saved.getCode(), saved.getUrl());
+    }
+
+    @GetMapping("/referral-links/default")
+    public ReferralLinkDetailResponse defaultReferralLink(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
+        return toReferralLinkDetailResponse(
+                defaultReferralLink(ambassador).orElseGet(() -> createDefaultReferralLink(ambassador)));
+    }
+
+    @PostMapping("/referral-links/{codigo}/track-click")
+    public ReferralClickResponse trackReferralLinkClick(@PathVariable String codigo) {
+        AmbassadorReferralLinkJpaEntity link =
+                referralLinkRepository
+                        .findByCode(codigo)
+                        .filter(AmbassadorReferralLinkJpaEntity::isActive)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Referral link not found"));
+        link.setClicks(link.getClicks() + 1);
+        link.setUpdatedAt(OffsetDateTime.now());
+        AmbassadorReferralLinkJpaEntity saved = referralLinkRepository.save(link);
+        return new ReferralClickResponse(saved.getCode(), saved.getClicks(), saved.getUrl());
     }
 
     @GetMapping("/referral-links/{linkId}")
@@ -366,7 +398,7 @@ public class AmbassadorPortalController {
                 pending,
                 conversionRate,
                 formatMoney(commissionRepository.sumAmountByAmbassadorId(ambassador.getId())),
-                List.of());
+                monthlyReferralMetrics(ambassador.getId()));
     }
 
     @PostMapping("/referrals")
@@ -403,6 +435,45 @@ public class AmbassadorPortalController {
             @PathVariable String referralId) {
         AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         return toReferralDetailResponse(referral);
+    }
+
+    @GetMapping("/referrals/{referralId}/metrics")
+    public ReferralBusinessMetricsResponse referralBusinessMetrics(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String referralId) {
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        ReferralAggregate aggregate = referralAggregate(referral);
+        BigDecimal commissions = sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
+        long monthlyLeads = monthlyReferralSignals(referral.getId(), YearMonth.now());
+        long previousMonthLeads = monthlyReferralSignals(referral.getId(), YearMonth.now().minusMonths(1));
+        int conversionRate = isActiveStatus(referral.getStatus()) ? 100 : onboardingProgress(referral.getId());
+        return new ReferralBusinessMetricsResponse(
+                monthlyLeads,
+                conversionRate,
+                growthRate(monthlyLeads, previousMonthLeads),
+                aggregate.rating().doubleValue(),
+                valueScore(aggregate.ventasTotales(), commissions, aggregate.rating(), conversionRate),
+                aggregate.ventasTotales(),
+                commissions,
+                reputationContribution(aggregate.rating(), aggregate.reviewCount()));
+    }
+
+    @GetMapping("/referrals/{referralId}/user-insights")
+    public ReferralUserInsightsResponse referralUserInsights(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String referralId) {
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        ReferralAggregate aggregate = referralAggregate(referral);
+        BigDecimal rating = aggregate.rating();
+        int userScore = rating.compareTo(BigDecimal.ZERO) == 0 ? 0 : rating.multiply(BigDecimal.valueOf(20)).intValue();
+        return new ReferralUserInsightsResponse(
+                userScore,
+                userView(rating, aggregate.reviewCount()),
+                topReviewComment(referral.getTenantId()),
+                insightStrengths(referral, aggregate),
+                insightRisks(referral, aggregate));
     }
 
     @PutMapping("/referrals/{referralId}")
@@ -517,6 +588,23 @@ public class AmbassadorPortalController {
         return new OnboardingDetailResponse(formatOnboardingId(referral.getId()), referralName(referral), valueOrDefault(referral.getStatus(), "en_proceso"), onboardingProgress(referral.getId()), defaultOnboardingSteps(referral.getId()));
     }
 
+    @GetMapping("/onboarding/{onboardingId}/snapshot")
+    public OnboardingSnapshotResponse onboardingSnapshot(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String onboardingId) {
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        return new OnboardingSnapshotResponse(
+                referralProfile(referral),
+                referralCatalog(referral),
+                referralPublications(referral),
+                referralEvidence(referral),
+                referralPromotion(referral),
+                referralChecklist(referral),
+                referralNotesSnapshot(referral.getId()),
+                pendingOnboardingActions(referral.getId()));
+    }
+
     @PatchMapping("/onboarding/{businessId}")
     public OnboardingSummaryResponse updateOnboarding(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
@@ -557,6 +645,44 @@ public class AmbassadorPortalController {
         task.setCreatedAt(OffsetDateTime.now());
         AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
         return new CreateOnboardingTaskResponse("TASK-" + saved.getId(), "Tarea creada");
+    }
+
+    @PostMapping("/onboarding/{onboardingId}/notes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CreateReferralNoteResponse createOnboardingNote(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String onboardingId,
+            @Valid @RequestBody CreateReferralNoteRequest request) {
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralNoteJpaEntity note = new AmbassadorReferralNoteJpaEntity();
+        note.setId(UUID.randomUUID());
+        note.setAmbassadorReferralId(referral.getId());
+        note.setNote(request.nota());
+        note.setCreatedAt(OffsetDateTime.now());
+        AmbassadorReferralNoteJpaEntity saved = noteRepository.save(note);
+        createActivity(referral.getId(), "nota_onboarding", "Nota de onboarding agregada", saved.getCreatedAt());
+        return new CreateReferralNoteResponse("NOTE-" + saved.getId(), "Nota agregada");
+    }
+
+    @PostMapping("/onboarding/{onboardingId}/actions")
+    @ResponseStatus(HttpStatus.CREATED)
+    public OnboardingActionResponse createOnboardingAction(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String onboardingId,
+            @Valid @RequestBody CreateOnboardingActionRequest request) {
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorOnboardingTaskJpaEntity task = new AmbassadorOnboardingTaskJpaEntity();
+        task.setId(UUID.randomUUID());
+        task.setAmbassadorReferralId(referral.getId());
+        task.setTitle(request.accion());
+        task.setDueDate(request.fechaLimite());
+        task.setStatus("pendiente");
+        task.setCreatedAt(OffsetDateTime.now());
+        AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
+        createActivity(referral.getId(), "accion_onboarding", request.accion(), saved.getCreatedAt());
+        return new OnboardingActionResponse("TASK-" + saved.getId(), "Acción pendiente creada");
     }
 
     @GetMapping("/onboarding/{onboardingId}/tasks")
@@ -1364,7 +1490,8 @@ public class AmbassadorPortalController {
                 valueOrDefault(ambassador.getLevel(), "Bronze"),
                 ambassador.getActivatedAt() == null ? null : ambassador.getActivatedAt().toLocalDate().toString(),
                 ambassador.getStatus(),
-                ambassador.getAvatarUrl());
+                ambassador.getAvatarUrl(),
+                defaultReferralLink(ambassador).map(link -> formatReferralLinkId(link.getId())).orElse(null));
     }
 
     private ReferralLinkResponse toReferralLinkResponse(AmbassadorReferralLinkJpaEntity link) {
@@ -1519,6 +1646,256 @@ public class AmbassadorPortalController {
             lead.setLastContactAt(request.fechaUltimoContacto());
         }
         lead.setUpdatedAt(OffsetDateTime.now());
+    }
+
+    private List<MonthlyReferralMetricResponse> monthlyReferralMetrics(UUID ambassadorId) {
+        Map<YearMonth, long[]> metrics = new LinkedHashMap<>();
+        referralRepository.findByAmbassadorId(ambassadorId).stream()
+                .filter(referral -> referral.getCreatedAt() != null)
+                .sorted(Comparator.comparing(AmbassadorReferralJpaEntity::getCreatedAt))
+                .forEach(
+                        referral -> {
+                            YearMonth month = YearMonth.from(referral.getCreatedAt());
+                            long[] values = metrics.computeIfAbsent(month, ignored -> new long[2]);
+                            values[0]++;
+                            if (isActiveStatus(referral.getStatus())) {
+                                values[1]++;
+                            }
+                        });
+        return metrics.entrySet().stream()
+                .map(entry -> new MonthlyReferralMetricResponse(entry.getKey().toString(), entry.getValue()[0], entry.getValue()[1]))
+                .toList();
+    }
+
+    private ReferralAggregate referralAggregate(AmbassadorReferralJpaEntity referral) {
+        if (referral.getTenantId() == null) {
+            return new ReferralAggregate(BigDecimal.ZERO, BigDecimal.ZERO, 0);
+        }
+        UUID tenantId = referral.getTenantId();
+        BigDecimal sales =
+                queryBigDecimal(
+                        "SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) "
+                                + "FROM client_order_items oi "
+                                + "JOIN client_orders o ON o.id = oi.order_id "
+                                + "JOIN listings l ON l.id = oi.listing_id "
+                                + "WHERE l.tenant_id = ? AND LOWER(COALESCE(o.status, '')) NOT IN ('cancelado', 'cancelled')",
+                        tenantId);
+        BigDecimal rating =
+                queryBigDecimal(
+                                "SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE tenant_id = ?",
+                                tenantId)
+                        .setScale(1, RoundingMode.HALF_UP);
+        long reviews = queryLong("SELECT COUNT(*) FROM reviews WHERE tenant_id = ?", tenantId);
+        return new ReferralAggregate(sales, rating, reviews);
+    }
+
+    private long monthlyReferralSignals(UUID referralId, YearMonth month) {
+        OffsetDateTime start = month.atDay(1).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        OffsetDateTime end = month.plusMonths(1).atDay(1).atStartOfDay().atOffset(start.getOffset());
+        return queryLong(
+                "SELECT COUNT(*) FROM ambassador_referral_activity "
+                        + "WHERE ambassador_referral_id = ? AND created_at >= ? AND created_at < ?",
+                referralId,
+                start,
+                end);
+    }
+
+    private int growthRate(long current, long previous) {
+        if (previous == 0) {
+            return current == 0 ? 0 : 100;
+        }
+        return BigDecimal.valueOf((current - previous) * 100.0 / previous)
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+    }
+
+    private int valueScore(BigDecimal sales, BigDecimal commissions, BigDecimal rating, int conversionRate) {
+        int salesScore = sales.compareTo(BigDecimal.ZERO) == 0 ? 0 : Math.min(30, sales.divide(BigDecimal.valueOf(500), 0, RoundingMode.DOWN).intValue());
+        int commissionScore = commissions.compareTo(BigDecimal.ZERO) == 0 ? 0 : Math.min(25, commissions.divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN).intValue());
+        int ratingScore = rating.multiply(BigDecimal.valueOf(7)).setScale(0, RoundingMode.HALF_UP).intValue();
+        return Math.min(100, salesScore + commissionScore + ratingScore + Math.min(10, conversionRate / 10));
+    }
+
+    private int reputationContribution(BigDecimal rating, long reviewCount) {
+        if (rating.compareTo(BigDecimal.ZERO) == 0) {
+            return 0;
+        }
+        int ratingScore = rating.multiply(BigDecimal.valueOf(16)).setScale(0, RoundingMode.HALF_UP).intValue();
+        return Math.min(100, ratingScore + Math.min(20, (int) reviewCount * 2));
+    }
+
+    private String userView(BigDecimal rating, long reviewCount) {
+        if (reviewCount == 0) {
+            return "Sin reseñas registradas";
+        }
+        if (rating.compareTo(BigDecimal.valueOf(4)) >= 0) {
+            return "Buena percepción general";
+        }
+        if (rating.compareTo(BigDecimal.valueOf(3)) >= 0) {
+            return "Percepción estable con oportunidades de mejora";
+        }
+        return "Percepción en riesgo";
+    }
+
+    private String topReviewComment(UUID tenantId) {
+        if (tenantId == null) {
+            return "";
+        }
+        List<Map<String, Object>> rows =
+                jdbcTemplate.queryForList(
+                        "SELECT comment FROM reviews WHERE tenant_id = ? AND comment IS NOT NULL "
+                                + "ORDER BY rating DESC, created_at DESC LIMIT 1",
+                        tenantId);
+        return rows.isEmpty() ? "" : valueOrDefault((String) rows.get(0).get("comment"), "");
+    }
+
+    private List<String> insightStrengths(AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
+        List<String> strengths = new ArrayList<>();
+        if (aggregate.rating().compareTo(BigDecimal.valueOf(4)) >= 0) {
+            strengths.add("Alta satisfacción de usuarios");
+        }
+        if (aggregate.ventasTotales().compareTo(BigDecimal.ZERO) > 0) {
+            strengths.add("Ventas registradas en marketplace");
+        }
+        if (isActiveStatus(referral.getStatus())) {
+            strengths.add("Negocio activo en plataforma");
+        }
+        if (strengths.isEmpty()) {
+            strengths.add("Base de onboarding registrada");
+        }
+        return strengths;
+    }
+
+    private List<String> insightRisks(AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
+        List<String> risks = new ArrayList<>();
+        if (!isActiveStatus(referral.getStatus())) {
+            risks.add("Onboarding pendiente de activación");
+        }
+        if (aggregate.reviewCount() == 0) {
+            risks.add("Sin reseñas de usuarios para validar percepción");
+        } else if (aggregate.rating().compareTo(BigDecimal.valueOf(3)) < 0) {
+            risks.add("Calificación promedio baja");
+        }
+        if (pendingOnboardingActions(referral.getId()).size() > 3) {
+            risks.add("Varias acciones pendientes de onboarding");
+        }
+        return risks;
+    }
+
+    private Map<String, Object> referralProfile(AmbassadorReferralJpaEntity referral) {
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("id", formatBusinessId(referral.getId()));
+        profile.put("nombre", referralName(referral));
+        profile.put("estado", valueOrDefault(referral.getStatus(), "en_proceso"));
+        profile.put("tipo", valueOrDefault(referral.getReferralType(), "empresa"));
+        profile.put("pais", valueOrDefault(referral.getCountry(), "Bolivia"));
+        profile.put("ciudad", referral.getCity());
+        profile.put("contacto", new ReferralContactResponse(referral.getContactName(), referral.getEmail(), referral.getPhone()));
+        return profile;
+    }
+
+    private Map<String, Object> referralCatalog(AmbassadorReferralJpaEntity referral) {
+        Map<String, Object> catalog = new LinkedHashMap<>();
+        if (referral.getTenantId() == null) {
+            catalog.put("totalProductos", 0);
+            catalog.put("activos", 0);
+            return catalog;
+        }
+        UUID tenantId = referral.getTenantId();
+        catalog.put("totalProductos", queryLong("SELECT COUNT(*) FROM listings WHERE tenant_id = ?", tenantId));
+        catalog.put("activos", queryLong("SELECT COUNT(*) FROM listings WHERE tenant_id = ? AND LOWER(COALESCE(status, '')) = 'active'", tenantId));
+        catalog.put("precioPromedio", queryBigDecimal("SELECT COALESCE(AVG(base_price), 0) FROM listings WHERE tenant_id = ?", tenantId));
+        return catalog;
+    }
+
+    private List<Map<String, Object>> referralPublications(AmbassadorReferralJpaEntity referral) {
+        if (referral.getTenantId() == null) {
+            return List.of();
+        }
+        return jdbcTemplate.queryForList(
+                        "SELECT id, title, status, base_price, currency, created_at "
+                                + "FROM listings WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 20",
+                        referral.getTenantId())
+                .stream()
+                .map(this::publicationSnapshot)
+                .toList();
+    }
+
+    private Map<String, Object> publicationSnapshot(Map<String, Object> row) {
+        Map<String, Object> publication = new LinkedHashMap<>();
+        publication.put("id", "PROD-" + row.get("id"));
+        publication.put("titulo", row.get("title"));
+        publication.put("estado", row.get("status"));
+        publication.put("precio", row.get("base_price"));
+        publication.put("moneda", row.get("currency"));
+        publication.put("fecha", row.get("created_at"));
+        return publication;
+    }
+
+    private List<Map<String, Object>> referralEvidence(AmbassadorReferralJpaEntity referral) {
+        return fileRepository.findAll().stream()
+                .filter(file -> referral.getId().equals(file.getAmbassadorReferralId()))
+                .sorted(Comparator.comparing(AmbassadorReferralFileJpaEntity::getCreatedAt).reversed())
+                .map(
+                        file -> {
+                            Map<String, Object> evidence = new LinkedHashMap<>();
+                            evidence.put("id", "FILE-" + file.getId());
+                            evidence.put("url", file.getUrl());
+                            evidence.put("fecha", file.getCreatedAt());
+                            return evidence;
+                        })
+                .toList();
+    }
+
+    private Map<String, Object> referralPromotion(AmbassadorReferralJpaEntity referral) {
+        Map<String, Object> promotion = new LinkedHashMap<>();
+        promotion.put("codigo", referral.getUsedCode());
+        referralLinkRepository
+                .findByCode(valueOrDefault(referral.getUsedCode(), ""))
+                .ifPresent(
+                        link -> {
+                            promotion.put("linkId", formatReferralLinkId(link.getId()));
+                            promotion.put("url", link.getUrl());
+                            promotion.put("clicks", link.getClicks());
+                            promotion.put("conversions", link.getConversions());
+                        });
+        return promotion;
+    }
+
+    private List<Map<String, Object>> referralChecklist(AmbassadorReferralJpaEntity referral) {
+        return defaultOnboardingSteps(referral.getId()).stream()
+                .map(
+                        step -> {
+                            Map<String, Object> item = new LinkedHashMap<>();
+                            item.put("id", step.id());
+                            item.put("nombre", step.nombre());
+                            item.put("completado", step.completado());
+                            return item;
+                        })
+                .toList();
+    }
+
+    private List<ReferralNoteResponse> referralNotesSnapshot(UUID referralId) {
+        return noteRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referralId).stream()
+                .map(note -> new ReferralNoteResponse("NOTE-" + note.getId(), note.getNote(), note.getCreatedAt()))
+                .toList();
+    }
+
+    private List<OnboardingTaskResponse> pendingOnboardingActions(UUID referralId) {
+        return onboardingTaskRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referralId).stream()
+                .filter(task -> !isCompletedStatus(task.getStatus()))
+                .map(task -> new OnboardingTaskResponse("TASK-" + task.getId(), task.getTitle(), task.getStatus(), task.getDueDate()))
+                .toList();
+    }
+
+    private BigDecimal queryBigDecimal(String sql, Object... args) {
+        BigDecimal value = jdbcTemplate.queryForObject(sql, BigDecimal.class, args);
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private long queryLong(String sql, Object... args) {
+        Long value = jdbcTemplate.queryForObject(sql, Long.class, args);
+        return value == null ? 0 : value;
     }
 
     private AmbassadorReferralJpaEntity findReferral(String referralId, UUID ambassadorId) {
@@ -1726,6 +2103,36 @@ public class AmbassadorPortalController {
                 new MilestoneResponse("MLS-003", "Primera venta", 3));
     }
 
+    private java.util.Optional<AmbassadorReferralLinkJpaEntity> defaultReferralLink(
+            AmbassadorJpaEntity ambassador) {
+        List<AmbassadorReferralLinkJpaEntity> activeLinks =
+                referralLinkRepository.findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(ambassador.getId());
+        if (!activeLinks.isEmpty()) {
+            return java.util.Optional.of(activeLinks.get(0));
+        }
+        return referralLinkRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+                .findFirst();
+    }
+
+    private AmbassadorReferralLinkJpaEntity createDefaultReferralLink(AmbassadorJpaEntity ambassador) {
+        String code = valueOrDefault(ambassador.getReferralCode(), "AMB-" + ambassador.getId().toString().substring(0, 6));
+        if (referralLinkRepository.findByCode(code).isPresent()) {
+            code = (code + "-" + ambassador.getId().toString().substring(0, 6)).toUpperCase(Locale.ROOT);
+        }
+        AmbassadorReferralLinkJpaEntity link = new AmbassadorReferralLinkJpaEntity();
+        link.setId(UUID.randomUUID());
+        link.setAmbassadorId(ambassador.getId());
+        link.setName("Link principal");
+        link.setSegment("general");
+        link.setCity(ambassador.getCity());
+        link.setCode(code.toUpperCase(Locale.ROOT));
+        link.setUrl(referralUrl(link.getCode()));
+        link.setActive(true);
+        link.setCreatedAt(OffsetDateTime.now());
+        link.setUpdatedAt(link.getCreatedAt());
+        return referralLinkRepository.save(link);
+    }
+
     private AmbassadorReferralLinkJpaEntity findReferralLink(String linkId, UUID ambassadorId) {
         return referralLinkRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(linkId, "REFLINK-"), ambassadorId)
@@ -1923,6 +2330,8 @@ public class AmbassadorPortalController {
         return "MSG-" + id;
     }
 
+    private record ReferralAggregate(BigDecimal ventasTotales, BigDecimal rating, long reviewCount) {}
+
     public record AmbassadorProfileResponse(
             String id,
             String nombre,
@@ -1935,7 +2344,8 @@ public class AmbassadorPortalController {
             String nivel,
             String fechaRegistro,
             String estado,
-            String avatar) {}
+            String avatar,
+            String defaultReferralLinkId) {}
 
     public record UpdateAmbassadorProfileRequest(
             @NotBlank String nombre,
@@ -1997,6 +2407,8 @@ public class AmbassadorPortalController {
             double conversionRate,
             String comisionesGeneradas) {}
 
+    public record ReferralClickResponse(String codigo, int clicks, String url) {}
+
     public record ReferralCodeResponse(String codigo, String tipo, long usos, boolean activo) {}
 
     public record AmbassadorReferralListResponse(
@@ -2016,6 +2428,23 @@ public class AmbassadorPortalController {
             List<MonthlyReferralMetricResponse> porMes) {}
 
     public record MonthlyReferralMetricResponse(String mes, long referidos, long activos) {}
+
+    public record ReferralBusinessMetricsResponse(
+            long monthlyLeads,
+            int conversionRate,
+            int growthRate,
+            double rating,
+            int valueScore,
+            BigDecimal ventasTotales,
+            BigDecimal commissionGenerated,
+            int reputationContribution) {}
+
+    public record ReferralUserInsightsResponse(
+            int userScore,
+            String userView,
+            String topComment,
+            List<String> strengths,
+            List<String> risks) {}
 
     public record CreateReferralRequest(
             @NotBlank String nombre,
@@ -2069,6 +2498,16 @@ public class AmbassadorPortalController {
     public record OnboardingDetailResponse(
             String id, String referido, String estado, int progreso, List<OnboardingStepResponse> pasos) {}
 
+    public record OnboardingSnapshotResponse(
+            Map<String, Object> perfil,
+            Map<String, Object> catalogo,
+            List<Map<String, Object>> publicaciones,
+            List<Map<String, Object>> evidencias,
+            Map<String, Object> promocion,
+            List<Map<String, Object>> checklist,
+            List<ReferralNoteResponse> notas,
+            List<OnboardingTaskResponse> accionesPendientes) {}
+
     public record OnboardingStepResponse(String id, String nombre, boolean completado) {}
 
     public record UpdateOnboardingRequest(String etapa, String nota) {}
@@ -2076,6 +2515,10 @@ public class AmbassadorPortalController {
     public record CreateOnboardingTaskRequest(@NotBlank String titulo, LocalDate fechaLimite) {}
 
     public record CreateOnboardingTaskResponse(String id, String mensaje) {}
+
+    public record CreateOnboardingActionRequest(@NotBlank String accion, LocalDate fechaLimite) {}
+
+    public record OnboardingActionResponse(String id, String mensaje) {}
 
     public record OnboardingTaskResponse(
             String id, String titulo, String estado, LocalDate fechaLimite) {}
