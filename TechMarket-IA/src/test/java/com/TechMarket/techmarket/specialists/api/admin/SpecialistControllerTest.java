@@ -690,8 +690,8 @@ class SpecialistControllerTest {
             }
 
             @Override
-            public OffsetDateTime getStartAt() {
-                return OffsetDateTime.parse("2026-04-10T10:00:00Z");
+            public String getStartAt() {
+                return "2026-05-10T10:00:00Z";
             }
 
             @Override

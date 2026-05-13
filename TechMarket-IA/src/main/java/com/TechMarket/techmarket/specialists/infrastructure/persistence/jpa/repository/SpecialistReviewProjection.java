@@ -1,7 +1,6 @@
 package com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface SpecialistReviewProjection {
@@ -20,5 +19,5 @@ public interface SpecialistReviewProjection {
 
     String getServiceName();
 
-    OffsetDateTime getCreatedAt();
+    String getCreatedAt();
 }

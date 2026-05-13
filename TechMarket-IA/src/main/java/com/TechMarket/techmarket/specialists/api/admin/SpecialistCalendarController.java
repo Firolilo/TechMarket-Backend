@@ -95,13 +95,13 @@ public class SpecialistCalendarController {
 
     private SpecialistCalendarEntryResponse toAppointmentResponse(
             SpecialistAppointmentSummaryProjection appointment) {
-        OffsetDateTime startAt = appointment.getStartAt();
+        String startAt = appointment.getStartAt();
         return new SpecialistCalendarEntryResponse(
                 identitySupport.formatProjectId(appointment.getId()),
                 fullName(appointment.getCustomerFirstName(), appointment.getCustomerLastName()),
                 appointment.getServiceName(),
-                startAt == null ? null : startAt.toLocalDate().toString(),
-                startAt == null ? null : startAt.toLocalTime().toString(),
+                datePart(startAt),
+                timePart(startAt),
                 appointment.getStatus(),
                 appointment.getLocation() == null ? null : "domicilio");
     }
@@ -124,6 +124,14 @@ public class SpecialistCalendarController {
         } catch (DateTimeParseException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fecha is invalid");
         }
+    }
+
+    private String datePart(String value) {
+        return value != null && value.length() >= 10 ? value.substring(0, 10) : null;
+    }
+
+    private String timePart(String value) {
+        return value != null && value.length() >= 16 ? value.substring(11, 16) : null;
     }
 
     private String fullName(String firstName, String lastName) {

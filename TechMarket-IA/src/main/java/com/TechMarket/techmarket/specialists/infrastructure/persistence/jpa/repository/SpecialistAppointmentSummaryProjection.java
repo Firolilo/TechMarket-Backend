@@ -1,6 +1,5 @@
 package com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface SpecialistAppointmentSummaryProjection {
@@ -23,7 +22,7 @@ public interface SpecialistAppointmentSummaryProjection {
 
     String getStatus();
 
-    OffsetDateTime getStartAt();
+    String getStartAt();
 
     String getLocation();
 

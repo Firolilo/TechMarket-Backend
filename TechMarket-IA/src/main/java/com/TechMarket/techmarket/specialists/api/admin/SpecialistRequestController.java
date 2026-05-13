@@ -8,7 +8,6 @@ import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAppointmentSummaryProjection;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceAppointmentSpringDataRepository;
 import jakarta.validation.Valid;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -69,14 +68,18 @@ public class SpecialistRequestController {
     }
 
     private SpecialistRequestResponse toResponse(SpecialistAppointmentSummaryProjection request) {
-        OffsetDateTime startAt = request.getStartAt();
+        String startAt = request.getStartAt();
         return new SpecialistRequestResponse(
                 identitySupport.formatRequestId(request.getId()),
                 fullName(request.getCustomerFirstName(), request.getCustomerLastName()),
                 request.getServiceName(),
-                startAt == null ? null : startAt.toLocalDate().toString(),
+                datePart(startAt),
                 request.getStatus(),
                 request.getPriority());
+    }
+
+    private String datePart(String value) {
+        return value != null && value.length() >= 10 ? value.substring(0, 10) : null;
     }
 
     private SpecialistServiceAppointmentJpaEntity findAppointment(

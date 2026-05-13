@@ -11,7 +11,6 @@ import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAppointmentSummaryProjection;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceAppointmentSpringDataRepository;
 import jakarta.validation.Valid;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -98,38 +97,42 @@ public class SpecialistProjectController {
 
     private SpecialistProjectResponse toProjectResponse(
             SpecialistAppointmentSummaryProjection project) {
-        OffsetDateTime startAt = project.getStartAt();
+        String startAt = project.getStartAt();
         return new SpecialistProjectResponse(
                 identitySupport.formatProjectId(project.getId()),
                 fullName(project.getCustomerFirstName(), project.getCustomerLastName()),
                 project.getServiceName(),
                 project.getStatus(),
-                startAt == null ? null : startAt.toLocalDate().toString());
+                datePart(startAt));
     }
 
     private SpecialistProjectDetailResponse toDetailResponse(
             SpecialistAppointmentSummaryProjection project) {
-        OffsetDateTime startAt = project.getStartAt();
+        String startAt = project.getStartAt();
         return new SpecialistProjectDetailResponse(
                 identitySupport.formatProjectId(project.getId()),
                 new SpecialistProjectClientResponse(
                         fullName(project.getCustomerFirstName(), project.getCustomerLastName()),
                         project.getCustomerPhone()),
                 project.getServiceName(),
-                startAt == null ? null : startAt.toLocalDate().toString(),
+                datePart(startAt),
                 project.getStatus(),
                 project.getDescription() == null ? project.getNotes() : project.getDescription());
     }
 
     private SpecialistProjectHistoryResponse toHistoryResponse(
             SpecialistAppointmentSummaryProjection project) {
-        OffsetDateTime startAt = project.getStartAt();
+        String startAt = project.getStartAt();
         return new SpecialistProjectHistoryResponse(
                 identitySupport.formatProjectId(project.getId()),
                 fullName(project.getCustomerFirstName(), project.getCustomerLastName()),
                 project.getServiceName(),
-                startAt == null ? null : startAt.toLocalDate().toString(),
+                datePart(startAt),
                 "Bs 0.00");
+    }
+
+    private String datePart(String value) {
+        return value != null && value.length() >= 10 ? value.substring(0, 10) : null;
     }
 
     private String normalizeProjectStatus(String status) {

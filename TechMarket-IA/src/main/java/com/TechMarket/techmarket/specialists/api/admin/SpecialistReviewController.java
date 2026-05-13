@@ -85,18 +85,19 @@ public class SpecialistReviewController {
     }
 
     private SpecialistReviewResponse toResponse(SpecialistReviewProjection review) {
-        OffsetDateTime createdAt = review.getCreatedAt();
+        String createdAt = review.getCreatedAt();
         return new SpecialistReviewResponse(
                 "REV-" + review.getId(),
                 fullName(review.getCustomerFirstName(), review.getCustomerLastName()),
                 stars(review.getRating()),
                 review.getComment(),
                 review.getServiceName(),
-                createdAt == null ? null : createdAt.toLocalDate().toString());
+                createdAt == null ? null : createdAt.substring(0, 10),
+                review.getTechnicianResponse());
     }
 
     private SpecialistReviewDetailResponse toDetailResponse(SpecialistReviewProjection review) {
-        OffsetDateTime createdAt = review.getCreatedAt();
+        String createdAt = review.getCreatedAt();
         return new SpecialistReviewDetailResponse(
                 "REV-" + review.getId(),
                 fullName(review.getCustomerFirstName(), review.getCustomerLastName()),
@@ -104,7 +105,7 @@ public class SpecialistReviewController {
                 review.getComment(),
                 review.getTechnicianResponse(),
                 review.getServiceName(),
-                createdAt == null ? null : createdAt.toLocalDate().toString());
+                createdAt == null ? null : createdAt.substring(0, 10));
     }
 
     private int stars(BigDecimal rating) {
