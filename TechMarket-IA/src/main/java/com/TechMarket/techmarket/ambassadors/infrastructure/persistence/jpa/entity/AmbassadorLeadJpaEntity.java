@@ -28,6 +28,24 @@ public class AmbassadorLeadJpaEntity {
     @Column(name = "phone")
     private String phone;
 
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "notes")
+    private String notes;
+
+    @Column(name = "next_action")
+    private String nextAction;
+
+    @Column(name = "last_contact_at")
+    private OffsetDateTime lastContactAt;
+
     @Column(name = "source")
     private String source;
 
@@ -55,6 +73,18 @@ public class AmbassadorLeadJpaEntity {
     public void setContactName(String contactName) { this.contactName = contactName; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+    public String getNextAction() { return nextAction; }
+    public void setNextAction(String nextAction) { this.nextAction = nextAction; }
+    public OffsetDateTime getLastContactAt() { return lastContactAt; }
+    public void setLastContactAt(OffsetDateTime lastContactAt) { this.lastContactAt = lastContactAt; }
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
     public String getStatus() { return status; }

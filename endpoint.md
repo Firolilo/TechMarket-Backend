@@ -570,6 +570,7 @@ json
 ## 4. MÓDULO EMBAJADOR (50+ endpoints)
 
 > Bloque implementado en `TechMarket-IA` para los endpoints 56 al 125 bajo `/api/ambassadors/**`.
+> Las rutas marcadas como "Extensión" son ampliaciones implementadas para frontend y no alteran la numeración global 1-226.
 
 ### Perfil y configuración
 #### 56. `GET /api/ambassadors/profile`
@@ -577,16 +578,17 @@ Obtener perfil del embajador autenticado.
 Response 200:
 {
  "id": "AMB-001",
- "email": "embajador@example.com",
  "nombre": "María",
  "apellido": "Rojas",
+ "email": "embajador@example.com",
  "telefono": "+59171234567",
  "pais": "Bolivia",
  "ciudad": "Santa Cruz",
- "avatar": "https://techmarket.bo/avatars/amb-001.jpg",
- "estado": "Activo",
+ "codigoReferido": "MARIA-GOLD",
  "nivel": "Gold",
- "codigoReferido": "MARIA-GOLD"}
+ "fechaRegistro": "2026-04-01",
+ "estado": "Activo",
+ "avatar": "https://techmarket.bo/avatars/amb-001.jpg"}
 #### 57. `PUT /api/ambassadors/profile`
 Actualizar perfil del embajador.
 Request:
@@ -606,6 +608,7 @@ Response 200:
  "url": "https://cdn.techmarket.bo/ambassadors/amb-001-avatar.jpg"}
 #### 59. `GET /api/ambassadors/profile/stats`
 Obtener métricas principales del embajador.
+Los estados `activo` y `ACTIVE` se consideran negocios activos.
 Response 200:
 {
  "negociosReferidos": 48,
@@ -613,6 +616,34 @@ Response 200:
  "conversionRate": 64.5,
  "comisionesTotales": "Bs 18.500",
  "nivel": "Gold"}
+##### Extensión: `GET /api/ambassadors/dashboard`
+Obtener un resumen consolidado para el dashboard del embajador y evitar llamadas separadas.
+Response 200:
+{
+ "profile": {
+   "id": "AMB-001",
+   "nombre": "María Rojas",
+   "apellido": "Rojas",
+   "email": "embajador@example.com",
+   "telefono": "+59171234567",
+   "pais": "Bolivia",
+   "ciudad": "Santa Cruz",
+   "codigoReferido": "MARIA-GOLD",
+   "nivel": "Gold",
+   "fechaRegistro": "2026-04-01",
+   "estado": "Activo",
+   "avatar": "https://techmarket.bo/avatars/amb-001.jpg"
+ },
+ "stats": {
+   "negociosReferidos": 48,
+   "negociosActivos": 31,
+   "conversionRate": 64.5,
+   "comisionesTotales": "Bs 18.500",
+   "nivel": "Gold"
+ },
+ "recentReferrals": [],
+ "recentCommissions": [],
+ "pendingActions": []}
 #### 60. `GET /api/ambassadors/settings`
 Obtener configuración del embajador.
 Response 200:
@@ -669,6 +700,16 @@ Response 200:
  "conversiones": 24,
  "conversionRate": 7.5,
  "activo": true}
+##### Extensión: `GET /api/ambassadors/referral-links/:linkId/stats`
+Obtener métricas resumidas de un link de referido.
+Response 200:
+{
+ "linkId": "REFLINK-001",
+ "codigo": "MARIA-SCZ",
+ "clicks": 320,
+ "registros": 24,
+ "conversionRate": 7.5,
+ "comisionesGeneradas": "Bs 23110"}
 #### 65. `PUT /api/ambassadors/referral-links/:linkId`
 Actualizar un link de referido.
 Request:
@@ -710,6 +751,7 @@ Response 200:
 ### Negocios referidos
 #### 70. `GET /api/ambassadors/referrals`
 Listar negocios o usuarios referidos.
+El campo `nombre` corresponde al nombre del negocio referido (`ambassador_referrals.name` o el tenant asociado), no al identificador `BUS-*`.
 Response 200:
 [
  {
@@ -720,6 +762,16 @@ Response 200:
    "fechaRegistro": "2026-04-10",
    "comisionGenerada": "Bs 850"
  }]
+##### Extensión: `GET /api/ambassadors/referrals/metrics`
+Obtener métricas agregadas para la pantalla de negocios referidos.
+Response 200:
+{
+ "totalReferidos": 9,
+ "activos": 9,
+ "pendientes": 0,
+ "conversionRate": 100,
+ "comisionTotal": "Bs 23110",
+ "porMes": []}
 #### 71. `POST /api/ambassadors/referrals`
 Registrar manualmente un prospecto referido.
 Request:
@@ -729,7 +781,8 @@ Request:
  "contacto": "Carlos Méndez",
  "telefono": "+59170001122",
  "email": "contacto@fixcloud.bo",
- "ciudad": "Santa Cruz"}
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia"}
 Response 201:
 {
  "id": "BUS-002",
@@ -741,15 +794,20 @@ Response 200:
 {
  "id": "BUS-001",
  "nombre": "ElectroMundo",
- "tipo": "empresa",
- "estado": "activo",
+ "estado": "ACTIVE",
+ "pais": "Bolivia",
+ "ciudad": "Santa Cruz",
+ "categoria": "Retail",
+ "fechaRegistro": "2026-04-10",
+ "ultimaActividad": "2026-05-01",
+ "ventasTotales": 0,
+ "comisionGenerada": 850,
+ "plan": "Premium",
  "contacto": {
    "nombre": "Carlos Méndez",
-   "telefono": "+59170001122",
-   "email": "contacto@electromundo.bo"
- },
- "fechaRegistro": "2026-04-10",
- "ultimaActividad": "2026-05-01T14:20:00Z"}
+   "email": "contacto@electromundo.bo",
+   "telefono": "+59170001122"
+ }}
 #### 73. `PUT /api/ambassadors/referrals/:referralId`
 Actualizar datos de un referido.
 Request:
@@ -840,6 +898,19 @@ Response 200:
      "completado": false
    }
  ]}
+##### Extensión: `PATCH /api/ambassadors/onboarding/:businessId`
+Actualizar etapa o agregar nota de seguimiento al onboarding de un negocio referido. `businessId` acepta `BUS-*` u `ONB-*`.
+Request:
+{
+ "etapa": "en_proceso",
+ "nota": "Se acordó completar catálogo esta semana"}
+Response 200:
+{
+ "id": "ONB-001",
+ "referidoId": "BUS-001",
+ "nombre": "ElectroMundo",
+ "progreso": 75,
+ "estado": "en_proceso"}
 #### 82. `POST /api/ambassadors/onboarding/:onboardingId/tasks`
 Crear tarea de seguimiento.
 Request:
@@ -865,6 +936,18 @@ Actualizar estado de una tarea.
 Request:
 {
  "estado": "completada"}
+Response 200:
+{
+ "id": "TASK-001",
+ "estado": "completada"}
+##### Extensión: `PATCH /api/ambassadors/onboarding/:businessId/tasks/:taskId`
+Actualizar título, estado, fecha límite o nota de una tarea de onboarding. `businessId` acepta `BUS-*` u `ONB-*`.
+Request:
+{
+ "titulo": "Publicar primeros productos",
+ "estado": "completada",
+ "fechaLimite": "2026-05-10",
+ "nota": "Tarea completada durante la llamada"}
 Response 200:
 {
  "id": "TASK-001",
@@ -908,7 +991,16 @@ Response 200:
    "nombre": "TecnoStore Bolivia",
    "tipo": "empresa",
    "estado": "nuevo",
-   "fuente": "evento"
+   "fuente": "evento",
+   "ciudad": "Santa Cruz",
+   "pais": "Bolivia",
+   "contacto": "Ana López",
+   "telefono": "+59175556677",
+   "email": "ana@tecnostore.bo",
+   "notas": "Interesada en plan premium",
+   "proximaAccion": "Enviar propuesta comercial",
+   "historialAcciones": [],
+   "fechaUltimoContacto": "2026-05-12T15:00:00Z"
  }]
 #### 89. `POST /api/ambassadors/leads`
 Crear nuevo lead.
@@ -918,6 +1010,11 @@ Request:
  "tipo": "empresa",
  "contacto": "Ana López",
  "telefono": "+59175556677",
+ "email": "ana@tecnostore.bo",
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia",
+ "notas": "Interesada en plan premium",
+ "proximaAccion": "Enviar propuesta comercial",
  "fuente": "evento"}
 Response 201:
 {
@@ -931,12 +1028,65 @@ Response 200:
  "nombre": "TecnoStore Bolivia",
  "tipo": "empresa",
  "estado": "nuevo",
- "probabilidadCierre": 68}
+ "probabilidadCierre": 68,
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia",
+ "contacto": "Ana López",
+ "telefono": "+59175556677",
+ "email": "ana@tecnostore.bo",
+ "notas": "Interesada en plan premium",
+ "proximaAccion": "Enviar propuesta comercial",
+ "historialAcciones": [],
+ "fechaUltimoContacto": "2026-05-12T15:00:00Z"}
 #### 91. `PUT /api/ambassadors/leads/:leadId`
 Actualizar lead.
+Request:
+{
+ "nombre": "TecnoStore Bolivia",
+ "tipo": "empresa",
+ "contacto": "Ana López",
+ "telefono": "+59175556677",
+ "email": "ana@tecnostore.bo",
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia",
+ "notas": "Pidió información de planes",
+ "proximaAccion": "Agendar demo",
+ "fuente": "evento",
+ "estado": "contactado",
+ "probabilidad": 75}
 Response 200:
 {
  "mensaje": "Lead actualizado"}
+##### Extensión: `PATCH /api/ambassadors/leads/:leadId`
+Actualizar parcialmente estado, contacto, notas, probabilidad, ciudad, país, teléfono, email, fuente o fecha de último contacto.
+Request:
+{
+ "estado": "contactado",
+ "contacto": "Ana López",
+ "telefono": "+59175556677",
+ "email": "ana@tecnostore.bo",
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia",
+ "notas": "Pidió información de planes",
+ "proximaAccion": "Agendar demo",
+ "probabilidad": 75,
+ "fechaUltimoContacto": "2026-05-12T15:00:00Z"}
+Response 200:
+{
+ "id": "LEAD-001",
+ "nombre": "TecnoStore Bolivia",
+ "tipo": "empresa",
+ "estado": "contactado",
+ "probabilidadCierre": 75,
+ "ciudad": "Santa Cruz",
+ "pais": "Bolivia",
+ "contacto": "Ana López",
+ "telefono": "+59175556677",
+ "email": "ana@tecnostore.bo",
+ "notas": "Pidió información de planes",
+ "proximaAccion": "Agendar demo",
+ "historialAcciones": [],
+ "fechaUltimoContacto": "2026-05-12T15:00:00Z"}
 #### 92. `PATCH /api/ambassadors/leads/:leadId/status`
 Cambiar estado del lead.
 Request:
@@ -946,6 +1096,19 @@ Response 200:
 {
  "id": "LEAD-001",
  "estado": "contactado"}
+##### Extensión: `POST /api/ambassadors/leads/:leadId/activities`
+Registrar acción o seguimiento de un lead.
+Request:
+{
+ "tipo": "CALL",
+ "nota": "Se llamó al prospecto, pidió información de planes",
+ "fecha": "2026-05-12T15:00:00Z"}
+Response 201:
+{
+ "id": "ACT-001",
+ "tipo": "CALL",
+ "nota": "Se llamó al prospecto, pidió información de planes",
+ "fecha": "2026-05-12T15:00:00Z"}
 #### 93. `POST /api/ambassadors/leads/:leadId/convert`
 Convertir lead en referido.
 Response 201:

@@ -3,6 +3,7 @@ package com.techmarket.techmarket.ambassadors.api.admin;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionDisputeJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorInvitationJpaEntity;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorLeadActivityJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorLeadJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorOnboardingMilestoneJpaEntity;
@@ -18,6 +19,7 @@ import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorCommissionDisputeSpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorCommissionSpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorInvitationSpringDataRepository;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorLeadActivitySpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorLeadSpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorOnboardingMilestoneSpringDataRepository;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.repository.AmbassadorOnboardingReminderSpringDataRepository;
@@ -51,6 +53,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -83,6 +87,7 @@ public class AmbassadorPortalController {
     private final AmbassadorOnboardingReminderSpringDataRepository reminderRepository;
     private final AmbassadorOnboardingMilestoneSpringDataRepository milestoneRepository;
     private final AmbassadorLeadSpringDataRepository leadRepository;
+    private final AmbassadorLeadActivitySpringDataRepository leadActivityRepository;
     private final AmbassadorCommissionDisputeSpringDataRepository commissionDisputeRepository;
     private final AmbassadorWithdrawalSpringDataRepository withdrawalRepository;
     private final AmbassadorPayoutMethodSpringDataRepository payoutMethodRepository;
@@ -105,6 +110,7 @@ public class AmbassadorPortalController {
             AmbassadorOnboardingReminderSpringDataRepository reminderRepository,
             AmbassadorOnboardingMilestoneSpringDataRepository milestoneRepository,
             AmbassadorLeadSpringDataRepository leadRepository,
+            AmbassadorLeadActivitySpringDataRepository leadActivityRepository,
             AmbassadorCommissionDisputeSpringDataRepository commissionDisputeRepository,
             AmbassadorWithdrawalSpringDataRepository withdrawalRepository,
             AmbassadorPayoutMethodSpringDataRepository payoutMethodRepository,
@@ -125,6 +131,7 @@ public class AmbassadorPortalController {
         this.reminderRepository = reminderRepository;
         this.milestoneRepository = milestoneRepository;
         this.leadRepository = leadRepository;
+        this.leadActivityRepository = leadActivityRepository;
         this.commissionDisputeRepository = commissionDisputeRepository;
         this.withdrawalRepository = withdrawalRepository;
         this.payoutMethodRepository = payoutMethodRepository;
@@ -177,7 +184,7 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         long referrals = referralRepository.countByAmbassadorId(ambassador.getId());
-        long active = referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassador.getId(), "activo");
+        long active = countActiveReferrals(ambassador.getId());
         double conversionRate =
                 referrals == 0 ? 0 : BigDecimal.valueOf(active * 100.0 / referrals).setScale(1, RoundingMode.HALF_UP).doubleValue();
         return new AmbassadorStatsResponse(
@@ -294,6 +301,27 @@ public class AmbassadorPortalController {
         return new ReferralLinkQrResponse("https://cdn.techmarket.bo/qr/" + link.getCode() + ".png");
     }
 
+    @GetMapping("/referral-links/{linkId}/stats")
+    public ReferralLinkStatsResponse referralLinkStats(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String linkId) {
+        AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
+        AmbassadorReferralLinkJpaEntity link = findReferralLink(linkId, ambassador.getId());
+        double conversionRate =
+                link.getClicks() == 0
+                        ? 0
+                        : BigDecimal.valueOf(link.getConversions() * 100.0 / link.getClicks())
+                                .setScale(1, RoundingMode.HALF_UP)
+                                .doubleValue();
+        return new ReferralLinkStatsResponse(
+                formatReferralLinkId(link.getId()),
+                link.getCode(),
+                link.getClicks(),
+                link.getConversions(),
+                conversionRate,
+                formatMoney(sumCommissions(commissionRepository.findByAmbassadorId(ambassador.getId()), null)));
+    }
+
     @GetMapping("/referral-codes")
     public List<ReferralCodeResponse> referralCodes(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
@@ -317,6 +345,30 @@ public class AmbassadorPortalController {
                 .toList();
     }
 
+    @GetMapping("/referrals/metrics")
+    public ReferralMetricsResponse referralMetrics(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
+        long total = referralRepository.countByAmbassadorId(ambassador.getId());
+        long active = countActiveReferrals(ambassador.getId());
+        long pending = referralRepository.findByAmbassadorId(ambassador.getId()).stream()
+                .filter(referral -> !isActiveStatus(referral.getStatus()))
+                .count();
+        double conversionRate =
+                total == 0
+                        ? 0
+                        : BigDecimal.valueOf(active * 100.0 / total)
+                                .setScale(1, RoundingMode.HALF_UP)
+                                .doubleValue();
+        return new ReferralMetricsResponse(
+                total,
+                active,
+                pending,
+                conversionRate,
+                formatMoney(commissionRepository.sumAmountByAmbassadorId(ambassador.getId())),
+                List.of());
+    }
+
     @PostMapping("/referrals")
     @ResponseStatus(HttpStatus.CREATED)
     public CreateReferralResponse createReferral(
@@ -333,6 +385,7 @@ public class AmbassadorPortalController {
         referral.setPhone(request.telefono());
         referral.setEmail(request.email());
         referral.setCity(request.ciudad());
+        referral.setCountry(request.pais());
         referral.setAttributionChannel("manual");
         referral.setUsedCode(ambassador.getReferralCode());
         referral.setStatus("prospecto");
@@ -464,6 +517,30 @@ public class AmbassadorPortalController {
         return new OnboardingDetailResponse(formatOnboardingId(referral.getId()), referralName(referral), valueOrDefault(referral.getStatus(), "en_proceso"), onboardingProgress(referral.getId()), defaultOnboardingSteps(referral.getId()));
     }
 
+    @PatchMapping("/onboarding/{businessId}")
+    public OnboardingSummaryResponse updateOnboarding(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String businessId,
+            @Valid @RequestBody UpdateOnboardingRequest request) {
+        AmbassadorReferralJpaEntity referral =
+                findReferralByBusinessOrOnboarding(
+                        businessId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        if (request.etapa() != null && !request.etapa().isBlank()) {
+            referral.setStatus(request.etapa());
+        }
+        referral.setLastActivityAt(OffsetDateTime.now());
+        AmbassadorReferralJpaEntity saved = referralRepository.save(referral);
+        if (request.nota() != null && !request.nota().isBlank()) {
+            createActivity(saved.getId(), "onboarding", request.nota(), saved.getLastActivityAt());
+        }
+        return new OnboardingSummaryResponse(
+                formatOnboardingId(saved.getId()),
+                formatBusinessId(saved.getId()),
+                referralName(saved),
+                onboardingProgress(saved.getId()),
+                valueOrDefault(saved.getStatus(), "en_proceso"));
+    }
+
     @PostMapping("/onboarding/{onboardingId}/tasks")
     @ResponseStatus(HttpStatus.CREATED)
     public CreateOnboardingTaskResponse createOnboardingTask(
@@ -505,6 +582,36 @@ public class AmbassadorPortalController {
         task.setStatus(request.estado());
         task.setCompletedAt("completada".equalsIgnoreCase(request.estado()) ? OffsetDateTime.now() : null);
         AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
+        return new OnboardingTaskStatusResponse("TASK-" + saved.getId(), saved.getStatus());
+    }
+
+    @PatchMapping("/onboarding/{businessId}/tasks/{taskId}")
+    public OnboardingTaskStatusResponse updateOnboardingTask(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String businessId,
+            @PathVariable String taskId,
+            @Valid @RequestBody UpdateOnboardingTaskRequest request) {
+        AmbassadorReferralJpaEntity referral =
+                findReferralByBusinessOrOnboarding(
+                        businessId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorOnboardingTaskJpaEntity task =
+                onboardingTaskRepository
+                        .findByIdAndAmbassadorReferralId(parsePrefixedUuid(taskId, "TASK-"), referral.getId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+        if (request.titulo() != null && !request.titulo().isBlank()) {
+            task.setTitle(request.titulo());
+        }
+        if (request.estado() != null && !request.estado().isBlank()) {
+            task.setStatus(request.estado());
+            task.setCompletedAt(isCompletedStatus(request.estado()) ? OffsetDateTime.now() : null);
+        }
+        if (request.fechaLimite() != null) {
+            task.setDueDate(request.fechaLimite());
+        }
+        AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
+        if (request.nota() != null && !request.nota().isBlank()) {
+            createActivity(referral.getId(), "tarea_onboarding", request.nota(), OffsetDateTime.now());
+        }
         return new OnboardingTaskStatusResponse("TASK-" + saved.getId(), saved.getStatus());
     }
 
@@ -555,7 +662,7 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         return leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
-                .map(lead -> new LeadSummaryResponse(formatLeadId(lead.getId()), lead.getName(), lead.getLeadType(), lead.getStatus(), lead.getSource()))
+                .map(this::toLeadSummaryResponse)
                 .toList();
     }
 
@@ -573,6 +680,11 @@ public class AmbassadorPortalController {
         lead.setLeadType(request.tipo());
         lead.setContactName(request.contacto());
         lead.setPhone(request.telefono());
+        lead.setEmail(request.email());
+        lead.setCity(request.ciudad());
+        lead.setCountry(request.pais());
+        lead.setNotes(request.notas());
+        lead.setNextAction(request.proximaAccion());
         lead.setSource(request.fuente());
         lead.setStatus("nuevo");
         lead.setCloseProbability(68);
@@ -587,7 +699,7 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String leadId) {
         AmbassadorLeadJpaEntity lead = findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return new LeadDetailResponse(formatLeadId(lead.getId()), lead.getName(), lead.getLeadType(), lead.getStatus(), lead.getCloseProbability());
+        return toLeadDetailResponse(lead);
     }
 
     @PutMapping("/leads/{leadId}")
@@ -600,10 +712,54 @@ public class AmbassadorPortalController {
         lead.setLeadType(request.tipo());
         lead.setContactName(request.contacto());
         lead.setPhone(request.telefono());
+        lead.setEmail(request.email());
+        lead.setCity(request.ciudad());
+        lead.setCountry(request.pais());
+        lead.setNotes(request.notas());
+        lead.setNextAction(request.proximaAccion());
+        if (request.probabilidad() != null) {
+            lead.setCloseProbability(request.probabilidad());
+        }
+        if (request.estado() != null && !request.estado().isBlank()) {
+            lead.setStatus(request.estado());
+        }
         lead.setSource(request.fuente());
         lead.setUpdatedAt(OffsetDateTime.now());
         leadRepository.save(lead);
         return new MessageResponse("Lead actualizado");
+    }
+
+    @PatchMapping("/leads/{leadId}")
+    public LeadDetailResponse patchLead(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String leadId,
+            @RequestBody PatchLeadRequest request) {
+        AmbassadorLeadJpaEntity lead =
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        applyLeadPatch(lead, request);
+        return toLeadDetailResponse(leadRepository.save(lead));
+    }
+
+    @PostMapping("/leads/{leadId}/activities")
+    @ResponseStatus(HttpStatus.CREATED)
+    public LeadActivityResponse createLeadActivity(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String leadId,
+            @Valid @RequestBody CreateLeadActivityRequest request) {
+        AmbassadorLeadJpaEntity lead =
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        OffsetDateTime createdAt = request.fecha() == null ? OffsetDateTime.now() : request.fecha();
+        AmbassadorLeadActivityJpaEntity activity = new AmbassadorLeadActivityJpaEntity();
+        activity.setId(UUID.randomUUID());
+        activity.setLeadId(lead.getId());
+        activity.setActivityType(request.tipo());
+        activity.setNote(request.nota());
+        activity.setCreatedAt(createdAt);
+        AmbassadorLeadActivityJpaEntity saved = leadActivityRepository.save(activity);
+        lead.setLastContactAt(createdAt);
+        lead.setUpdatedAt(OffsetDateTime.now());
+        leadRepository.save(lead);
+        return toLeadActivityResponse(saved);
     }
 
     @PatchMapping("/leads/{leadId}/status")
@@ -633,6 +789,9 @@ public class AmbassadorPortalController {
         referral.setReferralType(lead.getLeadType());
         referral.setContactName(lead.getContactName());
         referral.setPhone(lead.getPhone());
+        referral.setEmail(lead.getEmail());
+        referral.setCity(lead.getCity());
+        referral.setCountry(lead.getCountry());
         referral.setAttributionChannel(valueOrDefault(lead.getSource(), "lead"));
         referral.setUsedCode(ambassador.getReferralCode());
         referral.setStatus("prospecto");
@@ -661,6 +820,60 @@ public class AmbassadorPortalController {
         return commissionRepository.findByAmbassadorId(ambassador.getId()).stream()
                 .map(this::toCommissionResponse)
                 .toList();
+    }
+
+    @GetMapping("/dashboard")
+    public AmbassadorDashboardResponse dashboard(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        UserJpaEntity user = findUser(parseUserId(userId));
+        AmbassadorJpaEntity ambassador = resolveAmbassador(user);
+        long referrals = referralRepository.countByAmbassadorId(ambassador.getId());
+        long active = countActiveReferrals(ambassador.getId());
+        double conversionRate =
+                referrals == 0
+                        ? 0
+                        : BigDecimal.valueOf(active * 100.0 / referrals)
+                                .setScale(1, RoundingMode.HALF_UP)
+                                .doubleValue();
+        AmbassadorStatsResponse stats =
+                new AmbassadorStatsResponse(
+                        referrals,
+                        active,
+                        conversionRate,
+                        "Bs " + commissionRepository.sumAmountByAmbassadorId(ambassador.getId()),
+                        valueOrDefault(ambassador.getLevel(), "Bronze"));
+        List<AmbassadorReferralListResponse> recentReferrals =
+                referralRepository.findByAmbassadorId(ambassador.getId()).stream()
+                        .sorted(Comparator.comparing(
+                                        AmbassadorReferralJpaEntity::getCreatedAt,
+                                        Comparator.nullsLast(Comparator.naturalOrder()))
+                                .reversed())
+                        .limit(5)
+                        .map(this::toReferralListResponse)
+                        .toList();
+        List<CommissionResponse> recentCommissions =
+                commissionRepository.findByAmbassadorId(ambassador.getId()).stream()
+                        .sorted(Comparator.comparing(
+                                        AmbassadorCommissionJpaEntity::getGeneratedAt,
+                                        Comparator.nullsLast(Comparator.naturalOrder()))
+                                .reversed())
+                        .limit(5)
+                        .map(this::toCommissionResponse)
+                        .toList();
+        List<PendingActionResponse> pendingActions =
+                leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+                        .filter(lead -> !isFinalLeadStatus(lead.getStatus()))
+                        .limit(5)
+                        .map(
+                                lead ->
+                                        new PendingActionResponse(
+                                                formatLeadId(lead.getId()),
+                                                "lead",
+                                                valueOrDefault(lead.getNextAction(), "Seguimiento pendiente"),
+                                                lead.getUpdatedAt()))
+                        .toList();
+        return new AmbassadorDashboardResponse(
+                toProfileResponse(ambassador, user), stats, recentReferrals, recentCommissions, pendingActions);
     }
 
     @GetMapping("/commissions/summary")
@@ -890,7 +1103,7 @@ public class AmbassadorPortalController {
                         ++position[0],
                         formatAmbassadorId(ambassador.getId()),
                         ambassadorUser(ambassador).map(this::fullName).orElse("Embajador"),
-                        referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassador.getId(), "activo"),
+                        countActiveReferrals(ambassador.getId()),
                         formatMoney(commissionRepository.sumAmountByAmbassadorId(ambassador.getId()))))
                 .toList();
     }
@@ -1000,7 +1213,7 @@ public class AmbassadorPortalController {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         long clicks = totalReferralLinkClicks(ambassador.getId());
         long leads = leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
-        long conversions = referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassador.getId(), "activo");
+        long conversions = countActiveReferrals(ambassador.getId());
         double conversionRate =
                 leads == 0
                         ? 0
@@ -1048,7 +1261,7 @@ public class AmbassadorPortalController {
                 totalReferralLinkClicks(ambassador.getId()),
                 leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size(),
                 referralRepository.countByAmbassadorId(ambassador.getId()),
-                referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassador.getId(), "activo"));
+                countActiveReferrals(ambassador.getId()));
     }
 
     @GetMapping("/reports/export")
@@ -1080,7 +1293,7 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         long leads = leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
-        long active = referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassador.getId(), "activo");
+        long active = countActiveReferrals(ambassador.getId());
         int conversion = leads == 0 ? 0 : (int) Math.min(100, Math.round(active * 100.0 / leads));
         return new AmbassadorAiInsightsResponse(
                 List.of(
@@ -1141,16 +1354,17 @@ public class AmbassadorPortalController {
     private AmbassadorProfileResponse toProfileResponse(AmbassadorJpaEntity ambassador, UserJpaEntity user) {
         return new AmbassadorProfileResponse(
                 formatAmbassadorId(ambassador.getId()),
-                user.getEmail(),
-                user.getFirstName(),
+                fullName(user),
                 user.getLastName(),
+                user.getEmail(),
                 user.getPhone(),
                 valueOrDefault(ambassador.getCountry(), "Bolivia"),
                 ambassador.getCity(),
-                ambassador.getAvatarUrl(),
-                ambassador.getStatus(),
+                ambassador.getReferralCode(),
                 valueOrDefault(ambassador.getLevel(), "Bronze"),
-                ambassador.getReferralCode());
+                ambassador.getActivatedAt() == null ? null : ambassador.getActivatedAt().toLocalDate().toString(),
+                ambassador.getStatus(),
+                ambassador.getAvatarUrl());
     }
 
     private ReferralLinkResponse toReferralLinkResponse(AmbassadorReferralLinkJpaEntity link) {
@@ -1192,7 +1406,7 @@ public class AmbassadorPortalController {
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new AmbassadorReferralListResponse(
                 formatBusinessId(referral.getId()),
-                tenant == null ? referral.getUsedCode() : tenant.getBusinessName(),
+                referralName(referral),
                 "empresa",
                 referral.getStatus(),
                 referral.getCreatedAt() == null ? null : referral.getCreatedAt().toLocalDate().toString(),
@@ -1200,14 +1414,111 @@ public class AmbassadorPortalController {
     }
 
     private AmbassadorReferralDetailResponse toReferralDetailResponse(AmbassadorReferralJpaEntity referral) {
+        BigDecimal commission = sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
         return new AmbassadorReferralDetailResponse(
                 formatBusinessId(referral.getId()),
                 referralName(referral),
-                valueOrDefault(referral.getReferralType(), "empresa"),
                 referral.getStatus(),
-                new ReferralContactResponse(referral.getContactName(), referral.getPhone(), referral.getEmail()),
+                valueOrDefault(referral.getCountry(), "Bolivia"),
+                referral.getCity(),
+                valueOrDefault(referral.getReferralType(), "Retail"),
                 referral.getCreatedAt() == null ? null : referral.getCreatedAt().toLocalDate().toString(),
-                referral.getLastActivityAt());
+                referral.getLastActivityAt() == null ? null : referral.getLastActivityAt().toLocalDate().toString(),
+                BigDecimal.ZERO,
+                commission,
+                "Premium",
+                new ReferralContactResponse(referral.getContactName(), referral.getEmail(), referral.getPhone()));
+    }
+
+    private LeadSummaryResponse toLeadSummaryResponse(AmbassadorLeadJpaEntity lead) {
+        return new LeadSummaryResponse(
+                formatLeadId(lead.getId()),
+                lead.getName(),
+                lead.getLeadType(),
+                lead.getStatus(),
+                lead.getSource(),
+                lead.getCity(),
+                lead.getCountry(),
+                lead.getContactName(),
+                lead.getPhone(),
+                lead.getEmail(),
+                lead.getNotes(),
+                lead.getNextAction(),
+                leadActivityRepository.findAllByLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
+                        .map(this::toLeadActivityResponse)
+                        .toList(),
+                lead.getLastContactAt());
+    }
+
+    private LeadDetailResponse toLeadDetailResponse(AmbassadorLeadJpaEntity lead) {
+        return new LeadDetailResponse(
+                formatLeadId(lead.getId()),
+                lead.getName(),
+                lead.getLeadType(),
+                lead.getStatus(),
+                lead.getCloseProbability(),
+                lead.getCity(),
+                lead.getCountry(),
+                lead.getContactName(),
+                lead.getPhone(),
+                lead.getEmail(),
+                lead.getNotes(),
+                lead.getNextAction(),
+                leadActivityRepository.findAllByLeadIdOrderByCreatedAtDesc(lead.getId()).stream()
+                        .map(this::toLeadActivityResponse)
+                        .toList(),
+                lead.getLastContactAt());
+    }
+
+    private LeadActivityResponse toLeadActivityResponse(AmbassadorLeadActivityJpaEntity activity) {
+        return new LeadActivityResponse(
+                "ACT-" + activity.getId(),
+                activity.getActivityType(),
+                activity.getNote(),
+                activity.getCreatedAt());
+    }
+
+    private void applyLeadPatch(AmbassadorLeadJpaEntity lead, PatchLeadRequest request) {
+        if (request.nombre() != null && !request.nombre().isBlank()) {
+            lead.setName(request.nombre());
+        }
+        if (request.tipo() != null) {
+            lead.setLeadType(request.tipo());
+        }
+        if (request.estado() != null && !request.estado().isBlank()) {
+            lead.setStatus(request.estado());
+        }
+        if (request.contacto() != null) {
+            lead.setContactName(request.contacto());
+        }
+        if (request.telefono() != null) {
+            lead.setPhone(request.telefono());
+        }
+        if (request.email() != null) {
+            lead.setEmail(request.email());
+        }
+        if (request.ciudad() != null) {
+            lead.setCity(request.ciudad());
+        }
+        if (request.pais() != null) {
+            lead.setCountry(request.pais());
+        }
+        if (request.notas() != null) {
+            lead.setNotes(request.notas());
+        }
+        if (request.proximaAccion() != null) {
+            lead.setNextAction(request.proximaAccion());
+        }
+        if (request.fuente() != null) {
+            lead.setSource(request.fuente());
+        }
+        if (request.probabilidad() != null) {
+            lead.setCloseProbability(request.probabilidad());
+        }
+        if (request.fechaUltimoContacto() != null) {
+            lead.setLastContactAt(request.fechaUltimoContacto());
+        }
+        lead.setUpdatedAt(OffsetDateTime.now());
     }
 
     private AmbassadorReferralJpaEntity findReferral(String referralId, UUID ambassadorId) {
@@ -1222,6 +1533,15 @@ public class AmbassadorPortalController {
                 .findByIdAndAmbassadorId(parsePrefixedUuid(onboardingId, "ONB-"), ambassadorId)
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding not found"));
+    }
+
+    private AmbassadorReferralJpaEntity findReferralByBusinessOrOnboarding(String value, UUID ambassadorId) {
+        String normalized = value == null ? "" : value.trim();
+        String prefix =
+                normalized.regionMatches(true, 0, "ONB-", 0, "ONB-".length()) ? "ONB-" : "BUS-";
+        return referralRepository
+                .findByIdAndAmbassadorId(parsePrefixedUuid(normalized, prefix), ambassadorId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding not found"));
     }
 
     private AmbassadorLeadJpaEntity findLead(String leadId, UUID ambassadorId) {
@@ -1441,12 +1761,57 @@ public class AmbassadorPortalController {
 
     private UUID parseUserId(String userId) {
         if (userId == null || userId.isBlank()) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof String subject && isUuid(subject)) {
+                    return UUID.fromString(subject);
+                }
+            }
+        }
+        if (userId == null || userId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "X-User-Id is required");
         }
         try {
             return UUID.fromString(userId.trim());
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-User-Id is invalid");
+        }
+    }
+
+    private long countActiveReferrals(UUID ambassadorId) {
+        return referralRepository.findByAmbassadorId(ambassadorId).stream()
+                .filter(referral -> isActiveStatus(referral.getStatus()))
+                .count();
+    }
+
+    private boolean isActiveStatus(String status) {
+        String normalized = valueOrDefault(status, "").trim();
+        return "activo".equalsIgnoreCase(normalized) || "active".equalsIgnoreCase(normalized);
+    }
+
+    private boolean isCompletedStatus(String status) {
+        String normalized = valueOrDefault(status, "").trim();
+        return "completada".equalsIgnoreCase(normalized)
+                || "completado".equalsIgnoreCase(normalized)
+                || "completed".equalsIgnoreCase(normalized)
+                || "done".equalsIgnoreCase(normalized);
+    }
+
+    private boolean isFinalLeadStatus(String status) {
+        String normalized = valueOrDefault(status, "").trim();
+        return "convertido".equalsIgnoreCase(normalized)
+                || "converted".equalsIgnoreCase(normalized)
+                || "perdido".equalsIgnoreCase(normalized)
+                || "lost".equalsIgnoreCase(normalized);
+    }
+
+    private boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
         }
     }
 
@@ -1560,16 +1925,17 @@ public class AmbassadorPortalController {
 
     public record AmbassadorProfileResponse(
             String id,
-            String email,
             String nombre,
             String apellido,
+            String email,
             String telefono,
             String pais,
             String ciudad,
-            String avatar,
-            String estado,
+            String codigoReferido,
             String nivel,
-            String codigoReferido) {}
+            String fechaRegistro,
+            String estado,
+            String avatar) {}
 
     public record UpdateAmbassadorProfileRequest(
             @NotBlank String nombre,
@@ -1623,6 +1989,14 @@ public class AmbassadorPortalController {
 
     public record ReferralLinkQrResponse(String qrUrl) {}
 
+    public record ReferralLinkStatsResponse(
+            String linkId,
+            String codigo,
+            int clicks,
+            int registros,
+            double conversionRate,
+            String comisionesGeneradas) {}
+
     public record ReferralCodeResponse(String codigo, String tipo, long usos, boolean activo) {}
 
     public record AmbassadorReferralListResponse(
@@ -1633,26 +2007,42 @@ public class AmbassadorPortalController {
             String fechaRegistro,
             String comisionGenerada) {}
 
+    public record ReferralMetricsResponse(
+            long totalReferidos,
+            long activos,
+            long pendientes,
+            double conversionRate,
+            String comisionTotal,
+            List<MonthlyReferralMetricResponse> porMes) {}
+
+    public record MonthlyReferralMetricResponse(String mes, long referidos, long activos) {}
+
     public record CreateReferralRequest(
             @NotBlank String nombre,
             @NotBlank String tipo,
             String contacto,
             String telefono,
             String email,
-            String ciudad) {}
+            String ciudad,
+            String pais) {}
 
     public record CreateReferralResponse(String id, String estado, String mensaje) {}
 
     public record AmbassadorReferralDetailResponse(
             String id,
             String nombre,
-            String tipo,
             String estado,
-            ReferralContactResponse contacto,
+            String pais,
+            String ciudad,
+            String categoria,
             String fechaRegistro,
-            OffsetDateTime ultimaActividad) {}
+            String ultimaActividad,
+            BigDecimal ventasTotales,
+            BigDecimal comisionGenerada,
+            String plan,
+            ReferralContactResponse contacto) {}
 
-    public record ReferralContactResponse(String nombre, String telefono, String email) {}
+    public record ReferralContactResponse(String nombre, String email, String telefono) {}
 
     public record UpdateReferralRequest(String contacto, String telefono, String ciudad) {}
 
@@ -1681,6 +2071,8 @@ public class AmbassadorPortalController {
 
     public record OnboardingStepResponse(String id, String nombre, boolean completado) {}
 
+    public record UpdateOnboardingRequest(String etapa, String nota) {}
+
     public record CreateOnboardingTaskRequest(@NotBlank String titulo, LocalDate fechaLimite) {}
 
     public record CreateOnboardingTaskResponse(String id, String mensaje) {}
@@ -1692,6 +2084,9 @@ public class AmbassadorPortalController {
 
     public record OnboardingTaskStatusResponse(String id, String estado) {}
 
+    public record UpdateOnboardingTaskRequest(
+            String titulo, String estado, LocalDate fechaLimite, String nota) {}
+
     public record CreateReminderRequest(OffsetDateTime fecha, @NotBlank String mensaje) {}
 
     public record ReminderResponse(String id, String mensaje) {}
@@ -1699,18 +2094,85 @@ public class AmbassadorPortalController {
     public record MilestoneResponse(String id, String nombre, int orden) {}
 
     public record LeadSummaryResponse(
-            String id, String nombre, String tipo, String estado, String fuente) {}
+            String id,
+            String nombre,
+            String tipo,
+            String estado,
+            String fuente,
+            String ciudad,
+            String pais,
+            String contacto,
+            String telefono,
+            String email,
+            String notas,
+            String proximaAccion,
+            List<LeadActivityResponse> historialAcciones,
+            OffsetDateTime fechaUltimoContacto) {}
 
     public record CreateLeadRequest(
-            @NotBlank String nombre, String tipo, String contacto, String telefono, String fuente) {}
+            @NotBlank String nombre,
+            String tipo,
+            String contacto,
+            String telefono,
+            String email,
+            String ciudad,
+            String pais,
+            String notas,
+            String proximaAccion,
+            String fuente) {}
 
     public record CreateLeadResponse(String id, String mensaje) {}
 
     public record LeadDetailResponse(
-            String id, String nombre, String tipo, String estado, int probabilidadCierre) {}
+            String id,
+            String nombre,
+            String tipo,
+            String estado,
+            int probabilidadCierre,
+            String ciudad,
+            String pais,
+            String contacto,
+            String telefono,
+            String email,
+            String notas,
+            String proximaAccion,
+            List<LeadActivityResponse> historialAcciones,
+            OffsetDateTime fechaUltimoContacto) {}
 
     public record UpdateLeadRequest(
-            @NotBlank String nombre, String tipo, String contacto, String telefono, String fuente) {}
+            @NotBlank String nombre,
+            String tipo,
+            String contacto,
+            String telefono,
+            String email,
+            String ciudad,
+            String pais,
+            String notas,
+            String proximaAccion,
+            String fuente,
+            String estado,
+            Integer probabilidad) {}
+
+    public record PatchLeadRequest(
+            String nombre,
+            String tipo,
+            String estado,
+            String contacto,
+            String telefono,
+            String email,
+            String ciudad,
+            String pais,
+            String notas,
+            String proximaAccion,
+            String fuente,
+            Integer probabilidad,
+            OffsetDateTime fechaUltimoContacto) {}
+
+    public record CreateLeadActivityRequest(
+            @NotBlank String tipo, @NotBlank String nota, OffsetDateTime fecha) {}
+
+    public record LeadActivityResponse(
+            String id, String tipo, String nota, OffsetDateTime fecha) {}
 
     public record UpdateLeadStatusRequest(@NotBlank String estado) {}
 
@@ -1720,6 +2182,16 @@ public class AmbassadorPortalController {
 
     public record CommissionResponse(
             String id, String referido, String concepto, String monto, String estado, String fecha) {}
+
+    public record AmbassadorDashboardResponse(
+            AmbassadorProfileResponse profile,
+            AmbassadorStatsResponse stats,
+            List<AmbassadorReferralListResponse> recentReferrals,
+            List<CommissionResponse> recentCommissions,
+            List<PendingActionResponse> pendingActions) {}
+
+    public record PendingActionResponse(
+            String id, String tipo, String descripcion, OffsetDateTime fecha) {}
 
     public record CommissionSummaryResponse(String totalGenerado, String disponible, String pendiente, String pagado) {}
 

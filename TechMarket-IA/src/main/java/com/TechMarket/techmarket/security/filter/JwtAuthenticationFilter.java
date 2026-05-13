@@ -1,6 +1,8 @@
 package com.techmarket.techmarket.security.filter;
 
 import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,6 +12,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,9 +24,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserSpringDataRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider, UserSpringDataRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -33,9 +40,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.isTokenValid(token)) {
             Claims claims = jwtTokenProvider.parseToken(token);
             List<SimpleGrantedAuthority> authorities = extractAuthorities(claims);
+            String principal = resolveLocalUserId(claims).map(UUID::toString).orElse(claims.getSubject());
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            claims.getSubject(), null, authorities);
+                    new UsernamePasswordAuthenticationToken(principal, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(request, response);
@@ -71,5 +78,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String formatRole(String role) {
         String normalized = role.trim().toUpperCase(Locale.ROOT);
         return normalized.startsWith("ROLE_") ? normalized : "ROLE_" + normalized;
+    }
+
+    private Optional<UUID> resolveLocalUserId(Claims claims) {
+        String subject = claims.getSubject();
+        if (isUuid(subject)) {
+            UUID userId = UUID.fromString(subject);
+            if (userRepository.existsById(userId)) {
+                return Optional.of(userId);
+            }
+        }
+
+        return firstPresent(claims.get("email", String.class), claims.get("username", String.class))
+                .flatMap(userRepository::findByEmailIgnoreCase)
+                .map(UserJpaEntity::getId);
+    }
+
+    private Optional<String> firstPresent(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return Optional.of(first.trim());
+        }
+        if (second != null && !second.isBlank()) {
+            return Optional.of(second.trim());
+        }
+        return Optional.empty();
+    }
+
+    private boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 }

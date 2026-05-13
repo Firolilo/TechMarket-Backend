@@ -73,7 +73,7 @@ public class UserHeaderConsistencyFilter extends OncePerRequestFilter {
             return Optional.empty();
         }
 
-        return userRepository.findByEmail(email).map(user -> user.getId());
+        return userRepository.findByEmailIgnoreCase(email).map(user -> user.getId());
     }
 
     private String extractToken(HttpServletRequest request) {

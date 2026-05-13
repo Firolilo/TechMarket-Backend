@@ -71,7 +71,11 @@ TOKEN_IAM="<accessToken_devuelto_por_IAM>"
 
 ## 4. Consumir endpoints de IA
 
-Mientras IA siga usando IDs UUID locales, envia tambien `X-User-Id`.
+IA acepta el JWT emitido por IAM en `Authorization: Bearer`. Si el token incluye un `sub` UUID que
+existe en IA, o si incluye `email`/`username` que coincide con `users.email` en IA, los endpoints
+pueden resolver el usuario autenticado sin `X-User-Id`.
+
+Mientras un endpoint o flujo no pueda resolverse por esos datos, envia tambien `X-User-Id`.
 
 ```bash
 USER_ID="<uuid_del_usuario_en_IA>"
@@ -103,12 +107,28 @@ curl -X GET "http://localhost:8092/api/clients/notifications" \
   -H "X-User-Id: $USER_ID"
 ```
 
+Ejemplo de endpoint de embajador resolviendo el usuario desde el token IAM:
+
+```bash
+curl -X GET "http://localhost:8092/api/ambassadors/profile" \
+  -H "Authorization: Bearer $TOKEN_IAM"
+```
+
+Si el usuario local no puede resolverse desde el token, usa el header de compatibilidad:
+
+```bash
+curl -X GET "http://localhost:8092/api/ambassadors/profile" \
+  -H "Authorization: Bearer $TOKEN_IAM" \
+  -H "X-User-Id: $USER_ID"
+```
+
 ## Comportamiento esperado
 
+- Token IAM valido y usuario resoluble por `sub` UUID, `email` o `username`: `200 OK`.
 - Token IAM valido + `X-User-Id` correcto: `200 OK`.
 - Token ausente, expirado, mal firmado o con issuer no confiable: `403 Forbidden`.
 - `X-User-Id` distinto al usuario del token cuando IA puede resolverlo por `email`/`username`: `403 Forbidden`.
-- `X-User-Id` ausente en endpoints que todavia lo requieren: `401 Unauthorized`.
+- `X-User-Id` ausente en endpoints que todavia lo requieren y usuario no resoluble desde el token: `401 Unauthorized`.
 
 ## Como IA valida el token
 
@@ -131,11 +151,18 @@ app:
 
 ## Nota sobre `X-User-Id`
 
-IAM actualmente emite `sub` como ID numerico. IA usa UUID en sus tablas locales. Por eso, varios
-endpoints de IA todavia necesitan `X-User-Id`.
+IAM actualmente puede emitir `sub` como ID numerico. IA usa UUID en sus tablas locales. Por eso,
+varios endpoints de IA todavia aceptan `X-User-Id` como compatibilidad.
 
-La integracion actual valida que ese header no contradiga el JWT cuando IA puede resolver el usuario
-por `email` o `username`.
+La integracion actual intenta resolver el usuario local en este orden:
+
+1. `sub` si es UUID y existe en `users`.
+2. `email` si coincide con `users.email`.
+3. `username` si coincide con `users.email`.
+4. `X-User-Id` cuando el token no alcanza para resolver el UUID local.
+
+Si se envia `X-User-Id`, IA valida que ese header no contradiga el JWT cuando puede resolver el
+usuario por `sub`, `email` o `username`.
 
 La mejora ideal a futuro es que IAM emita tambien el UUID compartido de usuario, por ejemplo:
 
@@ -148,7 +175,7 @@ La mejora ideal a futuro es que IAM emita tambien el UUID compartido de usuario,
 }
 ```
 
-Con ese claim, IA podria dejar de depender de `X-User-Id`.
+Con ese claim, IA podria dejar de depender de `X-User-Id` en todos los endpoints.
 
 ## Verificacion automatizada
 

@@ -10,5 +10,7 @@ public interface UserSpringDataRepository extends JpaRepository<UserJpaEntity, U
 
     Optional<UserJpaEntity> findByEmail(String email);
 
+    Optional<UserJpaEntity> findByEmailIgnoreCase(String email);
+
     List<UserJpaEntity> findAllByOrderByCreatedAtDesc();
 }

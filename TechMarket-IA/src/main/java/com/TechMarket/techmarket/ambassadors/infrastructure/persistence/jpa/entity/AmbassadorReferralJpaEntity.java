@@ -46,6 +46,9 @@ public class AmbassadorReferralJpaEntity {
     @Column(name = "city")
     private String city;
 
+    @Column(name = "country")
+    private String country;
+
     @Column(name = "last_activity_at")
     private OffsetDateTime lastActivityAt;
 
@@ -146,6 +149,14 @@ public class AmbassadorReferralJpaEntity {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public OffsetDateTime getLastActivityAt() {
