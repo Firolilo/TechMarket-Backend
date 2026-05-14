@@ -19,6 +19,9 @@ public class CommunityPostJpaEntity {
     @Column(name = "author_user_id")
     private UUID authorUserId;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "content")
     private String content;
 
@@ -50,6 +53,14 @@ public class CommunityPostJpaEntity {
 
     public void setAuthorUserId(UUID authorUserId) {
         this.authorUserId = authorUserId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getContent() {
