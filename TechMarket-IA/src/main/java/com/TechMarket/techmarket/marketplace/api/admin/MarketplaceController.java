@@ -58,6 +58,22 @@ public class MarketplaceController {
         return toPage(listings, pagina);
     }
 
+    @GetMapping("/services")
+    public ProductPageResponse services(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "pagina", defaultValue = "1") int pagina) {
+        List<ListingJpaEntity> listings =
+                listingRepository.findAll().stream()
+                        .filter(listing -> "SERVICE".equals(listing.getListingType()))
+                        .filter(listing -> matchesSearch(listing, search))
+                        .sorted(
+                                Comparator.comparing(
+                                        ListingJpaEntity::getCreatedAt,
+                                        Comparator.nullsLast(Comparator.reverseOrder())))
+                        .toList();
+        return toPage(listings, pagina);
+    }
+
     @GetMapping("/products/{productId}")
     public ProductDetailResponse product(@PathVariable String productId) {
         ListingJpaEntity listing =

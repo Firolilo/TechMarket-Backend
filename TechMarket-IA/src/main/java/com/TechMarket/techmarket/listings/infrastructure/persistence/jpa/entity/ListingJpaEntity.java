@@ -35,6 +35,9 @@ public class ListingJpaEntity {
     @Column(name = "currency")
     private String currency;
 
+    @Column(name = "listing_type")
+    private String listingType;
+
     @Column(name = "status")
     private String status;
 
@@ -106,6 +109,14 @@ public class ListingJpaEntity {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+
+    public String getListingType() {
+        return listingType;
+    }
+
+    public void setListingType(String listingType) {
+        this.listingType = listingType;
     }
 
     public String getStatus() {

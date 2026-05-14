@@ -257,7 +257,15 @@ public class ClientFavoritesCommunityController {
                                 .findById(post.getAuthorUserId())
                                 .map(user -> displayName(user.getFirstName(), user.getLastName()))
                                 .orElse("Usuario");
-        return new CommunityPostResponse(formatPostId(post.getId()), author, post.getContent());
+        String creadoEn = post.getCreatedAt() != null
+                ? post.getCreatedAt().toInstant().toString()
+                : null;
+        return new CommunityPostResponse(
+                formatPostId(post.getId()),
+                author,
+                post.getTitle(),
+                post.getContent(),
+                creadoEn);
     }
 
     private String displayName(String firstName, String lastName) {
