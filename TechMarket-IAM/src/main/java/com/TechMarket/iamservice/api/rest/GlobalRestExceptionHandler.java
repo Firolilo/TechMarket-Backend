@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -181,6 +182,24 @@ public class GlobalRestExceptionHandler {
                         request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+            DataIntegrityViolationException ex, HttpServletRequest request, WebRequest webRequest) {
+        Locale locale = webRequest.getLocale();
+        String message = resolveMessage("IAM_USER_ALREADY_EXISTS", Map.of(), locale);
+
+        log.warn("event=IAM_DATA_INTEGRITY_ERROR path={}", request.getRequestURI(), ex);
+
+        ErrorResponse errorResponse =
+                new ErrorResponse(
+                        "IAM_USER_ALREADY_EXISTS",
+                        message,
+                        Instant.now(),
+                        request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

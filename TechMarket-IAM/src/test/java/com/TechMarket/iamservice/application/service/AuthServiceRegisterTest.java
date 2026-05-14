@@ -198,6 +198,67 @@ class AuthServiceRegisterTest {
         assertThat(response.roles()).containsExactly("embajador");
     }
 
+    @Test
+    void shouldAllowEmpresaRegistration() {
+        RegisterUserRequest request =
+                new RegisterUserRequest(
+                        "empresa@example.com",
+                        "SecurePass123!",
+                        "SecurePass123!",
+                        "empresa",
+                        "Isabella",
+                        "Negocios",
+                        "+59170000001",
+                        "Bolivia",
+                        "La Paz",
+                        true);
+
+        when(tenantUserRepository.existsByTenantIdAndEmail(
+                        IamConstants.GLOBAL_TENANT_ID, "empresa@example.com"))
+                .thenReturn(false);
+        when(tenantUserRepository.existsByTenantIdAndUsername(
+                        IamConstants.GLOBAL_TENANT_ID, "empresa@example.com"))
+                .thenReturn(false);
+        when(tenantRoleRepository.findByNameIgnoreCaseAndTenantId(
+                        "empresa", IamConstants.GLOBAL_TENANT_ID))
+                .thenReturn(Optional.of(role("empresa")));
+        when(tenantUserRepository.save(any(UserEntity.class)))
+                .thenAnswer(
+                        invocation -> {
+                            UserEntity user = invocation.getArgument(0);
+                            ReflectionTestUtils.setField(user, "id", 99L);
+                            return user;
+                        });
+        when(passwordEncoder.encode("SecurePass123!")).thenReturn("encoded-password");
+        when(userCredentialRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userScopeRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(jwtTokenService.generateAccessToken(
+                        anyLong(), anyString(), anyString(), anyList(), anyList(), anyList()))
+                .thenReturn(
+                        new JwtTokenService.GeneratedToken(
+                                "access-token",
+                                "access-id",
+                                Instant.parse("2026-05-04T12:00:00Z")));
+        when(jwtTokenService.generateRefreshToken(anyLong(), anyString()))
+                .thenReturn(
+                        new JwtTokenService.GeneratedToken(
+                                "refresh-token",
+                                "refresh-id",
+                                Instant.parse("2026-05-11T12:00:00Z")));
+
+        AuthTokenResponse response = authService.register(request);
+
+        ArgumentCaptor<UserEntity> userCaptor = ArgumentCaptor.forClass(UserEntity.class);
+        verify(tenantUserRepository).save(userCaptor.capture());
+
+        UserEntity savedUser = userCaptor.getValue();
+        assertThat(savedUser.getUserType()).isEqualTo("empresa");
+        assertThat(savedUser.getRoles()).extracting(RoleEntity::getName).containsExactly("empresa");
+        assertThat(response.userId()).isEqualTo(99L);
+        assertThat(response.roles()).containsExactly("empresa");
+    }
+
     private RoleEntity role(String name) {
         RoleEntity role = new RoleEntity(name, "Rol " + name);
         role.setTenantId(IamConstants.GLOBAL_TENANT_ID);
