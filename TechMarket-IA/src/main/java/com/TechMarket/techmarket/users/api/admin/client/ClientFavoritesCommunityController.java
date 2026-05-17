@@ -239,7 +239,12 @@ public class ClientFavoritesCommunityController {
 
     private CompanySummaryResponse toCompanySummary(TenantJpaEntity tenant) {
         return new CompanySummaryResponse(
-                formatCompanyId(tenant.getId()), tenant.getBusinessName(), null, 0);
+                formatCompanyId(tenant.getId()),
+                tenant.getBusinessName(),
+                null,
+                0.0,
+                tenant.getDescription(),
+                tenant.getBusinessType());
     }
 
     private CommunityResponse toCommunityResponse(CommunityJpaEntity community) {

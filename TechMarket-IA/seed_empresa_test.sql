@@ -303,13 +303,14 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────
--- 15. RESEÑAS (de clientes sobre la empresa)
+-- 15. RESEÑAS (de clientes sobre productos y servicios de la empresa)
 -- ─────────────────────────────────────────────────────────────
-INSERT INTO reviews (id, tenant_id, user_id, ticket_id, quote_id, rating, comment, moderation_status, created_at)
+INSERT INTO reviews (id, tenant_id, user_id, listing_id, ticket_id, quote_id, rating, comment, moderation_status, created_at)
 VALUES
     ('bb000000-0000-0000-0003-000000000001'::uuid,
      'bb000000-0000-0000-0000-000000000002'::uuid,
      '10000000-0000-0000-0000-000000000101'::uuid,
+     'bb000000-0000-0000-0002-000000000001'::uuid,
      NULL, NULL, 4.5,
      'Excelente atencion y el equipo llego en perfectas condiciones. Lo recomiendo.',
      'APPROVED', NOW() - INTERVAL '3 months'),
@@ -317,6 +318,7 @@ VALUES
     ('bb000000-0000-0000-0003-000000000002'::uuid,
      'bb000000-0000-0000-0000-000000000002'::uuid,
      '10000000-0000-0000-0000-000000000102'::uuid,
+     'bb000000-0000-0000-0002-000000000001'::uuid,
      NULL, NULL, 5.0,
      'Compre un laptop ThinkPad y el servicio post-venta es muy bueno. Respondieron todas mis dudas.',
      'APPROVED', NOW() - INTERVAL '2 months'),
@@ -324,6 +326,7 @@ VALUES
     ('bb000000-0000-0000-0003-000000000003'::uuid,
      'bb000000-0000-0000-0000-000000000002'::uuid,
      '10000000-0000-0000-0000-000000000103'::uuid,
+     'bb000000-0000-0000-0002-000000000002'::uuid,
      NULL, NULL, 4.0,
      'Buenos productos y precios competitivos. La entrega tardo un dia mas de lo esperado pero el producto bien.',
      'APPROVED', NOW() - INTERVAL '6 weeks'),
@@ -331,6 +334,7 @@ VALUES
     ('bb000000-0000-0000-0003-000000000004'::uuid,
      'bb000000-0000-0000-0000-000000000002'::uuid,
      '10000000-0000-0000-0000-000000000104'::uuid,
+     'bb000000-0000-0000-0002-000000000005'::uuid,
      NULL, NULL, 5.0,
      'El mantenimiento de laptop fue rapido y profesional. Me explicaron todo lo que encontraron.',
      'APPROVED', NOW() - INTERVAL '3 weeks'),
@@ -338,6 +342,7 @@ VALUES
     ('bb000000-0000-0000-0003-000000000005'::uuid,
      'bb000000-0000-0000-0000-000000000002'::uuid,
      '10000000-0000-0000-0000-000000000101'::uuid,
+     'bb000000-0000-0000-0002-000000000004'::uuid,
      NULL, NULL, 4.5,
      'Gran variedad de perifericos. Encontre el mouse que buscaba a buen precio.',
      'APPROVED', NOW() - INTERVAL '2 weeks')
@@ -414,5 +419,6 @@ COMMIT;
 -- SELECT id, business_name, status FROM tenants WHERE id = 'bb000000-0000-0000-0000-000000000002';
 -- SELECT COUNT(*) FROM listings WHERE tenant_id = 'bb000000-0000-0000-0000-000000000002';
 -- SELECT COUNT(*) FROM reviews  WHERE tenant_id = 'bb000000-0000-0000-0000-000000000002';
+-- SELECT listing_id, AVG(rating) FROM reviews WHERE tenant_id = 'bb000000-0000-0000-0000-000000000002' GROUP BY listing_id;
 -- SELECT COUNT(*) FROM feed_posts WHERE tenant_id = 'bb000000-0000-0000-0000-000000000002';
 -- =============================================================================

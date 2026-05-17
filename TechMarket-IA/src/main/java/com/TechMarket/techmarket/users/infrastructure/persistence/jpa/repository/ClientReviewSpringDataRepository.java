@@ -11,5 +11,7 @@ public interface ClientReviewSpringDataRepository
 
     List<ClientReviewJpaEntity> findAllByListingIdOrderByCreatedAtDesc(UUID listingId);
 
+    List<ClientReviewJpaEntity> findAllByTenantId(UUID tenantId);
+
     Optional<ClientReviewJpaEntity> findByIdAndUserId(UUID id, UUID userId);
 }

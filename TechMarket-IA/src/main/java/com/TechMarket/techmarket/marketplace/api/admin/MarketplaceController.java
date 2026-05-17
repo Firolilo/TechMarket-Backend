@@ -1,6 +1,7 @@
 package com.techmarket.techmarket.marketplace.api.admin;
 
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.entity.ListingJpaEntity;
+import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.repository.ListingImageSpringDataRepository;
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.repository.ListingSpringDataRepository;
 import com.techmarket.techmarket.marketplace.api.admin.response.CategoryTreeResponse;
 import com.techmarket.techmarket.marketplace.api.admin.response.CompanyDetailResponse;
@@ -12,6 +13,9 @@ import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.repository.CatalogCategorySpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientReviewJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -29,16 +33,22 @@ import org.springframework.web.server.ResponseStatusException;
 public class MarketplaceController {
 
     private final ListingSpringDataRepository listingRepository;
+    private final ListingImageSpringDataRepository listingImageRepository;
     private final CatalogCategorySpringDataRepository categoryRepository;
     private final TenantSpringDataRepository tenantRepository;
+    private final ClientReviewSpringDataRepository reviewRepository;
 
     public MarketplaceController(
             ListingSpringDataRepository listingRepository,
+            ListingImageSpringDataRepository listingImageRepository,
             CatalogCategorySpringDataRepository categoryRepository,
-            TenantSpringDataRepository tenantRepository) {
+            TenantSpringDataRepository tenantRepository,
+            ClientReviewSpringDataRepository reviewRepository) {
         this.listingRepository = listingRepository;
+        this.listingImageRepository = listingImageRepository;
         this.categoryRepository = categoryRepository;
         this.tenantRepository = tenantRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     @GetMapping("/products")
@@ -120,10 +130,11 @@ public class MarketplaceController {
     @GetMapping("/companies/{companyId}")
     public CompanyDetailResponse company(@PathVariable String companyId) {
         TenantJpaEntity tenant = findTenant(parsePrefixedUuid(companyId, "EMP-"));
+        double rating = averageRatingForTenant(tenant.getId());
         return new CompanyDetailResponse(
                 formatCompanyId(tenant.getId()),
                 tenant.getBusinessName(),
-                null,
+                tenant.getDescription(),
                 tenant.getCreatedAt() == null ? null : tenant.getCreatedAt().toLocalDate(),
                 0);
     }
@@ -144,12 +155,25 @@ public class MarketplaceController {
     }
 
     private ProductSummaryResponse toProductSummary(ListingJpaEntity listing) {
+        String imagenPrincipal = listingImageRepository
+                .findFirstByListingIdAndIsPrimaryTrue(listing.getId())
+                .map(img -> img.getImageUrl())
+                .orElse(null);
+
+        double calificacion = reviewRepository
+                .findAllByListingIdOrderByCreatedAtDesc(listing.getId())
+                .stream()
+                .filter(r -> r.getRating() != null)
+                .mapToDouble(r -> r.getRating().doubleValue())
+                .average()
+                .orElse(0.0);
+
         return new ProductSummaryResponse(
                 formatProductId(listing.getId()),
                 listing.getTitle(),
                 listing.getBasePrice(),
-                null,
-                0);
+                imagenPrincipal,
+                calificacion);
     }
 
     private CategoryTreeResponse toCategoryTree(CatalogCategoryJpaEntity category) {
@@ -165,8 +189,22 @@ public class MarketplaceController {
         if (tenant == null) {
             return null;
         }
+        double rating = averageRatingForTenant(tenant.getId());
         return new CompanySummaryResponse(
-                formatCompanyId(tenant.getId()), tenant.getBusinessName(), null, 0);
+                formatCompanyId(tenant.getId()),
+                tenant.getBusinessName(),
+                null,
+                rating,
+                tenant.getDescription(),
+                tenant.getBusinessType());
+    }
+
+    private double averageRatingForTenant(UUID tenantId) {
+        return reviewRepository.findAllByTenantId(tenantId).stream()
+                .filter(r -> r.getRating() != null)
+                .mapToDouble(r -> r.getRating().doubleValue())
+                .average()
+                .orElse(0.0);
     }
 
     private TenantJpaEntity findTenant(UUID tenantId) {

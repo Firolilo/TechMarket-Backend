@@ -22,6 +22,12 @@ public class TenantJpaEntity {
     @Column(name = "tax_id")
     private String taxId;
 
+    @Column(name = "business_type")
+    private String businessType;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "status")
     private String status;
 
@@ -61,6 +67,22 @@ public class TenantJpaEntity {
 
     public void setTaxId(String taxId) {
         this.taxId = taxId;
+    }
+
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getStatus() {
