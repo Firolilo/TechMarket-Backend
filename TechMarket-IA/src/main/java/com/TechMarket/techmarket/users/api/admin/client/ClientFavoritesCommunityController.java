@@ -7,17 +7,24 @@ import com.techmarket.techmarket.marketplace.api.admin.response.ProductSummaryRe
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
 import com.techmarket.techmarket.users.api.admin.client.response.CommunityMemberResponse;
+import com.techmarket.techmarket.users.api.admin.client.response.CommunityPostCommentResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CommunityPostResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CommunityResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.MessageResponse;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientFavoriteJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.CommunityJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.CommunityMemberRoleJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.CommunityMembershipJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.CommunityPostJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.CommunityPostLikeJpaEntity;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.PostCommentJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientFavoriteSpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.CommunityMemberRoleSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.CommunityMembershipSpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.CommunityPostLikeSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.CommunityPostSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.CommunitySpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.PostCommentSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -46,6 +53,9 @@ public class ClientFavoritesCommunityController {
     private final CommunityMembershipSpringDataRepository membershipRepository;
     private final CommunityPostSpringDataRepository postRepository;
     private final UserSpringDataRepository userRepository;
+    private final CommunityMemberRoleSpringDataRepository memberRoleRepository;
+    private final CommunityPostLikeSpringDataRepository postLikeRepository;
+    private final PostCommentSpringDataRepository postCommentRepository;
 
     public ClientFavoritesCommunityController(
             ClientFavoriteSpringDataRepository favoriteRepository,
@@ -54,7 +64,10 @@ public class ClientFavoritesCommunityController {
             CommunitySpringDataRepository communityRepository,
             CommunityMembershipSpringDataRepository membershipRepository,
             CommunityPostSpringDataRepository postRepository,
-            UserSpringDataRepository userRepository) {
+            UserSpringDataRepository userRepository,
+            CommunityMemberRoleSpringDataRepository memberRoleRepository,
+            CommunityPostLikeSpringDataRepository postLikeRepository,
+            PostCommentSpringDataRepository postCommentRepository) {
         this.favoriteRepository = favoriteRepository;
         this.listingRepository = listingRepository;
         this.tenantRepository = tenantRepository;
@@ -62,6 +75,9 @@ public class ClientFavoritesCommunityController {
         this.membershipRepository = membershipRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
+        this.memberRoleRepository = memberRoleRepository;
+        this.postLikeRepository = postLikeRepository;
+        this.postCommentRepository = postCommentRepository;
     }
 
     @GetMapping("/favorites/products")
@@ -210,13 +226,141 @@ public class ClientFavoritesCommunityController {
     public List<CommunityMemberResponse> communityMembers(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String communityId) {
-        parseUserId(userId);
+        UUID currentUserId = parseUserId(userId);
         CommunityJpaEntity community = findCommunity(communityId);
-        return membershipRepository
-                .findAllByCommunityIdOrderByJoinedAtAsc(community.getId())
-                .stream()
-                .map(this::toCommunityMemberResponse)
+        List<CommunityMembershipJpaEntity> memberships =
+                membershipRepository.findAllByCommunityIdOrderByJoinedAtAsc(community.getId());
+        return memberships.stream()
+                .map(m -> toCommunityMemberResponse(m, currentUserId, resolveRole(m, memberships)))
                 .toList();
+    }
+
+    @PostMapping("/communities/{communityId}/members/{memberUserId}/promote")
+    @Transactional
+    public MessageResponse promoteMember(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String memberUserId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID targetUserId = parsePrefixedUuid(memberUserId, "USR-");
+
+        List<CommunityMembershipJpaEntity> memberships =
+                membershipRepository.findAllByCommunityIdOrderByJoinedAtAsc(community.getId());
+        String currentRole = roleForUser(currentUserId, memberships);
+
+        if (!CommunityMemberRoleJpaEntity.ROLE_ADMIN.equals(currentRole)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Solo el administrador puede promover miembros");
+        }
+
+        if (currentUserId.equals(targetUserId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "No podés cambiar tu propio rol");
+        }
+
+        boolean targetIsMember =
+                memberships.stream().anyMatch(m -> targetUserId.equals(m.getUserId()));
+        if (!targetIsMember) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "El usuario no es miembro de esta comunidad");
+        }
+
+        setMemberRole(community.getId(), targetUserId, CommunityMemberRoleJpaEntity.ROLE_MODERATOR);
+        return new MessageResponse("Miembro promovido a moderador");
+    }
+
+    @PostMapping("/communities/{communityId}/members/{memberUserId}/demote")
+    @Transactional
+    public MessageResponse demoteMember(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String memberUserId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID targetUserId = parsePrefixedUuid(memberUserId, "USR-");
+
+        List<CommunityMembershipJpaEntity> memberships =
+                membershipRepository.findAllByCommunityIdOrderByJoinedAtAsc(community.getId());
+        String currentRole = roleForUser(currentUserId, memberships);
+
+        if (!CommunityMemberRoleJpaEntity.ROLE_ADMIN.equals(currentRole)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Solo el administrador puede degradar miembros");
+        }
+
+        if (currentUserId.equals(targetUserId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "No podés cambiar tu propio rol");
+        }
+
+        memberRoleRepository
+                .findByCommunityIdAndUserId(community.getId(), targetUserId)
+                .ifPresent(memberRoleRepository::delete);
+        return new MessageResponse("Moderador degradado a miembro");
+    }
+
+    @DeleteMapping("/communities/{communityId}/members/{memberUserId}")
+    @Transactional
+    public MessageResponse kickMember(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String memberUserId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID targetUserId = parsePrefixedUuid(memberUserId, "USR-");
+
+        if (currentUserId.equals(targetUserId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Usá 'salir de la comunidad' para irte vos mismo");
+        }
+
+        List<CommunityMembershipJpaEntity> memberships =
+                membershipRepository.findAllByCommunityIdOrderByJoinedAtAsc(community.getId());
+        String currentRole = roleForUser(currentUserId, memberships);
+        String targetRole = roleForUser(targetUserId, memberships);
+
+        boolean isAdmin = CommunityMemberRoleJpaEntity.ROLE_ADMIN.equals(currentRole);
+        boolean isModerator = CommunityMemberRoleJpaEntity.ROLE_MODERATOR.equals(currentRole);
+
+        if (!isAdmin && !isModerator) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "No tenés permisos para expulsar miembros");
+        }
+
+        // Moderadores no pueden kickear a admins ni a otros moderadores.
+        if (isModerator
+                && (CommunityMemberRoleJpaEntity.ROLE_ADMIN.equals(targetRole)
+                        || CommunityMemberRoleJpaEntity.ROLE_MODERATOR.equals(targetRole))) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No podés expulsar a administradores ni a otros moderadores");
+        }
+
+        // El admin no puede ser expulsado nunca (siempre debe haber 1 admin).
+        if (CommunityMemberRoleJpaEntity.ROLE_ADMIN.equals(targetRole)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "El administrador no puede ser expulsado");
+        }
+
+        CommunityMembershipJpaEntity targetMembership =
+                memberships.stream()
+                        .filter(m -> targetUserId.equals(m.getUserId()))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "El usuario no es miembro de esta comunidad"));
+
+        membershipRepository.delete(targetMembership);
+        memberRoleRepository
+                .findByCommunityIdAndUserId(community.getId(), targetUserId)
+                .ifPresent(memberRoleRepository::delete);
+        community.setMembersCount(Math.max(0, community.getMembersCount() - 1));
+        communityRepository.save(community);
+
+        return new MessageResponse("Miembro expulsado de la comunidad");
     }
 
     @PostMapping("/communities/{communityId}/posts")
@@ -260,7 +404,7 @@ public class ClientFavoritesCommunityController {
         post.setCreatedAt(OffsetDateTime.now());
         postRepository.save(post);
 
-        return toCommunityPostResponse(post);
+        return toCommunityPostResponse(post, currentUserId);
     }
 
     public record CreateCommunityPostRequest(String titulo, String contenido) {}
@@ -311,12 +455,132 @@ public class ClientFavoritesCommunityController {
     public List<CommunityPostResponse> communityPosts(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String communityId) {
-        parseUserId(userId);
+        UUID currentUserId = parseUserId(userId);
         CommunityJpaEntity community = findCommunity(communityId);
         return postRepository.findAllByCommunityIdOrderByCreatedAtDesc(community.getId()).stream()
-                .map(this::toCommunityPostResponse)
+                .map(post -> toCommunityPostResponse(post, currentUserId))
                 .toList();
     }
+
+    @PostMapping("/communities/{communityId}/posts/{postId}/like")
+    @Transactional
+    public CommunityPostResponse likePost(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String postId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID postUuid = parsePrefixedUuid(postId, "POST-");
+        CommunityPostJpaEntity post =
+                postRepository
+                        .findById(postUuid)
+                        .filter(p -> community.getId().equals(p.getCommunityId()))
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        postLikeRepository
+                .findByPostIdAndUserId(post.getId(), currentUserId)
+                .orElseGet(
+                        () -> {
+                            CommunityPostLikeJpaEntity like = new CommunityPostLikeJpaEntity();
+                            like.setId(UUID.randomUUID());
+                            like.setPostId(post.getId());
+                            like.setUserId(currentUserId);
+                            like.setCreatedAt(OffsetDateTime.now());
+                            return postLikeRepository.save(like);
+                        });
+
+        return toCommunityPostResponse(post, currentUserId);
+    }
+
+    @DeleteMapping("/communities/{communityId}/posts/{postId}/like")
+    @Transactional
+    public CommunityPostResponse unlikePost(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String postId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID postUuid = parsePrefixedUuid(postId, "POST-");
+        CommunityPostJpaEntity post =
+                postRepository
+                        .findById(postUuid)
+                        .filter(p -> community.getId().equals(p.getCommunityId()))
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        postLikeRepository
+                .findByPostIdAndUserId(post.getId(), currentUserId)
+                .ifPresent(postLikeRepository::delete);
+
+        return toCommunityPostResponse(post, currentUserId);
+    }
+
+    @GetMapping("/communities/{communityId}/posts/{postId}/comments")
+    public List<CommunityPostCommentResponse> listPostComments(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String postId) {
+        parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID postUuid = parsePrefixedUuid(postId, "POST-");
+        CommunityPostJpaEntity post =
+                postRepository
+                        .findById(postUuid)
+                        .filter(p -> community.getId().equals(p.getCommunityId()))
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        return postCommentRepository.findAllByFeedPostIdOrderByCreatedAtAsc(post.getId()).stream()
+                .map(this::toCommunityPostCommentResponse)
+                .toList();
+    }
+
+    @PostMapping("/communities/{communityId}/posts/{postId}/comments")
+    @Transactional
+    public CommunityPostCommentResponse createPostComment(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @PathVariable String postId,
+            @RequestBody CreatePostCommentRequest request) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        UUID postUuid = parsePrefixedUuid(postId, "POST-");
+        CommunityPostJpaEntity post =
+                postRepository
+                        .findById(postUuid)
+                        .filter(p -> community.getId().equals(p.getCommunityId()))
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Post no encontrado"));
+
+        if (request == null
+                || request.contenido() == null
+                || request.contenido().trim().isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "El comentario no puede estar vacio");
+        }
+
+        PostCommentJpaEntity comment = new PostCommentJpaEntity();
+        comment.setId(UUID.randomUUID());
+        comment.setFeedPostId(post.getId());
+        comment.setUserId(currentUserId);
+        comment.setCommentBody(request.contenido().trim());
+        comment.setStatus("PUBLISHED");
+        comment.setCreatedAt(OffsetDateTime.now());
+        postCommentRepository.save(comment);
+
+        return toCommunityPostCommentResponse(comment);
+    }
+
+    public record CreatePostCommentRequest(String contenido) {}
 
     private ProductSummaryResponse toProductSummary(ListingJpaEntity listing) {
         return new ProductSummaryResponse(
@@ -352,7 +616,7 @@ public class ClientFavoritesCommunityController {
     }
 
     private CommunityMemberResponse toCommunityMemberResponse(
-            CommunityMembershipJpaEntity membership) {
+            CommunityMembershipJpaEntity membership, UUID currentUserId, String role) {
         String memberName =
                 userRepository
                         .findById(membership.getUserId())
@@ -362,12 +626,13 @@ public class ClientFavoritesCommunityController {
                 membership.getJoinedAt() != null
                         ? membership.getJoinedAt().toInstant().toString()
                         : null;
-        // Para MVP: rol siempre "Miembro" (no hay tabla de roles aún)
+        boolean esMiUsuario = membership.getUserId().equals(currentUserId);
         return new CommunityMemberResponse(
-                "USR-" + membership.getUserId(), memberName, "Miembro", unidoEn);
+                "USR-" + membership.getUserId(), memberName, role, unidoEn, esMiUsuario);
     }
 
-    private CommunityPostResponse toCommunityPostResponse(CommunityPostJpaEntity post) {
+    private CommunityPostResponse toCommunityPostResponse(
+            CommunityPostJpaEntity post, UUID currentUserId) {
         String author =
                 post.getAuthorUserId() == null
                         ? "Usuario"
@@ -377,8 +642,92 @@ public class ClientFavoritesCommunityController {
                                 .orElse("Usuario");
         String creadoEn =
                 post.getCreatedAt() != null ? post.getCreatedAt().toInstant().toString() : null;
+        long likes = postLikeRepository.countByPostId(post.getId());
+        long comments = postCommentRepository.countByFeedPostId(post.getId());
+        boolean meGusta =
+                postLikeRepository.findByPostIdAndUserId(post.getId(), currentUserId).isPresent();
         return new CommunityPostResponse(
-                formatPostId(post.getId()), author, post.getTitle(), post.getContent(), creadoEn);
+                formatPostId(post.getId()),
+                author,
+                post.getTitle(),
+                post.getContent(),
+                creadoEn,
+                likes,
+                comments,
+                meGusta);
+    }
+
+    private CommunityPostCommentResponse toCommunityPostCommentResponse(
+            PostCommentJpaEntity comment) {
+        String author =
+                comment.getUserId() == null
+                        ? "Usuario"
+                        : userRepository
+                                .findById(comment.getUserId())
+                                .map(user -> displayName(user.getFirstName(), user.getLastName()))
+                                .orElse("Usuario");
+        String creadoEn =
+                comment.getCreatedAt() != null
+                        ? comment.getCreatedAt().toInstant().toString()
+                        : null;
+        return new CommunityPostCommentResponse(
+                "CMT-" + comment.getId(), author, comment.getCommentBody(), creadoEn);
+    }
+
+    /**
+     * Resuelve el rol de un miembro: explicit role en la tabla, o fallback al miembro más antiguo
+     * que se convierte en ADMIN implícito (garantiza siempre 1 admin).
+     */
+    private String resolveRole(
+            CommunityMembershipJpaEntity membership,
+            List<CommunityMembershipJpaEntity> allMemberships) {
+        java.util.Optional<CommunityMemberRoleJpaEntity> explicit =
+                memberRoleRepository.findByCommunityIdAndUserId(
+                        membership.getCommunityId(), membership.getUserId());
+        if (explicit.isPresent()) {
+            return explicit.get().getRole();
+        }
+
+        boolean anyExplicitAdmin =
+                memberRoleRepository.countByCommunityIdAndRole(
+                                membership.getCommunityId(),
+                                CommunityMemberRoleJpaEntity.ROLE_ADMIN)
+                        > 0;
+
+        if (!anyExplicitAdmin && allMemberships.size() > 0) {
+            CommunityMembershipJpaEntity oldest = allMemberships.get(0);
+            if (oldest.getUserId().equals(membership.getUserId())) {
+                return CommunityMemberRoleJpaEntity.ROLE_ADMIN;
+            }
+        }
+
+        return "MEMBER";
+    }
+
+    private String roleForUser(UUID userId, List<CommunityMembershipJpaEntity> memberships) {
+        return memberships.stream()
+                .filter(m -> userId.equals(m.getUserId()))
+                .findFirst()
+                .map(m -> resolveRole(m, memberships))
+                .orElse("NONE");
+    }
+
+    private void setMemberRole(UUID communityId, UUID userId, String role) {
+        CommunityMemberRoleJpaEntity entity =
+                memberRoleRepository
+                        .findByCommunityIdAndUserId(communityId, userId)
+                        .orElseGet(
+                                () -> {
+                                    CommunityMemberRoleJpaEntity created =
+                                            new CommunityMemberRoleJpaEntity();
+                                    created.setId(UUID.randomUUID());
+                                    created.setCommunityId(communityId);
+                                    created.setUserId(userId);
+                                    return created;
+                                });
+        entity.setRole(role);
+        entity.setGrantedAt(OffsetDateTime.now());
+        memberRoleRepository.save(entity);
     }
 
     private String displayName(String firstName, String lastName) {
