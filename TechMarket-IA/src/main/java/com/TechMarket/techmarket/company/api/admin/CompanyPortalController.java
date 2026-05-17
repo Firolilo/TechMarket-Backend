@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -187,6 +189,7 @@ public class CompanyPortalController {
         response.put("alerts", alerts(products, activeProducts, profile));
         response.put("recentActivity", recentActivity(currentTenantId));
         response.put("recommendedActions", recommendedActions(products, activeProducts, profile));
+        response.put("lastSessionAt", latestTimestamp("SELECT MAX(created_at) FROM interaction_events WHERE tenant_id = ?", currentTenantId));
         response.put("settings", profile.get("settings"));
         return response;
     }
@@ -195,6 +198,7 @@ public class CompanyPortalController {
     public Map<String, Object> aiQuery(@RequestBody Map<String, Object> request) {
         String question = valueOrDefault(request.get("question"), "Consulta empresarial");
         String context = valueOrDefault(request.get("context"), "perfil y publicaciones");
+        Map<String, Object> settings = settings(jsonValue(request.get("settings")));
         return mapOf(
                 "summary",
                 "Analisis generado para: " + question,
@@ -206,7 +210,21 @@ public class CompanyPortalController {
                 "advice",
                 "Prioriza una publicacion clara con precio, imagen y estado activo; luego actualiza cobertura, contactos y horarios para reducir friccion.",
                 "nextStep",
-                "Publica o actualiza el producto con mayor demanda y comparte una oferta con llamada a contacto.");
+                "Publica o actualiza el producto con mayor demanda y comparte una oferta con llamada a contacto.",
+                "actionPlan",
+                List.of("Actualizar catalogo visible", "Responder conversaciones abiertas", "Revisar resenas pendientes"),
+                "watchItems",
+                List.of("Productos sin imagen", "Conversaciones sin leer", "Resenas sin respuesta"),
+                "priority",
+                "medium",
+                "confidence",
+                0.82,
+                "focusLabel",
+                "Publicaciones",
+                "focusHref",
+                "/empresa/publicaciones",
+                "settings",
+                settings);
     }
 
     @GetMapping("/publicaciones")
@@ -223,6 +241,8 @@ public class CompanyPortalController {
         List<Map<String, Object>> services = services(currentTenantId, company);
         List<Map<String, Object>> offers = offers(currentTenantId, company);
         List<Map<String, Object>> surveys = surveys(currentTenantId);
+        List<Map<String, Object>> posts = posts(currentTenantId, currentUserId);
+        List<Map<String, Object>> users = interactingUsers(currentTenantId);
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("company", company);
         response.put(
@@ -254,6 +274,10 @@ public class CompanyPortalController {
         response.put("services", services);
         response.put("offers", offers);
         response.put("surveys", surveys);
+        response.put("posts", posts);
+        response.put("users", users);
+        response.put("interactingUsers", users);
+        response.put("latestInteractionNotification", latestInteractionNotification(currentTenantId));
         response.put("settings", profileResponse(currentTenantId).get("settings"));
         return response;
     }
@@ -417,7 +441,11 @@ public class CompanyPortalController {
                     OffsetDateTime.now(),
                     OffsetDateTime.now());
         }
-        return mapOf("publicationId", "POST-" + postId, "liked", liked, "likes", likesCount(postId));
+        return mapOf(
+                "publicationId", "POST-" + postId,
+                "liked", liked,
+                "likes", likesCount(postId),
+                "settings", settings(jsonValue(request.get("settings"))));
     }
 
     @PostMapping("/publicaciones/{publicationId}/comentarios")
@@ -445,12 +473,16 @@ public class CompanyPortalController {
                 "CMT-" + commentId,
                 "publicationId",
                 "POST-" + postId,
+                "authorId",
+                stringValue(request.get("authorId")),
                 "authorName",
                 valueOrDefault(request.get("authorName"), "Usuario"),
                 "text",
                 valueOrDefault(request.get("text"), ""),
                 "createdAt",
-                OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+                OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                "settings",
+                settings(jsonValue(request.get("settings"))));
     }
 
     @PutMapping("/productos/{productId}")
@@ -561,7 +593,159 @@ public class CompanyPortalController {
     public Map<String, Object> uploadMultipartImage(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folder", defaultValue = "empresa") String folder) {
-        return imageUploadResponse(folder, file.getOriginalFilename());
+        return imageUploadResponse(
+                folder, file.getOriginalFilename(), file.getContentType(), file.getSize());
+    }
+
+    @GetMapping("/chat/conversaciones")
+    public Map<String, Object> chatConversations(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        List<Map<String, Object>> conversations = conversations(currentTenantId);
+        long unreadTotal =
+                conversations.stream()
+                        .filter(item -> Boolean.TRUE.equals(item.get("unread")))
+                        .count();
+        return mapOf("conversations", conversations, "unreadTotal", unreadTotal, "settings", profileResponse(currentTenantId).get("settings"));
+    }
+
+    @GetMapping("/chat/conversaciones/{conversationId}/mensajes")
+    public Map<String, Object> chatMessages(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId,
+            @PathVariable String conversationId) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        UUID ticketId = parsePrefixedUuid(conversationId, "CONV-");
+        Map<String, Object> ticket = findCompanyTicket(currentTenantId, ticketId);
+        return mapOf(
+                "conversationId", "CONV-" + ticketId,
+                "customer", userSummary((UUID) ticket.get("customer_user_id")),
+                "productOrService", listingSummary((UUID) ticket.get("listing_id")),
+                "messages", messages(ticketId),
+                "settings", profileResponse(currentTenantId).get("settings"));
+    }
+
+    @PostMapping("/chat/conversaciones/{conversationId}/mensajes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, Object> sendChatMessage(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId,
+            @PathVariable String conversationId,
+            @RequestBody Map<String, Object> request) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        UUID ticketId = parsePrefixedUuid(valueOrDefault(request.get("conversationId"), conversationId), "CONV-");
+        findCompanyTicket(currentTenantId, ticketId);
+        UUID messageId = UUID.randomUUID();
+        jdbc.update(
+                "INSERT INTO ticket_messages (id, ticket_id, author_user_id, message_body, message_type, is_visible_to_customer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                messageId,
+                ticketId,
+                parseOptionalUuid(userId),
+                valueOrDefault(request.get("text"), ""),
+                valueOrDefault(request.get("author"), "company"),
+                true,
+                OffsetDateTime.now());
+        return mapOf(
+                "id", "MSG-" + messageId,
+                "conversationId", "CONV-" + ticketId,
+                "author", valueOrDefault(request.get("author"), "company"),
+                "text", valueOrDefault(request.get("text"), ""),
+                "createdAt", OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                "settings", settings(jsonValue(request.get("settings"))));
+    }
+
+    @PatchMapping("/chat/conversaciones/{conversationId}/leido")
+    public Map<String, Object> markChatRead(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId,
+            @PathVariable String conversationId,
+            @RequestBody Map<String, Object> request) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        UUID ticketId = parsePrefixedUuid(valueOrDefault(request.get("conversationId"), conversationId), "CONV-");
+        findCompanyTicket(currentTenantId, ticketId);
+        UUID currentUserId = parseOptionalUuid(userId);
+        boolean read = booleanValue(request.get("read"));
+        if (currentUserId != null && read) {
+            upsertReadReceipt(ticketId, currentUserId);
+        }
+        return mapOf("conversationId", "CONV-" + ticketId, "read", read, "settings", settings(jsonValue(request.get("settings"))));
+    }
+
+    @GetMapping("/resenas")
+    public Map<String, Object> reviews(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        List<Map<String, Object>> reviews = reviewsList(currentTenantId);
+        BigDecimal average = decimalQuery("SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE tenant_id = ?", currentTenantId);
+        long pendingReplies = count("SELECT COUNT(*) FROM reviews WHERE tenant_id = ? AND company_response IS NULL", currentTenantId);
+        return mapOf(
+                "reviews", reviews,
+                "totalReviews", reviews.size(),
+                "averageStars", average,
+                "pendingReplies", pendingReplies,
+                "followUpItems", followUpItems(currentTenantId),
+                "topTags", List.of("atencion", "calidad", "precio"),
+                "ratingSummary", ratingSummary(currentTenantId),
+                "settings", profileResponse(currentTenantId).get("settings"));
+    }
+
+    @PostMapping("/resenas/{reviewId}/respuesta")
+    public Map<String, Object> replyReview(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId,
+            @PathVariable String reviewId,
+            @RequestBody Map<String, Object> request) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        UUID reviewUuid = parsePrefixedUuid(valueOrDefault(request.get("reviewId"), reviewId), "REV-");
+        int updated =
+                jdbc.update(
+                        "UPDATE reviews SET company_response = ?, company_response_at = ?, updated_at = ? WHERE id = ? AND tenant_id = ?",
+                        stringValue(request.get("response")),
+                        OffsetDateTime.now(),
+                        OffsetDateTime.now(),
+                        reviewUuid,
+                        currentTenantId);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found");
+        }
+        return mapOf(
+                "reviewId", "REV-" + reviewUuid,
+                "response", stringValue(request.get("response")),
+                "wasResponded", booleanValue(request.get("wasResponded")) || stringValue(request.get("response")) != null,
+                "settings", settings(jsonValue(request.get("settings"))));
+    }
+
+    @GetMapping("/analiticas")
+    public Map<String, Object> analytics(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Tenant-Id", required = false) String tenantId,
+            @RequestHeader(value = "X-Company-Id", required = false) String companyId) {
+        UUID currentTenantId = resolveTenantId(userId, tenantId, companyId);
+        BigDecimal ratingAverage = decimalQuery("SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE tenant_id = ?", currentTenantId);
+        long visits = count("SELECT COUNT(*) FROM interaction_events WHERE tenant_id = ?", currentTenantId);
+        long conversions = count("SELECT COALESCE(SUM(conversions_count), 0) FROM tenant_daily_metrics WHERE tenant_id = ?", currentTenantId);
+        long leads = count("SELECT COALESCE(SUM(leads_count), 0) FROM tenant_daily_metrics WHERE tenant_id = ?", currentTenantId);
+        BigDecimal conversion =
+                leads == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(conversions * 100.0 / leads);
+        return mapOf(
+                "publicationMetrics", publicationMetrics(currentTenantId),
+                "ratingLevels", ratingSummary(currentTenantId),
+                "userReviews", reviewsList(currentTenantId),
+                "userComments", userComments(currentTenantId),
+                "growthSeries", growthSeries(currentTenantId),
+                "totalVisits", visits,
+                "averageConversion", conversion,
+                "ratingAverage", ratingAverage,
+                "growthIndex", boundedScore(conversions + visits, 100),
+                "settings", profileResponse(currentTenantId).get("settings"));
     }
 
     private Map<String, Object> profileResponse(UUID tenantId) {
@@ -607,16 +791,27 @@ public class CompanyPortalController {
     }
 
     private Map<String, Object> imageUploadResponse(String folderValue, String fileValue) {
+        return imageUploadResponse(folderValue, fileValue, null, 0L);
+    }
+
+    private Map<String, Object> imageUploadResponse(
+            String folderValue, String fileValue, String mimeType, long size) {
         String folder = valueOrDefault(folderValue, "empresa").replaceAll("[^a-zA-Z0-9_-]", "-");
         String file = valueOrDefault(fileValue, UUID.randomUUID().toString());
         String extension = file.contains(".") ? file.substring(file.lastIndexOf('.')) : ".jpg";
+        UUID imageId = UUID.randomUUID();
         String url =
                 "https://cdn.techmarket.local/empresa/"
                         + folder
                         + "/"
-                        + UUID.randomUUID()
+                        + imageId
                         + extension;
-        return mapOf("url", url, "folder", folder);
+        return mapOf(
+                "id", "IMG-" + imageId,
+                "fileName", file,
+                "url", url,
+                "mimeType", valueOrDefault(mimeType, "image/jpeg"),
+                "size", size);
     }
 
     private UUID resolveTenantId(String userId, String tenantId, String companyId) {
@@ -683,6 +878,82 @@ public class CompanyPortalController {
                 .stream()
                 .map(row -> findTextPostItem((UUID) row.get("id"), userId))
                 .toList();
+    }
+
+    private List<Map<String, Object>> posts(UUID tenantId, UUID userId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT id
+                        FROM feed_posts
+                        WHERE tenant_id = ?
+                          AND LOWER(COALESCE(post_type, 'post')) NOT IN ('product', 'service', 'offer', 'survey')
+                        ORDER BY created_at DESC NULLS LAST
+                        """,
+                        tenantId)
+                .stream()
+                .map(row -> findFeedItem((UUID) row.get("id"), userId))
+                .toList();
+    }
+
+    private List<Map<String, Object>> interactingUsers(UUID tenantId) {
+        Map<UUID, Map<String, Object>> users = new LinkedHashMap<>();
+        jdbc.queryForList(
+                        """
+                        SELECT DISTINCT user_id
+                        FROM interaction_events
+                        WHERE tenant_id = ? AND user_id IS NOT NULL
+                        LIMIT 20
+                        """,
+                        tenantId)
+                .forEach(row -> putUser(users, (UUID) row.get("user_id")));
+        jdbc.queryForList(
+                        """
+                        SELECT DISTINCT user_id
+                        FROM reviews
+                        WHERE tenant_id = ? AND user_id IS NOT NULL
+                        LIMIT 20
+                        """,
+                        tenantId)
+                .forEach(row -> putUser(users, (UUID) row.get("user_id")));
+        jdbc.queryForList(
+                        """
+                        SELECT DISTINCT pc.user_id
+                        FROM post_comments pc
+                        JOIN feed_posts fp ON fp.id = pc.feed_post_id
+                        WHERE fp.tenant_id = ? AND pc.user_id IS NOT NULL
+                        LIMIT 20
+                        """,
+                        tenantId)
+                .forEach(row -> putUser(users, (UUID) row.get("user_id")));
+        return new ArrayList<>(users.values());
+    }
+
+    private void putUser(Map<UUID, Map<String, Object>> users, UUID userId) {
+        if (userId != null && !users.containsKey(userId)) {
+            users.put(userId, userSummary(userId));
+        }
+    }
+
+    private Map<String, Object> latestInteractionNotification(UUID tenantId) {
+        try {
+            Map<String, Object> row =
+                    jdbc.queryForMap(
+                            """
+                            SELECT id, event_type, created_at
+                            FROM interaction_events
+                            WHERE tenant_id = ?
+                            ORDER BY created_at DESC NULLS LAST
+                            LIMIT 1
+                            """,
+                            tenantId);
+            return mapOf(
+                    "id", "INT-" + row.get("id"),
+                    "title", "Nueva interaccion",
+                    "detail", valueOrDefault(row.get("event_type"), "Actividad reciente"),
+                    "time", row.get("created_at"));
+        } catch (EmptyResultDataAccessException ex) {
+            return new LinkedHashMap<>();
+        }
     }
 
     private Map<String, Object> findFeedItem(UUID postId, UUID userId) {
@@ -1002,6 +1273,136 @@ public class CompanyPortalController {
                 "canSend", true);
     }
 
+    private List<Map<String, Object>> conversations(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT t.*, MAX(tm.created_at) AS last_message_at, COUNT(tm.id) AS message_count
+                        FROM tickets t
+                        LEFT JOIN ticket_messages tm ON tm.ticket_id = t.id
+                        WHERE t.tenant_id = ?
+                          AND LOWER(COALESCE(t.ticket_type, '')) IN ('company_chat', 'chat', 'support')
+                        GROUP BY t.id
+                        ORDER BY COALESCE(MAX(tm.created_at), t.created_at, t.opened_at) DESC NULLS LAST
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "CONV-" + row.get("id"),
+                                        "subject", valueOrDefault(row.get("subject"), "Conversacion"),
+                                        "status", row.get("status"),
+                                        "customer", userSummary((UUID) row.get("customer_user_id")),
+                                        "productOrService", listingSummary((UUID) row.get("listing_id")),
+                                        "lastMessageAt", row.get("last_message_at"),
+                                        "messageCount", numberOrDefault(row.get("message_count"), 0),
+                                        "unread", true))
+                .toList();
+    }
+
+    private Map<String, Object> findCompanyTicket(UUID tenantId, UUID ticketId) {
+        try {
+            return jdbc.queryForMap(
+                    """
+                    SELECT *
+                    FROM tickets
+                    WHERE id = ? AND tenant_id = ?
+                      AND LOWER(COALESCE(ticket_type, '')) IN ('company_chat', 'chat', 'support')
+                    """,
+                    ticketId,
+                    tenantId);
+        } catch (EmptyResultDataAccessException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found");
+        }
+    }
+
+    private List<Map<String, Object>> messages(UUID ticketId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT id, author_user_id, message_body, message_type, created_at
+                        FROM ticket_messages
+                        WHERE ticket_id = ?
+                        ORDER BY created_at ASC NULLS LAST
+                        """,
+                        ticketId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "MSG-" + row.get("id"),
+                                        "authorId", row.get("author_user_id"),
+                                        "author", valueOrDefault(row.get("message_type"), "user"),
+                                        "text", row.get("message_body"),
+                                        "createdAt", row.get("created_at")))
+                .toList();
+    }
+
+    private void upsertReadReceipt(UUID ticketId, UUID userId) {
+        jdbc.update(
+                """
+                INSERT INTO chat_read_receipts (id, ticket_id, user_id, read_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (ticket_id, user_id) DO UPDATE SET read_at = EXCLUDED.read_at
+                """,
+                UUID.randomUUID(),
+                ticketId,
+                userId,
+                OffsetDateTime.now());
+    }
+
+    private Map<String, Object> userSummary(UUID userId) {
+        if (userId == null) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> row =
+                    jdbc.queryForMap(
+                            "SELECT id, first_name, last_name, email, phone FROM users WHERE id = ?",
+                            userId);
+            String name =
+                    (valueOrDefault(row.get("first_name"), "") + " " + valueOrDefault(row.get("last_name"), ""))
+                            .trim();
+            return mapOf(
+                    "id", "USR-" + row.get("id"),
+                    "name", name.isBlank() ? valueOrDefault(row.get("email"), "Usuario") : name,
+                    "email", row.get("email"),
+                    "phone", row.get("phone"));
+        } catch (EmptyResultDataAccessException ex) {
+            return mapOf("id", "USR-" + userId, "name", "Usuario");
+        }
+    }
+
+    private Map<String, Object> listingSummary(UUID listingId) {
+        if (listingId == null) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            Map<String, Object> row =
+                    jdbc.queryForMap(
+                            "SELECT id, title, listing_type, base_price, image_url FROM listings WHERE id = ?",
+                            listingId);
+            return mapOf(
+                    "id", formatListingId(row),
+                    "name", row.get("title"),
+                    "type", row.get("listing_type"),
+                    "price", row.get("base_price"),
+                    "imageUrl", row.get("image_url"));
+        } catch (EmptyResultDataAccessException ex) {
+            return new LinkedHashMap<>();
+        }
+    }
+
+    private String formatListingId(Map<String, Object> row) {
+        String type = valueOrDefault(row.get("listing_type"), "PRODUCT").toUpperCase(Locale.ROOT);
+        String prefix =
+                switch (type) {
+                    case "SERVICE" -> "SERV-";
+                    case "OFFER" -> "OFF-";
+                    default -> "PROD-";
+                };
+        return prefix + row.get("id");
+    }
+
     private List<Map<String, Object>> branches(UUID tenantId, Object branchesJson) {
         List<Object> saved = jsonList(branchesJson);
         if (!saved.isEmpty()) {
@@ -1130,6 +1531,155 @@ public class CompanyPortalController {
                             "href", "/empresa/publicaciones"));
         }
         return actions;
+    }
+
+    private List<Map<String, Object>> reviewsList(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT r.id, r.user_id, r.listing_id, r.rating, r.comment, r.moderation_status,
+                               r.created_at, r.company_response, r.company_response_at
+                        FROM reviews r
+                        WHERE r.tenant_id = ?
+                        ORDER BY r.created_at DESC NULLS LAST
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "REV-" + row.get("id"),
+                                        "user", userSummary((UUID) row.get("user_id")),
+                                        "productOrService", listingSummary((UUID) row.get("listing_id")),
+                                        "stars", row.get("rating"),
+                                        "comment", row.get("comment"),
+                                        "status", row.get("moderation_status"),
+                                        "createdAt", row.get("created_at"),
+                                        "response", row.get("company_response"),
+                                        "respondedAt", row.get("company_response_at"),
+                                        "wasResponded", row.get("company_response") != null))
+                .toList();
+    }
+
+    private List<Map<String, Object>> followUpItems(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT id, rating, comment
+                        FROM reviews
+                        WHERE tenant_id = ? AND company_response IS NULL
+                        ORDER BY created_at DESC NULLS LAST
+                        LIMIT 5
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "REV-" + row.get("id"),
+                                        "title", "Responder resena",
+                                        "detail", valueOrDefault(row.get("comment"), "Resena sin respuesta"),
+                                        "priority", ratingPriority(row.get("rating"))))
+                .toList();
+    }
+
+    private List<Map<String, Object>> ratingSummary(UUID tenantId) {
+        List<Map<String, Object>> summary = new ArrayList<>();
+        for (int stars = 5; stars >= 1; stars--) {
+            summary.add(
+                    mapOf(
+                            "stars", stars,
+                            "count", count(
+                                    "SELECT COUNT(*) FROM reviews WHERE tenant_id = ? AND ROUND(rating) = ?",
+                                    tenantId,
+                                    stars)));
+        }
+        return summary;
+    }
+
+    private String ratingPriority(Object rating) {
+        BigDecimal value = decimalOrDefault(rating, BigDecimal.ZERO);
+        return value.compareTo(BigDecimal.valueOf(3)) <= 0 ? "high" : "normal";
+    }
+
+    private List<Map<String, Object>> publicationMetrics(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT fp.id, fp.title, fp.post_type,
+                               COUNT(DISTINCT c.id) AS comments,
+                               COUNT(DISTINCT l.id) FILTER (WHERE l.liked = TRUE) AS likes
+                        FROM feed_posts fp
+                        LEFT JOIN post_comments c ON c.feed_post_id = fp.id
+                        LEFT JOIN company_publication_likes l ON l.feed_post_id = fp.id
+                        WHERE fp.tenant_id = ?
+                        GROUP BY fp.id
+                        ORDER BY fp.created_at DESC NULLS LAST
+                        LIMIT 20
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "POST-" + row.get("id"),
+                                        "title", row.get("title"),
+                                        "type", row.get("post_type"),
+                                        "likes", numberOrDefault(row.get("likes"), 0),
+                                        "comments", numberOrDefault(row.get("comments"), 0),
+                                        "interactions", numberOrDefault(row.get("likes"), 0) + numberOrDefault(row.get("comments"), 0)))
+                .toList();
+    }
+
+    private List<Map<String, Object>> userComments(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT pc.id, pc.user_id, pc.comment_body, pc.created_at, fp.id AS post_id, fp.title
+                        FROM post_comments pc
+                        JOIN feed_posts fp ON fp.id = pc.feed_post_id
+                        WHERE fp.tenant_id = ?
+                        ORDER BY pc.created_at DESC NULLS LAST
+                        LIMIT 30
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "id", "CMT-" + row.get("id"),
+                                        "publicationId", "POST-" + row.get("post_id"),
+                                        "publicationTitle", row.get("title"),
+                                        "user", userSummary((UUID) row.get("user_id")),
+                                        "text", row.get("comment_body"),
+                                        "createdAt", row.get("created_at")))
+                .toList();
+    }
+
+    private List<Map<String, Object>> growthSeries(UUID tenantId) {
+        return jdbc.queryForList(
+                        """
+                        SELECT metric_date, leads_count, tickets_count, conversions_count, revenue_amount
+                        FROM tenant_daily_metrics
+                        WHERE tenant_id = ?
+                        ORDER BY metric_date ASC NULLS LAST
+                        LIMIT 30
+                        """,
+                        tenantId)
+                .stream()
+                .map(
+                        row ->
+                                mapOf(
+                                        "date", row.get("metric_date"),
+                                        "leads", numberOrDefault(row.get("leads_count"), 0),
+                                        "tickets", numberOrDefault(row.get("tickets_count"), 0),
+                                        "conversions", numberOrDefault(row.get("conversions_count"), 0),
+                                        "revenue", decimalOrDefault(row.get("revenue_amount"), BigDecimal.ZERO)))
+                .toList();
+    }
+
+    private Object latestTimestamp(String sql, Object... args) {
+        try {
+            return jdbc.queryForObject(sql, Object.class, args);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
     }
 
     private Map<String, Object> metric(
