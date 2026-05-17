@@ -9,4 +9,4 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-    repair-on-migrate: true
+    # El auto-repair se hace via FlywayMigrationStrategy bean (FlywayConfig.java)
