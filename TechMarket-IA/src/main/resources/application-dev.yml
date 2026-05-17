@@ -21,3 +21,9 @@ management:
 logging:
   level:
     com.techmarket: DEBUG
+
+# En dev, usar el mismo secret e issuer que el IAM backend para aceptar sus tokens
+app:
+  jwt:
+    secret: dev-secret-key-change-me-please-32-bytes-minimum
+    trusted-issuers: iam-service

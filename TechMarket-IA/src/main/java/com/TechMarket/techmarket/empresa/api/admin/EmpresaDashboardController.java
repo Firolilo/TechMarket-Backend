@@ -189,7 +189,7 @@ public class EmpresaDashboardController {
                                 ? "Productos y servicios visibles"
                                 : "Sin publicaciones activas",
                         activeListings > 0 ? "positive" : "neutral",
-                        "/empresa/catalogo"),
+                        "/empresa/publicaciones"),
                 new MetricItem(
                         "m-reviews",
                         "Resenas recibidas",
@@ -205,7 +205,7 @@ public class EmpresaDashboardController {
                         String.valueOf(openChats),
                         openChats > 0 ? "Consultas pendientes de atencion" : "Sin chats pendientes",
                         openChats == 0 ? "positive" : "neutral",
-                        "/empresa/chats"),
+                        "/empresa/chat"),
                 new MetricItem(
                         "m-rating",
                         "Calificacion",
@@ -228,7 +228,7 @@ public class EmpresaDashboardController {
                             "Chats sin atender",
                             openChats + " consulta(s) de clientes esperan respuesta.",
                             "alta",
-                            "/empresa/chats"));
+                            "/empresa/chat"));
         }
         if (activeListings == 0) {
             alerts.add(
@@ -237,7 +237,7 @@ public class EmpresaDashboardController {
                             "Sin publicaciones activas",
                             "No tienes productos o servicios visibles en el marketplace.",
                             "alta",
-                            "/empresa/catalogo"));
+                            "/empresa/publicaciones"));
         }
         if (reviewCount == 0) {
             alerts.add(
@@ -307,7 +307,7 @@ public class EmpresaDashboardController {
                             "Amplia tu catalogo",
                             "Publicar mas productos o servicios aumenta tu visibilidad en el marketplace.",
                             "Alta: mas publicaciones generan mas clientes potenciales",
-                            "/empresa/catalogo",
+                            "/empresa/publicaciones",
                             "Ir al catalogo"));
         }
         if (openChats > 0) {
@@ -317,7 +317,7 @@ public class EmpresaDashboardController {
                             "Responde los chats pendientes",
                             "Los clientes que esperan respuesta pueden perder el interes rapidamente.",
                             "Alta: la velocidad de respuesta impacta directamente en la conversion",
-                            "/empresa/chats",
+                            "/empresa/chat",
                             "Ir a chats"));
         }
         if (avgRating < 4.0) {

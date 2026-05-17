@@ -5,9 +5,9 @@ COPY TechMarket-Core/pom.xml pom.xml
 COPY TechMarket-Core/core-platform core-platform
 COPY TechMarket-IA TechMarket-IA
 
-RUN mvn -q -f pom.xml -DskipTests -Dspotless.check.skip=true install
-RUN mvn -q -f core-platform/pom.xml -DskipTests -Dspotless.check.skip=true install
-RUN mvn -q -f TechMarket-IA/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+RUN mvn -q -f pom.xml -DskipTests -DskipQuality install
+RUN mvn -q -f core-platform/pom.xml -DskipTests -DskipQuality install
+RUN mvn -q -f TechMarket-IA/pom.xml -DskipTests -DskipQuality clean package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /opt/techmarket-ia

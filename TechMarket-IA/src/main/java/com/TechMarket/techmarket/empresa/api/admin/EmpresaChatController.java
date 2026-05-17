@@ -114,7 +114,8 @@ public class EmpresaChatController {
                     new ChatThreadResponse(
                             "CHT-" + chat.getId(),
                             customerName,
-                            chat.getSubject() != null ? chat.getSubject() : "Consulta",
+                            cleanSubject(chat.getSubject()),
+                            extractListingId(chat.getSubject()),
                             lastMessageText,
                             relativeTime,
                             unread > 0 ? (int) unread : null,
@@ -225,6 +226,20 @@ public class EmpresaChatController {
                 .orElse("Cliente");
     }
 
+    private String cleanSubject(String subject) {
+        if (subject == null || subject.isBlank()) return "Consulta";
+        String cleaned = subject.replaceAll("\\s*\\([A-Z]+-[0-9a-f-]{36}\\)\\s*$", "").trim();
+        return cleaned.isBlank() ? "Consulta" : cleaned;
+    }
+
+    private String extractListingId(String subject) {
+        if (subject == null) return null;
+        java.util.regex.Matcher m =
+                java.util.regex.Pattern.compile("\\(([A-Z]+-[0-9a-f-]{36})\\)\\s*$")
+                        .matcher(subject);
+        return m.find() ? m.group(1) : null;
+    }
+
     private String initials(String name) {
         if (name == null || name.isBlank()) return "CL";
         String[] parts = name.trim().split("\\s+");
@@ -279,6 +294,7 @@ public class EmpresaChatController {
             String id,
             String name,
             String product,
+            String listingId,
             String lastMessage,
             String time,
             Integer unread,
