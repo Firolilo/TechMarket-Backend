@@ -6,6 +6,7 @@ import com.techmarket.techmarket.marketplace.api.admin.response.CompanySummaryRe
 import com.techmarket.techmarket.marketplace.api.admin.response.ProductSummaryResponse;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
+import com.techmarket.techmarket.users.api.admin.client.response.CommunityMemberResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CommunityPostResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CommunityResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.MessageResponse;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -171,9 +173,97 @@ public class ClientFavoritesCommunityController {
                 .map(CommunityMembershipJpaEntity::getCommunityId)
                 .map(communityRepository::findById)
                 .flatMap(Optional::stream)
-                .map(this::toCommunityResponse)
+                .map(community -> toCommunityResponse(community, true))
                 .toList();
     }
+
+    @GetMapping("/communities/discover")
+    public List<CommunityResponse> discoverCommunities(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        UUID currentUserId = parseUserId(userId);
+        java.util.Set<UUID> joinedIds =
+                membershipRepository.findAllByUserId(currentUserId).stream()
+                        .map(CommunityMembershipJpaEntity::getCommunityId)
+                        .collect(java.util.stream.Collectors.toSet());
+        return communityRepository.findAll().stream()
+                .map(
+                        community ->
+                                toCommunityResponse(
+                                        community, joinedIds.contains(community.getId())))
+                .toList();
+    }
+
+    @GetMapping("/communities/{communityId}")
+    public CommunityResponse communityDetail(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        boolean joined =
+                membershipRepository
+                        .findByCommunityIdAndUserId(community.getId(), currentUserId)
+                        .isPresent();
+        return toCommunityResponse(community, joined);
+    }
+
+    @GetMapping("/communities/{communityId}/members")
+    public List<CommunityMemberResponse> communityMembers(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId) {
+        parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+        return membershipRepository
+                .findAllByCommunityIdOrderByJoinedAtAsc(community.getId())
+                .stream()
+                .map(this::toCommunityMemberResponse)
+                .toList();
+    }
+
+    @PostMapping("/communities/{communityId}/posts")
+    @Transactional
+    public CommunityPostResponse createCommunityPost(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String communityId,
+            @RequestBody CreateCommunityPostRequest request) {
+        UUID currentUserId = parseUserId(userId);
+        CommunityJpaEntity community = findCommunity(communityId);
+
+        if (request == null
+                || request.contenido() == null
+                || request.contenido().trim().isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "El contenido del post no puede estar vacio");
+        }
+
+        membershipRepository
+                .findByCommunityIdAndUserId(community.getId(), currentUserId)
+                .orElseGet(
+                        () -> {
+                            CommunityMembershipJpaEntity membership =
+                                    new CommunityMembershipJpaEntity();
+                            membership.setId(UUID.randomUUID());
+                            membership.setCommunityId(community.getId());
+                            membership.setUserId(currentUserId);
+                            membership.setJoinedAt(OffsetDateTime.now());
+                            community.setMembersCount(community.getMembersCount() + 1);
+                            communityRepository.save(community);
+                            return membershipRepository.save(membership);
+                        });
+
+        CommunityPostJpaEntity post = new CommunityPostJpaEntity();
+        post.setId(UUID.randomUUID());
+        post.setCommunityId(community.getId());
+        post.setAuthorUserId(currentUserId);
+        post.setTitle(request.titulo() == null ? null : request.titulo().trim());
+        post.setContent(request.contenido().trim());
+        post.setStatus("PUBLISHED");
+        post.setCreatedAt(OffsetDateTime.now());
+        postRepository.save(post);
+
+        return toCommunityPostResponse(post);
+    }
+
+    public record CreateCommunityPostRequest(String titulo, String contenido) {}
 
     @PostMapping("/communities/{communityId}/join")
     @Transactional
@@ -247,11 +337,34 @@ public class ClientFavoritesCommunityController {
                 tenant.getBusinessType());
     }
 
-    private CommunityResponse toCommunityResponse(CommunityJpaEntity community) {
+    private CommunityResponse toCommunityResponse(CommunityJpaEntity community, boolean joined) {
+        String creadoEn =
+                community.getCreatedAt() != null
+                        ? community.getCreatedAt().toInstant().toString()
+                        : null;
         return new CommunityResponse(
                 formatCommunityId(community.getId()),
                 community.getName(),
-                community.getMembersCount());
+                community.getDescription(),
+                community.getMembersCount(),
+                joined,
+                creadoEn);
+    }
+
+    private CommunityMemberResponse toCommunityMemberResponse(
+            CommunityMembershipJpaEntity membership) {
+        String memberName =
+                userRepository
+                        .findById(membership.getUserId())
+                        .map(user -> displayName(user.getFirstName(), user.getLastName()))
+                        .orElse("Usuario");
+        String unidoEn =
+                membership.getJoinedAt() != null
+                        ? membership.getJoinedAt().toInstant().toString()
+                        : null;
+        // Para MVP: rol siempre "Miembro" (no hay tabla de roles aún)
+        return new CommunityMemberResponse(
+                "USR-" + membership.getUserId(), memberName, "Miembro", unidoEn);
     }
 
     private CommunityPostResponse toCommunityPostResponse(CommunityPostJpaEntity post) {
