@@ -8,5 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AmbassadorOnboardingMilestoneSpringDataRepository
         extends JpaRepository<AmbassadorOnboardingMilestoneJpaEntity, UUID> {
 
-    Optional<AmbassadorOnboardingMilestoneJpaEntity> findByAmbassadorReferralIdAndMilestoneCode(UUID referralId, String code);
+    Optional<AmbassadorOnboardingMilestoneJpaEntity> findByAmbassadorReferralIdAndMilestoneCode(
+            UUID referralId, String code);
 }

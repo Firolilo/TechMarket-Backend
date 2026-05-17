@@ -6,8 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface AmbassadorSpringDataRepository
-        extends JpaRepository<AmbassadorJpaEntity, UUID> {
+public interface AmbassadorSpringDataRepository extends JpaRepository<AmbassadorJpaEntity, UUID> {
 
     Optional<AmbassadorJpaEntity> findByUserId(UUID userId);
 

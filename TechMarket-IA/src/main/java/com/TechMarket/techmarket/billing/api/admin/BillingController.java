@@ -58,7 +58,8 @@ public class BillingController {
             @PathVariable String invoiceId) {
         UserInvoiceJpaEntity invoice =
                 invoiceRepository
-                        .findByIdAndUserId(parsePrefixedUuid(invoiceId, "INV-"), parseUserId(userId))
+                        .findByIdAndUserId(
+                                parsePrefixedUuid(invoiceId, "INV-"), parseUserId(userId))
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -95,7 +96,9 @@ public class BillingController {
     private InvoiceResponse toInvoiceResponse(UserInvoiceJpaEntity invoice) {
         return new InvoiceResponse(
                 formatInvoiceId(invoice.getId()),
-                invoice.getTransactionId() == null ? null : formatTransactionId(invoice.getTransactionId()),
+                invoice.getTransactionId() == null
+                        ? null
+                        : formatTransactionId(invoice.getTransactionId()),
                 invoice.getInvoiceNumber(),
                 invoice.getAmount());
     }
@@ -135,7 +138,8 @@ public class BillingController {
         return "RFD-" + id;
     }
 
-    public record InvoiceResponse(String id, String transactionId, String numero, BigDecimal monto) {}
+    public record InvoiceResponse(
+            String id, String transactionId, String numero, BigDecimal monto) {}
 
     public record InvoiceDownloadResponse(String downloadUrl) {}
 

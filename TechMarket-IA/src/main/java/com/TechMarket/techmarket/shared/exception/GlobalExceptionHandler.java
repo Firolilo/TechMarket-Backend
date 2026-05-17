@@ -29,8 +29,7 @@ public class GlobalExceptionHandler {
                 ex.getBindingResult().getFieldErrors().stream()
                         .map(e -> e.getField() + ": " + e.getDefaultMessage())
                         .collect(Collectors.joining(", "));
-        ErrorResponse body =
-                new ErrorResponse(400, "Bad Request", message, OffsetDateTime.now());
+        ErrorResponse body = new ErrorResponse(400, "Bad Request", message, OffsetDateTime.now());
         return ResponseEntity.badRequest().body(body);
     }
 
@@ -38,7 +37,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         ErrorResponse body =
                 new ErrorResponse(
-                        500, "Internal Server Error", "An unexpected error occurred",
+                        500,
+                        "Internal Server Error",
+                        "An unexpected error occurred",
                         OffsetDateTime.now());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }

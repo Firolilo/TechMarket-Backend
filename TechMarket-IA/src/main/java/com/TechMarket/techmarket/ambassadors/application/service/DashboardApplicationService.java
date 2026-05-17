@@ -55,7 +55,8 @@ public class DashboardApplicationService {
                 commissionRepo.findByAmbassadorId(ambassador.id());
 
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime startOfMonth =
+                now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         OffsetDateTime startOfLastMonth = startOfMonth.minusMonths(1);
 
         double thisMonthTotal = sumCommissions(commissions, startOfMonth, now);
@@ -75,27 +76,47 @@ public class DashboardApplicationService {
                                                 "CONFIRMED".equalsIgnoreCase(c.getStatus())
                                                         || "PAID".equalsIgnoreCase(c.getStatus()));
 
-        long activeCount = referrals.stream()
-                .filter(r -> "ACTIVE".equalsIgnoreCase(r.getStatus()))
-                .count();
+        long activeCount =
+                referrals.stream().filter(r -> "ACTIVE".equalsIgnoreCase(r.getStatus())).count();
         String activityState;
         if (activeCount == 0) activityState = "SIN_ACTIVIDAD";
         else if (activeCount <= 2) activityState = "ACTIVIDAD_INICIAL";
         else activityState = "ACTIVIDAD_CONSTANTE";
 
-        int hardware = (int) referrals.stream()
-                .filter(r -> "ACTIVE".equalsIgnoreCase(r.getStatus())
-                        && "HARDWARE".equalsIgnoreCase(r.getReferralType()))
-                .count();
-        int software = (int) referrals.stream()
-                .filter(r -> "ACTIVE".equalsIgnoreCase(r.getStatus())
-                        && "SOFTWARE".equalsIgnoreCase(r.getReferralType()))
-                .count();
-        int services = (int) referrals.stream()
-                .filter(r -> "ACTIVE".equalsIgnoreCase(r.getStatus())
-                        && ("SERVICES".equalsIgnoreCase(r.getReferralType())
-                                || "SERVICIOS".equalsIgnoreCase(r.getReferralType())))
-                .count();
+        int hardware =
+                (int)
+                        referrals.stream()
+                                .filter(
+                                        r ->
+                                                "ACTIVE".equalsIgnoreCase(r.getStatus())
+                                                        && "HARDWARE"
+                                                                .equalsIgnoreCase(
+                                                                        r.getReferralType()))
+                                .count();
+        int software =
+                (int)
+                        referrals.stream()
+                                .filter(
+                                        r ->
+                                                "ACTIVE".equalsIgnoreCase(r.getStatus())
+                                                        && "SOFTWARE"
+                                                                .equalsIgnoreCase(
+                                                                        r.getReferralType()))
+                                .count();
+        int services =
+                (int)
+                        referrals.stream()
+                                .filter(
+                                        r ->
+                                                "ACTIVE".equalsIgnoreCase(r.getStatus())
+                                                        && ("SERVICES"
+                                                                        .equalsIgnoreCase(
+                                                                                r.getReferralType())
+                                                                || "SERVICIOS"
+                                                                        .equalsIgnoreCase(
+                                                                                r
+                                                                                        .getReferralType())))
+                                .count();
 
         // Level breakdown from actual attributionType on each commission
         double l1Income = incomeByLevel(commissions, 1);
@@ -128,34 +149,46 @@ public class DashboardApplicationService {
         List<AmbassadorReferralJpaEntity> referrals =
                 referralRepo.findByAmbassadorId(ambassador.id());
 
-        Map<UUID, String> referralNames = referrals.stream()
-                .collect(Collectors.toMap(
-                        AmbassadorReferralJpaEntity::getId,
-                        r -> r.getName() != null ? r.getName() : "Empresa"));
-        Map<UUID, String> referralTypes = referrals.stream()
-                .collect(Collectors.toMap(
-                        AmbassadorReferralJpaEntity::getId,
-                        r -> r.getReferralType() != null ? r.getReferralType() : "SERVICES"));
+        Map<UUID, String> referralNames =
+                referrals.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        AmbassadorReferralJpaEntity::getId,
+                                        r -> r.getName() != null ? r.getName() : "Empresa"));
+        Map<UUID, String> referralTypes =
+                referrals.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        AmbassadorReferralJpaEntity::getId,
+                                        r ->
+                                                r.getReferralType() != null
+                                                        ? r.getReferralType()
+                                                        : "SERVICES"));
 
         return commissions.stream()
                 .limit(limit)
-                .map(c -> {
-                    String name = c.getAmbassadorReferralId() != null
-                            ? referralNames.getOrDefault(c.getAmbassadorReferralId(), "Referido")
-                            : "Referido";
-                    String refType = c.getAmbassadorReferralId() != null
-                            ? referralTypes.getOrDefault(c.getAmbassadorReferralId(), "SERVICES")
-                            : "SERVICES";
-                    double amount = parseAmount(c.getAmount());
-                    int lvl = levelFrom(c.getAttributionType());
-                    return new ActivityItemResponse(
-                            labelForEvent(c.getEventType()),
-                            name,
-                            c.getGeneratedAt(),
-                            amount > 0 ? amount : null,
-                            refType,
-                            lvl);
-                })
+                .map(
+                        c -> {
+                            String name =
+                                    c.getAmbassadorReferralId() != null
+                                            ? referralNames.getOrDefault(
+                                                    c.getAmbassadorReferralId(), "Referido")
+                                            : "Referido";
+                            String refType =
+                                    c.getAmbassadorReferralId() != null
+                                            ? referralTypes.getOrDefault(
+                                                    c.getAmbassadorReferralId(), "SERVICES")
+                                            : "SERVICES";
+                            double amount = parseAmount(c.getAmount());
+                            int lvl = levelFrom(c.getAttributionType());
+                            return new ActivityItemResponse(
+                                    labelForEvent(c.getEventType()),
+                                    name,
+                                    c.getGeneratedAt(),
+                                    amount > 0 ? amount : null,
+                                    refType,
+                                    lvl);
+                        })
                 .toList();
     }
 
@@ -166,9 +199,9 @@ public class DashboardApplicationService {
         OffsetDateTime now = OffsetDateTime.now();
         return switch (periodo == null ? "semana" : periodo.toLowerCase()) {
             case "4semanas" -> buildWeekPoints(commissions, now, 4);
-            case "mes"      -> buildWeekPoints(commissions, now, 5);
+            case "mes" -> buildWeekPoints(commissions, now, 5);
             case "trimestre" -> buildMonthPoints(commissions, now, 3);
-            default          -> buildDailyPoints(commissions, now, 7);
+            default -> buildDailyPoints(commissions, now, 7);
         };
     }
 
@@ -195,7 +228,8 @@ public class DashboardApplicationService {
             LocalDate weekEnd = now.toLocalDate().minusWeeks(i);
             LocalDate weekStart = weekEnd.minusDays(6);
             OffsetDateTime start = weekStart.atStartOfDay(now.getOffset()).toOffsetDateTime();
-            OffsetDateTime end = weekEnd.plusDays(1).atStartOfDay(now.getOffset()).toOffsetDateTime();
+            OffsetDateTime end =
+                    weekEnd.plusDays(1).atStartOfDay(now.getOffset()).toOffsetDateTime();
             double income = sumCommissions(commissions, start, end);
             double impact = income > 0 ? income / (LEVEL1_PCT / 100.0) : 0.0;
             result.add(new DailyActivityResponse(weekStart.format(fmt), impact, income));
@@ -205,11 +239,17 @@ public class DashboardApplicationService {
 
     private List<DailyActivityResponse> buildMonthPoints(
             List<AmbassadorCommissionJpaEntity> commissions, OffsetDateTime now, int months) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM yyyy", Locale.forLanguageTag("es"));
+        DateTimeFormatter fmt =
+                DateTimeFormatter.ofPattern("MMM yyyy", Locale.forLanguageTag("es"));
         List<DailyActivityResponse> result = new ArrayList<>();
         for (int i = months - 1; i >= 0; i--) {
-            OffsetDateTime monthStart = now.minusMonths(i)
-                    .withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+            OffsetDateTime monthStart =
+                    now.minusMonths(i)
+                            .withDayOfMonth(1)
+                            .withHour(0)
+                            .withMinute(0)
+                            .withSecond(0)
+                            .withNano(0);
             OffsetDateTime monthEnd = monthStart.plusMonths(1);
             double income = sumCommissions(commissions, monthStart, monthEnd);
             double impact = income > 0 ? income / (LEVEL1_PCT / 100.0) : 0.0;
@@ -247,24 +287,30 @@ public class DashboardApplicationService {
         Map<UUID, List<AmbassadorCommissionJpaEntity>> byReferral =
                 commissions.stream()
                         .filter(c -> c.getAmbassadorReferralId() != null)
-                        .collect(Collectors.groupingBy(AmbassadorCommissionJpaEntity::getAmbassadorReferralId));
+                        .collect(
+                                Collectors.groupingBy(
+                                        AmbassadorCommissionJpaEntity::getAmbassadorReferralId));
 
         return referrals.stream()
-                .sorted(Comparator.comparing(
-                        AmbassadorReferralJpaEntity::getCreatedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .sorted(
+                        Comparator.comparing(
+                                AmbassadorReferralJpaEntity::getCreatedAt,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(
                         r -> {
                             List<AmbassadorCommissionJpaEntity> rc =
                                     byReferral.getOrDefault(r.getId(), List.of());
-                            double totalIncome = rc.stream()
-                                    .mapToDouble(c -> parseAmount(c.getAmount()))
-                                    .sum();
-                            double monthlyIncome = rc.stream()
-                                    .filter(c -> c.getGeneratedAt() != null
-                                            && !c.getGeneratedAt().isBefore(startOfMonth))
-                                    .mapToDouble(c -> parseAmount(c.getAmount()))
-                                    .sum();
+                            double totalIncome =
+                                    rc.stream().mapToDouble(c -> parseAmount(c.getAmount())).sum();
+                            double monthlyIncome =
+                                    rc.stream()
+                                            .filter(
+                                                    c ->
+                                                            c.getGeneratedAt() != null
+                                                                    && !c.getGeneratedAt()
+                                                                            .isBefore(startOfMonth))
+                                            .mapToDouble(c -> parseAmount(c.getAmount()))
+                                            .sum();
                             double totalImpact = totalIncome / (LEVEL1_PCT / 100.0);
                             double monthlyImpact = monthlyIncome / (LEVEL1_PCT / 100.0);
 
@@ -317,8 +363,7 @@ public class DashboardApplicationService {
     private double parseAmount(String amount) {
         if (amount == null || amount.isBlank()) return 0.0;
         try {
-            return new BigDecimal(amount.replace("Bs", "").replace(",", "").trim())
-                    .doubleValue();
+            return new BigDecimal(amount.replace("Bs", "").replace(",", "").trim()).doubleValue();
         } catch (NumberFormatException e) {
             return 0.0;
         }

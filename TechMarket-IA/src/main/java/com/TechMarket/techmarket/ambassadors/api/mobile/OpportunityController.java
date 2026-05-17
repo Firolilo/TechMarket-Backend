@@ -36,22 +36,19 @@ public class OpportunityController {
     @GetMapping
     public List<OpportunityResponse> list(Authentication auth) {
         UUID ambassadorId = findAmbassador(auth).id();
-        return opportunityRepo
-                .findByAmbassadorIdOrderByDetectedAtDesc(ambassadorId)
-                .stream()
+        return opportunityRepo.findByAmbassadorIdOrderByDetectedAtDesc(ambassadorId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @PatchMapping("/{id}/status")
     public OpportunityResponse updateStatus(
-            Authentication auth,
-            @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
+            Authentication auth, @PathVariable UUID id, @RequestBody Map<String, String> body) {
         UUID ambassadorId = findAmbassador(auth).id();
-        AmbassadorOpportunityJpaEntity entity = opportunityRepo
-                .findByIdAndAmbassadorId(id, ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        AmbassadorOpportunityJpaEntity entity =
+                opportunityRepo
+                        .findByIdAndAmbassadorId(id, ambassadorId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         String newStatus = body.get("status");
         if (newStatus != null) {
             entity.setStatus(newStatus);
@@ -63,13 +60,12 @@ public class OpportunityController {
 
     @PatchMapping("/{id}/save")
     public OpportunityResponse toggleSave(
-            Authentication auth,
-            @PathVariable UUID id,
-            @RequestBody Map<String, Boolean> body) {
+            Authentication auth, @PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
         UUID ambassadorId = findAmbassador(auth).id();
-        AmbassadorOpportunityJpaEntity entity = opportunityRepo
-                .findByIdAndAmbassadorId(id, ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        AmbassadorOpportunityJpaEntity entity =
+                opportunityRepo
+                        .findByIdAndAmbassadorId(id, ambassadorId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Boolean saved = body.get("saved");
         if (saved != null) {
             entity.setSaved(saved);
@@ -85,7 +81,10 @@ public class OpportunityController {
         UUID userId = UUID.fromString((String) auth.getPrincipal());
         return ambassadorRepo
                 .findByUserId(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ambassador not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Ambassador not found"));
     }
 
     private OpportunityResponse toResponse(AmbassadorOpportunityJpaEntity e) {

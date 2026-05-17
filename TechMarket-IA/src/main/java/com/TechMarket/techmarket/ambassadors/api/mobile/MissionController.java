@@ -37,9 +37,7 @@ public class MissionController {
     @GetMapping
     public List<MissionResponse> list(Authentication auth) {
         UUID ambassadorId = findAmbassador(auth).id();
-        return missionRepo
-                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassadorId)
-                .stream()
+        return missionRepo.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassadorId).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -49,7 +47,8 @@ public class MissionController {
         UUID ambassadorId = findAmbassador(auth).id();
         AmbassadorMissionJpaEntity mission = findMission(id, ambassadorId);
         if (!"disponible".equalsIgnoreCase(mission.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Mission is not in disponible state");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Mission is not in disponible state");
         }
         mission.setStatus("enProgreso");
         mission.setProgress(BigDecimal.ZERO);
@@ -73,13 +72,19 @@ public class MissionController {
         UUID userId = UUID.fromString((String) auth.getPrincipal());
         return ambassadorRepo
                 .findByUserId(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ambassador not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Ambassador not found"));
     }
 
     private AmbassadorMissionJpaEntity findMission(UUID id, UUID ambassadorId) {
         return missionRepo
                 .findByIdAndAmbassadorId(id, ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Mission not found"));
     }
 
     private MissionResponse toResponse(AmbassadorMissionJpaEntity m) {

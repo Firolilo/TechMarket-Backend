@@ -12,7 +12,8 @@ public interface AmbassadorCommissionSpringDataRepository
 
     List<AmbassadorCommissionJpaEntity> findByAmbassadorId(UUID ambassadorId);
 
-    List<AmbassadorCommissionJpaEntity> findAllByAmbassadorIdOrderByGeneratedAtDesc(UUID ambassadorId);
+    List<AmbassadorCommissionJpaEntity> findAllByAmbassadorIdOrderByGeneratedAtDesc(
+            UUID ambassadorId);
 
     Optional<AmbassadorCommissionJpaEntity> findByIdAndAmbassadorId(UUID id, UUID ambassadorId);
 

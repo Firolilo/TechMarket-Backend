@@ -57,7 +57,11 @@ public class AdminDashboardController {
 
     @GetMapping("/dashboard")
     public AdminDashboardResponse dashboard() {
-        OffsetDateTime todayStart = OffsetDateTime.now(ZoneOffset.UTC).toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime todayStart =
+                OffsetDateTime.now(ZoneOffset.UTC)
+                        .toLocalDate()
+                        .atStartOfDay()
+                        .atOffset(ZoneOffset.UTC);
         return new AdminDashboardResponse(
                 userRepository.count(),
                 tenantRepository.count(),
@@ -153,7 +157,11 @@ public class AdminDashboardController {
         action.setPerformedByUserId(actorId);
         action.setCreatedAt(OffsetDateTime.now());
         AdminModerationActionJpaEntity saved = moderationActionRepository.save(action);
-        saveAuditLog(actorId, "moderacion_" + request.accion(), request.tipoObjeto(), action.getEntityId());
+        saveAuditLog(
+                actorId,
+                "moderacion_" + request.accion(),
+                request.tipoObjeto(),
+                action.getEntityId());
         return new ModerationActionResponse("ACT-" + saved.getId(), saved.getActionType());
     }
 
@@ -241,7 +249,8 @@ public class AdminDashboardController {
         try {
             return UUID.fromString(normalized);
         } catch (IllegalArgumentException ex) {
-            return UUID.nameUUIDFromBytes((objectId == null ? "" : objectId).getBytes(StandardCharsets.UTF_8));
+            return UUID.nameUUIDFromBytes(
+                    (objectId == null ? "" : objectId).getBytes(StandardCharsets.UTF_8));
         }
     }
 

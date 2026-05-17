@@ -33,7 +33,15 @@ class UserControllerTest {
         OffsetDateTime now = OffsetDateTime.now();
         when(service.create(any()))
                 .thenReturn(
-                        new User(id, "Ada", "Lovelace", "ada@techmarket.com", null, "ACTIVE", now, now));
+                        new User(
+                                id,
+                                "Ada",
+                                "Lovelace",
+                                "ada@techmarket.com",
+                                null,
+                                "ACTIVE",
+                                now,
+                                now));
 
         String payload =
                 objectMapper.writeValueAsString(

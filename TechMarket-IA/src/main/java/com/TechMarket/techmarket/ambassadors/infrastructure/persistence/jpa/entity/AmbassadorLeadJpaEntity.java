@@ -61,38 +61,139 @@ public class AmbassadorLeadJpaEntity {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getAmbassadorId() { return ambassadorId; }
-    public void setAmbassadorId(UUID ambassadorId) { this.ambassadorId = ambassadorId; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getLeadType() { return leadType; }
-    public void setLeadType(String leadType) { this.leadType = leadType; }
-    public String getContactName() { return contactName; }
-    public void setContactName(String contactName) { this.contactName = contactName; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-    public String getNextAction() { return nextAction; }
-    public void setNextAction(String nextAction) { this.nextAction = nextAction; }
-    public OffsetDateTime getLastContactAt() { return lastContactAt; }
-    public void setLastContactAt(OffsetDateTime lastContactAt) { this.lastContactAt = lastContactAt; }
-    public String getSource() { return source; }
-    public void setSource(String source) { this.source = source; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public int getCloseProbability() { return closeProbability; }
-    public void setCloseProbability(int closeProbability) { this.closeProbability = closeProbability; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getAmbassadorId() {
+        return ambassadorId;
+    }
+
+    public void setAmbassadorId(UUID ambassadorId) {
+        this.ambassadorId = ambassadorId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getLeadType() {
+        return leadType;
+    }
+
+    public void setLeadType(String leadType) {
+        this.leadType = leadType;
+    }
+
+    public String getContactName() {
+        return contactName;
+    }
+
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public String getNextAction() {
+        return nextAction;
+    }
+
+    public void setNextAction(String nextAction) {
+        this.nextAction = nextAction;
+    }
+
+    public OffsetDateTime getLastContactAt() {
+        return lastContactAt;
+    }
+
+    public void setLastContactAt(OffsetDateTime lastContactAt) {
+        this.lastContactAt = lastContactAt;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getCloseProbability() {
+        return closeProbability;
+    }
+
+    public void setCloseProbability(int closeProbability) {
+        this.closeProbability = closeProbability;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

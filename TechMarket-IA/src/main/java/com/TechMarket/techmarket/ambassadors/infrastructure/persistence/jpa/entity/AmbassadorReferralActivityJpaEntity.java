@@ -25,14 +25,43 @@ public class AmbassadorReferralActivityJpaEntity {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getAmbassadorReferralId() { return ambassadorReferralId; }
-    public void setAmbassadorReferralId(UUID ambassadorReferralId) { this.ambassadorReferralId = ambassadorReferralId; }
-    public String getActivityType() { return activityType; }
-    public void setActivityType(String activityType) { this.activityType = activityType; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getAmbassadorReferralId() {
+        return ambassadorReferralId;
+    }
+
+    public void setAmbassadorReferralId(UUID ambassadorReferralId) {
+        this.ambassadorReferralId = ambassadorReferralId;
+    }
+
+    public String getActivityType() {
+        return activityType;
+    }
+
+    public void setActivityType(String activityType) {
+        this.activityType = activityType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

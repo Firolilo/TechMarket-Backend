@@ -79,7 +79,10 @@ public class PublicConfigController {
                 formatCategoryId(category.getId()),
                 category.getName(),
                 categoryRepository.findAllByParentCategoryId(category.getId()).stream()
-                        .map(child -> new CategoryChildResponse(formatCategoryId(child.getId()), child.getName()))
+                        .map(
+                                child ->
+                                        new CategoryChildResponse(
+                                                formatCategoryId(child.getId()), child.getName()))
                         .toList());
     }
 

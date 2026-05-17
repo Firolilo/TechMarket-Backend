@@ -107,7 +107,8 @@ public class SupportController {
         message.setVisibleToCustomer(true);
         message.setCreatedAt(OffsetDateTime.now());
         ClientChatMessageJpaEntity saved = messageRepository.save(message);
-        return new CreateSupportTicketMessageResponse(formatTicketMessageId(saved.getId()), "Respuesta enviada");
+        return new CreateSupportTicketMessageResponse(
+                formatTicketMessageId(saved.getId()), "Respuesta enviada");
     }
 
     @PutMapping("/{ticketId}/status")
@@ -123,7 +124,8 @@ public class SupportController {
 
     private ClientChatJpaEntity findTicket(String ticketId, UUID userId) {
         return ticketRepository
-                .findByIdAndCustomerUserIdAndTicketType(parsePrefixedUuid(ticketId, "TCK-"), userId, SUPPORT_TYPE)
+                .findByIdAndCustomerUserIdAndTicketType(
+                        parsePrefixedUuid(ticketId, "TCK-"), userId, SUPPORT_TYPE)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

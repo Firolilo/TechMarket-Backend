@@ -15,8 +15,5 @@ public record DashboardStatsResponse(
             int activeHardware, int activeSoftware, int activeServices) {}
 
     public record LevelImpactResponse(
-            int level,
-            double economicImpact,
-            double percentageApplied,
-            double incomeGenerated) {}
+            int level, double economicImpact, double percentageApplied, double incomeGenerated) {}
 }

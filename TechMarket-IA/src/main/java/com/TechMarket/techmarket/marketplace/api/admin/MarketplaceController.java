@@ -13,9 +13,7 @@ import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.repository.CatalogCategorySpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
-import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientReviewJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
-import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -155,18 +153,18 @@ public class MarketplaceController {
     }
 
     private ProductSummaryResponse toProductSummary(ListingJpaEntity listing) {
-        String imagenPrincipal = listingImageRepository
-                .findFirstByListingIdAndIsPrimaryTrue(listing.getId())
-                .map(img -> img.getImageUrl())
-                .orElse(null);
+        String imagenPrincipal =
+                listingImageRepository
+                        .findFirstByListingIdAndIsPrimaryTrue(listing.getId())
+                        .map(img -> img.getImageUrl())
+                        .orElse(null);
 
-        double calificacion = reviewRepository
-                .findAllByListingIdOrderByCreatedAtDesc(listing.getId())
-                .stream()
-                .filter(r -> r.getRating() != null)
-                .mapToDouble(r -> r.getRating().doubleValue())
-                .average()
-                .orElse(0.0);
+        double calificacion =
+                reviewRepository.findAllByListingIdOrderByCreatedAtDesc(listing.getId()).stream()
+                        .filter(r -> r.getRating() != null)
+                        .mapToDouble(r -> r.getRating().doubleValue())
+                        .average()
+                        .orElse(0.0);
 
         return new ProductSummaryResponse(
                 formatProductId(listing.getId()),

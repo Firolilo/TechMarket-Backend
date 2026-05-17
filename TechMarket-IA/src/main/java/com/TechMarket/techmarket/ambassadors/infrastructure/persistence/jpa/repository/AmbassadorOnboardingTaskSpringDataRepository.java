@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AmbassadorOnboardingTaskSpringDataRepository
         extends JpaRepository<AmbassadorOnboardingTaskJpaEntity, UUID> {
 
-    List<AmbassadorOnboardingTaskJpaEntity> findAllByAmbassadorReferralIdOrderByCreatedAtDesc(UUID referralId);
+    List<AmbassadorOnboardingTaskJpaEntity> findAllByAmbassadorReferralIdOrderByCreatedAtDesc(
+            UUID referralId);
 
-    Optional<AmbassadorOnboardingTaskJpaEntity> findByIdAndAmbassadorReferralId(UUID id, UUID referralId);
+    Optional<AmbassadorOnboardingTaskJpaEntity> findByIdAndAmbassadorReferralId(
+            UUID id, UUID referralId);
 }

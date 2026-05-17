@@ -31,8 +31,7 @@ public class AmbassadorController {
     @GetMapping("/me")
     public AmbassadorResponse getMe(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        Ambassador ambassador =
-                service.getByUserId(new GetAmbassadorByUserIdQuery(userId));
+        Ambassador ambassador = service.getByUserId(new GetAmbassadorByUserIdQuery(userId));
         return toResponse(ambassador);
     }
 

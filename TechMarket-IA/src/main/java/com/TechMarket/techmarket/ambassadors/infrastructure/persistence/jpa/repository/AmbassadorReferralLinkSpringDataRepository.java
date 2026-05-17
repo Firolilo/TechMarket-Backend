@@ -9,9 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AmbassadorReferralLinkSpringDataRepository
         extends JpaRepository<AmbassadorReferralLinkJpaEntity, UUID> {
 
-    List<AmbassadorReferralLinkJpaEntity> findAllByAmbassadorIdOrderByCreatedAtDesc(UUID ambassadorId);
+    List<AmbassadorReferralLinkJpaEntity> findAllByAmbassadorIdOrderByCreatedAtDesc(
+            UUID ambassadorId);
 
-    List<AmbassadorReferralLinkJpaEntity> findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(UUID ambassadorId);
+    List<AmbassadorReferralLinkJpaEntity> findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(
+            UUID ambassadorId);
 
     Optional<AmbassadorReferralLinkJpaEntity> findByIdAndAmbassadorId(UUID id, UUID ambassadorId);
 

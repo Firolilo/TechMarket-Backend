@@ -30,8 +30,7 @@ public class DashboardController {
 
     @GetMapping("/activity")
     public List<ActivityItemResponse> getActivity(
-            Authentication auth,
-            @RequestParam(defaultValue = "10") int limit) {
+            Authentication auth, @RequestParam(defaultValue = "10") int limit) {
         return service.getRecentActivity(userIdFrom(auth), limit);
     }
 

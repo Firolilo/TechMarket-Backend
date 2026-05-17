@@ -43,36 +43,91 @@ public class AmbassadorOpportunityJpaEntity {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public UUID getAmbassadorId() { return ambassadorId; }
-    public void setAmbassadorId(UUID ambassadorId) { this.ambassadorId = ambassadorId; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public String getOpportunityType() { return opportunityType; }
-    public void setOpportunityType(String opportunityType) { this.opportunityType = opportunityType; }
+    public UUID getAmbassadorId() {
+        return ambassadorId;
+    }
 
-    public String getZone() { return zone; }
-    public void setZone(String zone) { this.zone = zone; }
+    public void setAmbassadorId(UUID ambassadorId) {
+        this.ambassadorId = ambassadorId;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getOpportunityType() {
+        return opportunityType;
+    }
 
-    public String getPotential() { return potential; }
-    public void setPotential(String potential) { this.potential = potential; }
+    public void setOpportunityType(String opportunityType) {
+        this.opportunityType = opportunityType;
+    }
 
-    public String getDataSource() { return dataSource; }
-    public void setDataSource(String dataSource) { this.dataSource = dataSource; }
+    public String getZone() {
+        return zone;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setZone(String zone) {
+        this.zone = zone;
+    }
 
-    public boolean isSaved() { return isSaved; }
-    public void setSaved(boolean saved) { isSaved = saved; }
+    public String getDescription() {
+        return description;
+    }
 
-    public OffsetDateTime getDetectedAt() { return detectedAt; }
-    public void setDetectedAt(OffsetDateTime detectedAt) { this.detectedAt = detectedAt; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getPotential() {
+        return potential;
+    }
+
+    public void setPotential(String potential) {
+        this.potential = potential;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isSaved() {
+        return isSaved;
+    }
+
+    public void setSaved(boolean saved) {
+        isSaved = saved;
+    }
+
+    public OffsetDateTime getDetectedAt() {
+        return detectedAt;
+    }
+
+    public void setDetectedAt(OffsetDateTime detectedAt) {
+        this.detectedAt = detectedAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

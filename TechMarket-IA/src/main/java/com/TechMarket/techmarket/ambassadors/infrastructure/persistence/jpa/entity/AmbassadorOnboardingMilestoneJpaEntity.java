@@ -25,14 +25,43 @@ public class AmbassadorOnboardingMilestoneJpaEntity {
     @Column(name = "completed_at")
     private OffsetDateTime completedAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getAmbassadorReferralId() { return ambassadorReferralId; }
-    public void setAmbassadorReferralId(UUID ambassadorReferralId) { this.ambassadorReferralId = ambassadorReferralId; }
-    public String getMilestoneCode() { return milestoneCode; }
-    public void setMilestoneCode(String milestoneCode) { this.milestoneCode = milestoneCode; }
-    public boolean isCompleted() { return completed; }
-    public void setCompleted(boolean completed) { this.completed = completed; }
-    public OffsetDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(OffsetDateTime completedAt) { this.completedAt = completedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getAmbassadorReferralId() {
+        return ambassadorReferralId;
+    }
+
+    public void setAmbassadorReferralId(UUID ambassadorReferralId) {
+        this.ambassadorReferralId = ambassadorReferralId;
+    }
+
+    public String getMilestoneCode() {
+        return milestoneCode;
+    }
+
+    public void setMilestoneCode(String milestoneCode) {
+        this.milestoneCode = milestoneCode;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
+    }
+
+    public OffsetDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(OffsetDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
 }

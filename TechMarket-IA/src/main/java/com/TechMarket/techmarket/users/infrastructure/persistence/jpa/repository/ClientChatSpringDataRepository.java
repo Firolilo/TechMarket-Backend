@@ -30,7 +30,10 @@ public interface ClientChatSpringDataRepository extends JpaRepository<ClientChat
     Optional<ClientChatJpaEntity> findByIdAndCustomerUserIdAndTicketType(
             UUID id, UUID customerUserId, String ticketType);
 
-    Optional<ClientChatJpaEntity> findByIdAndAssignedTechnicianUserId(UUID id, UUID assignedTechnicianUserId);
+    List<ClientChatJpaEntity> findAllByTenantId(UUID tenantId);
+
+    Optional<ClientChatJpaEntity> findByIdAndAssignedTechnicianUserId(
+            UUID id, UUID assignedTechnicianUserId);
 
     @Query(
             """

@@ -8,5 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AmbassadorReferralActivitySpringDataRepository
         extends JpaRepository<AmbassadorReferralActivityJpaEntity, UUID> {
 
-    List<AmbassadorReferralActivityJpaEntity> findAllByAmbassadorReferralIdOrderByCreatedAtDesc(UUID referralId);
+    List<AmbassadorReferralActivityJpaEntity> findAllByAmbassadorReferralIdOrderByCreatedAtDesc(
+            UUID referralId);
 }

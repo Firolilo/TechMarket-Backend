@@ -40,7 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.isTokenValid(token)) {
             Claims claims = jwtTokenProvider.parseToken(token);
             List<SimpleGrantedAuthority> authorities = extractAuthorities(claims);
-            String principal = resolveLocalUserId(claims).map(UUID::toString).orElse(claims.getSubject());
+            String principal =
+                    resolveLocalUserId(claims).map(UUID::toString).orElse(claims.getSubject());
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(principal, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);

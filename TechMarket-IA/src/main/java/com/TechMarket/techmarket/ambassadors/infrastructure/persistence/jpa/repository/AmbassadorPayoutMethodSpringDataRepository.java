@@ -9,7 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AmbassadorPayoutMethodSpringDataRepository
         extends JpaRepository<AmbassadorPayoutMethodJpaEntity, UUID> {
 
-    List<AmbassadorPayoutMethodJpaEntity> findAllByAmbassadorIdOrderByCreatedAtDesc(UUID ambassadorId);
+    List<AmbassadorPayoutMethodJpaEntity> findAllByAmbassadorIdOrderByCreatedAtDesc(
+            UUID ambassadorId);
 
     Optional<AmbassadorPayoutMethodJpaEntity> findByIdAndAmbassadorId(UUID id, UUID ambassadorId);
 

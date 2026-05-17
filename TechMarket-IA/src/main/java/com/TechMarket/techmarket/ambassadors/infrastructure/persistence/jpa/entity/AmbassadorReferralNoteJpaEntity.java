@@ -22,12 +22,35 @@ public class AmbassadorReferralNoteJpaEntity {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getAmbassadorReferralId() { return ambassadorReferralId; }
-    public void setAmbassadorReferralId(UUID ambassadorReferralId) { this.ambassadorReferralId = ambassadorReferralId; }
-    public String getNote() { return note; }
-    public void setNote(String note) { this.note = note; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getAmbassadorReferralId() {
+        return ambassadorReferralId;
+    }
+
+    public void setAmbassadorReferralId(UUID ambassadorReferralId) {
+        this.ambassadorReferralId = ambassadorReferralId;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

@@ -57,7 +57,9 @@ public class PaymentController {
     @GetMapping("/payments/methods")
     public List<PaymentMethodResponse> paymentMethods(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return paymentMethodRepository.findAllByUserIdOrderByCreatedAtDesc(parseUserId(userId)).stream()
+        return paymentMethodRepository
+                .findAllByUserIdOrderByCreatedAtDesc(parseUserId(userId))
+                .stream()
                 .map(this::toPaymentMethodResponse)
                 .toList();
     }
@@ -70,11 +72,13 @@ public class PaymentController {
             @Valid @RequestBody CreatePaymentMethodRequest request) {
         UUID currentUserId = parseUserId(userId);
         if (request.predeterminado()) {
-            paymentMethodRepository.findAllByUserIdOrderByCreatedAtDesc(currentUserId).forEach(
-                    method -> {
-                        method.setDefaultMethod(false);
-                        paymentMethodRepository.save(method);
-                    });
+            paymentMethodRepository
+                    .findAllByUserIdOrderByCreatedAtDesc(currentUserId)
+                    .forEach(
+                            method -> {
+                                method.setDefaultMethod(false);
+                                paymentMethodRepository.save(method);
+                            });
         }
         UserPaymentMethodJpaEntity paymentMethod = new UserPaymentMethodJpaEntity();
         paymentMethod.setId(UUID.randomUUID());
@@ -86,7 +90,8 @@ public class PaymentController {
         paymentMethod.setDefaultMethod(request.predeterminado());
         paymentMethod.setCreatedAt(OffsetDateTime.now());
         UserPaymentMethodJpaEntity saved = paymentMethodRepository.save(paymentMethod);
-        return new CreatePaymentMethodResponse(formatPaymentMethodId(saved.getId()), "Metodo de pago agregado");
+        return new CreatePaymentMethodResponse(
+                formatPaymentMethodId(saved.getId()), "Metodo de pago agregado");
     }
 
     @DeleteMapping("/payments/methods/{paymentMethodId}")
@@ -115,7 +120,8 @@ public class PaymentController {
         intent.setStatus(PENDING);
         intent.setCreatedAt(OffsetDateTime.now());
         UserPaymentIntentJpaEntity saved = paymentIntentRepository.save(intent);
-        return new PaymentIntentResponse(formatPaymentIntentId(saved.getId()), saved.getStatus(), saved.getAmount());
+        return new PaymentIntentResponse(
+                formatPaymentIntentId(saved.getId()), saved.getStatus(), saved.getAmount());
     }
 
     @PostMapping("/payments/confirm")
@@ -154,7 +160,9 @@ public class PaymentController {
     @GetMapping("/transactions")
     public List<TransactionSummaryResponse> transactions(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return transactionRepository.findAllByUserIdOrderByCreatedAtDesc(parseUserId(userId)).stream()
+        return transactionRepository
+                .findAllByUserIdOrderByCreatedAtDesc(parseUserId(userId))
+                .stream()
                 .map(this::toTransactionSummaryResponse)
                 .toList();
     }
@@ -165,7 +173,8 @@ public class PaymentController {
             @PathVariable String transactionId) {
         UserTransactionJpaEntity transaction =
                 transactionRepository
-                        .findByIdAndUserId(parsePrefixedUuid(transactionId, "TRX-"), parseUserId(userId))
+                        .findByIdAndUserId(
+                                parsePrefixedUuid(transactionId, "TRX-"), parseUserId(userId))
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -196,7 +205,8 @@ public class PaymentController {
                 method.isDefaultMethod());
     }
 
-    private TransactionSummaryResponse toTransactionSummaryResponse(UserTransactionJpaEntity transaction) {
+    private TransactionSummaryResponse toTransactionSummaryResponse(
+            UserTransactionJpaEntity transaction) {
         return new TransactionSummaryResponse(
                 formatTransactionId(transaction.getId()),
                 transaction.getConcept(),
@@ -211,7 +221,8 @@ public class PaymentController {
         invoice.setId(UUID.randomUUID());
         invoice.setUserId(transaction.getUserId());
         invoice.setTransactionId(transaction.getId());
-        invoice.setInvoiceNumber("TM-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")));
+        invoice.setInvoiceNumber(
+                "TM-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")));
         invoice.setAmount(transaction.getAmount());
         invoice.setCurrency(transaction.getCurrency());
         invoice.setDownloadUrl("https://techmarket.bo/invoices/" + invoice.getId() + ".pdf");

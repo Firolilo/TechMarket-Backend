@@ -49,17 +49,22 @@ public class AmbassadorHistoryController {
 
         if (periodo != null && !periodo.isBlank()) {
             OffsetDateTime now = OffsetDateTime.now();
-            OffsetDateTime cutoff = switch (periodo.toLowerCase()) {
-                case "4semanas" -> now.minusWeeks(4);
-                case "mes"      -> now.minusMonths(1);
-                case "trimestre" -> now.minusMonths(3);
-                default -> null;
-            };
+            OffsetDateTime cutoff =
+                    switch (periodo.toLowerCase()) {
+                        case "4semanas" -> now.minusWeeks(4);
+                        case "mes" -> now.minusMonths(1);
+                        case "trimestre" -> now.minusMonths(3);
+                        default -> null;
+                    };
             if (cutoff != null) {
                 final OffsetDateTime from = cutoff;
-                commissions = commissions.stream()
-                        .filter(c -> c.getGeneratedAt() != null && !c.getGeneratedAt().isBefore(from))
-                        .toList();
+                commissions =
+                        commissions.stream()
+                                .filter(
+                                        c ->
+                                                c.getGeneratedAt() != null
+                                                        && !c.getGeneratedAt().isBefore(from))
+                                .toList();
             }
         }
 

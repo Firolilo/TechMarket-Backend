@@ -267,7 +267,9 @@ public class ConversationController {
             String id, String titulo, String ultimoMensaje, int mensajesSinLeer) {}
 
     public record CreateConversationRequest(
-            @NotBlank String participanteId, @NotBlank String tipo, @NotBlank String mensajeInicial) {}
+            @NotBlank String participanteId,
+            @NotBlank String tipo,
+            @NotBlank String mensajeInicial) {}
 
     public record CreateConversationResponse(String id, String estado) {}
 

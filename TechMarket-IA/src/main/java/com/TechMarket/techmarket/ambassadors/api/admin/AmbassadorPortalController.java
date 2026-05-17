@@ -3,8 +3,8 @@ package com.techmarket.techmarket.ambassadors.api.admin;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionDisputeJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorInvitationJpaEntity;
-import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorLeadActivityJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorJpaEntity;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorLeadActivityJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorLeadJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorOnboardingMilestoneJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorOnboardingReminderJpaEntity;
@@ -57,10 +57,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -194,7 +194,11 @@ public class AmbassadorPortalController {
         long referrals = referralRepository.countByAmbassadorId(ambassador.getId());
         long active = countActiveReferrals(ambassador.getId());
         double conversionRate =
-                referrals == 0 ? 0 : BigDecimal.valueOf(active * 100.0 / referrals).setScale(1, RoundingMode.HALF_UP).doubleValue();
+                referrals == 0
+                        ? 0
+                        : BigDecimal.valueOf(active * 100.0 / referrals)
+                                .setScale(1, RoundingMode.HALF_UP)
+                                .doubleValue();
         return new AmbassadorStatsResponse(
                 referrals,
                 active,
@@ -230,7 +234,9 @@ public class AmbassadorPortalController {
     public List<ReferralLinkResponse> referralLinks(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        return referralLinkRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+        return referralLinkRepository
+                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId())
+                .stream()
                 .map(this::toReferralLinkResponse)
                 .toList();
     }
@@ -254,7 +260,8 @@ public class AmbassadorPortalController {
         link.setCreatedAt(OffsetDateTime.now());
         link.setUpdatedAt(link.getCreatedAt());
         AmbassadorReferralLinkJpaEntity saved = referralLinkRepository.save(link);
-        return new CreateReferralLinkResponse(formatReferralLinkId(saved.getId()), saved.getCode(), saved.getUrl());
+        return new CreateReferralLinkResponse(
+                formatReferralLinkId(saved.getId()), saved.getCode(), saved.getUrl());
     }
 
     @GetMapping("/referral-links/default")
@@ -262,7 +269,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         return toReferralLinkDetailResponse(
-                defaultReferralLink(ambassador).orElseGet(() -> createDefaultReferralLink(ambassador)));
+                defaultReferralLink(ambassador)
+                        .orElseGet(() -> createDefaultReferralLink(ambassador)));
     }
 
     @PostMapping("/referral-links/{codigo}/track-click")
@@ -285,7 +293,8 @@ public class AmbassadorPortalController {
     public ReferralLinkDetailResponse referralLink(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String linkId) {
-        return toReferralLinkDetailResponse(findReferralLink(linkId, resolveAmbassador(findUser(parseUserId(userId))).getId()));
+        return toReferralLinkDetailResponse(
+                findReferralLink(linkId, resolveAmbassador(findUser(parseUserId(userId))).getId()));
     }
 
     @PutMapping("/referral-links/{linkId}")
@@ -312,7 +321,8 @@ public class AmbassadorPortalController {
         link.setActive(request.activo());
         link.setUpdatedAt(OffsetDateTime.now());
         AmbassadorReferralLinkJpaEntity saved = referralLinkRepository.save(link);
-        return new ReferralLinkStatusResponse(formatReferralLinkId(saved.getId()), saved.isActive());
+        return new ReferralLinkStatusResponse(
+                formatReferralLinkId(saved.getId()), saved.isActive());
     }
 
     @DeleteMapping("/referral-links/{linkId}")
@@ -330,7 +340,8 @@ public class AmbassadorPortalController {
             @PathVariable String linkId) {
         AmbassadorReferralLinkJpaEntity link =
                 findReferralLink(linkId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return new ReferralLinkQrResponse("https://cdn.techmarket.bo/qr/" + link.getCode() + ".png");
+        return new ReferralLinkQrResponse(
+                "https://cdn.techmarket.bo/qr/" + link.getCode() + ".png");
     }
 
     @GetMapping("/referral-links/{linkId}/stats")
@@ -351,7 +362,10 @@ public class AmbassadorPortalController {
                 link.getClicks(),
                 link.getConversions(),
                 conversionRate,
-                formatMoney(sumCommissions(commissionRepository.findByAmbassadorId(ambassador.getId()), null)));
+                formatMoney(
+                        sumCommissions(
+                                commissionRepository.findByAmbassadorId(ambassador.getId()),
+                                null)));
     }
 
     @GetMapping("/referral-codes")
@@ -359,13 +373,26 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         List<ReferralCodeResponse> links =
-                referralLinkRepository.findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(ambassador.getId()).stream()
-                        .map(link -> new ReferralCodeResponse(link.getCode(), valueOrDefault(link.getSegment(), "campaña"), link.getConversions(), true))
+                referralLinkRepository
+                        .findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(ambassador.getId())
+                        .stream()
+                        .map(
+                                link ->
+                                        new ReferralCodeResponse(
+                                                link.getCode(),
+                                                valueOrDefault(link.getSegment(), "campaña"),
+                                                link.getConversions(),
+                                                true))
                         .toList();
         if (!links.isEmpty()) {
             return links;
         }
-        return List.of(new ReferralCodeResponse(ambassador.getReferralCode(), "general", referralRepository.countByAmbassadorId(ambassador.getId()), true));
+        return List.of(
+                new ReferralCodeResponse(
+                        ambassador.getReferralCode(),
+                        "general",
+                        referralRepository.countByAmbassadorId(ambassador.getId()),
+                        true));
     }
 
     @GetMapping("/referrals")
@@ -383,9 +410,10 @@ public class AmbassadorPortalController {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         long total = referralRepository.countByAmbassadorId(ambassador.getId());
         long active = countActiveReferrals(ambassador.getId());
-        long pending = referralRepository.findByAmbassadorId(ambassador.getId()).stream()
-                .filter(referral -> !isActiveStatus(referral.getStatus()))
-                .count();
+        long pending =
+                referralRepository.findByAmbassadorId(ambassador.getId()).stream()
+                        .filter(referral -> !isActiveStatus(referral.getStatus()))
+                        .count();
         double conversionRate =
                 total == 0
                         ? 0
@@ -426,14 +454,17 @@ public class AmbassadorPortalController {
         AmbassadorReferralJpaEntity saved = referralRepository.save(referral);
         createActivity(saved.getId(), "registro", "Prospecto registrado manualmente", now);
         return new CreateReferralResponse(
-                formatBusinessId(saved.getId()), saved.getStatus(), "Prospecto registrado correctamente");
+                formatBusinessId(saved.getId()),
+                saved.getStatus(),
+                "Prospecto registrado correctamente");
     }
 
     @GetMapping("/referrals/{referralId}")
     public AmbassadorReferralDetailResponse referral(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         return toReferralDetailResponse(referral);
     }
 
@@ -444,16 +475,20 @@ public class AmbassadorPortalController {
         AmbassadorReferralJpaEntity referral =
                 findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         ReferralAggregate aggregate = referralAggregate(referral);
-        BigDecimal commissions = sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
+        BigDecimal commissions =
+                sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
         long monthlyLeads = monthlyReferralSignals(referral.getId(), YearMonth.now());
-        long previousMonthLeads = monthlyReferralSignals(referral.getId(), YearMonth.now().minusMonths(1));
-        int conversionRate = isActiveStatus(referral.getStatus()) ? 100 : onboardingProgress(referral.getId());
+        long previousMonthLeads =
+                monthlyReferralSignals(referral.getId(), YearMonth.now().minusMonths(1));
+        int conversionRate =
+                isActiveStatus(referral.getStatus()) ? 100 : onboardingProgress(referral.getId());
         return new ReferralBusinessMetricsResponse(
                 monthlyLeads,
                 conversionRate,
                 growthRate(monthlyLeads, previousMonthLeads),
                 aggregate.rating().doubleValue(),
-                valueScore(aggregate.ventasTotales(), commissions, aggregate.rating(), conversionRate),
+                valueScore(
+                        aggregate.ventasTotales(), commissions, aggregate.rating(), conversionRate),
                 aggregate.ventasTotales(),
                 commissions,
                 reputationContribution(aggregate.rating(), aggregate.reviewCount()));
@@ -467,7 +502,10 @@ public class AmbassadorPortalController {
                 findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         ReferralAggregate aggregate = referralAggregate(referral);
         BigDecimal rating = aggregate.rating();
-        int userScore = rating.compareTo(BigDecimal.ZERO) == 0 ? 0 : rating.multiply(BigDecimal.valueOf(20)).intValue();
+        int userScore =
+                rating.compareTo(BigDecimal.ZERO) == 0
+                        ? 0
+                        : rating.multiply(BigDecimal.valueOf(20)).intValue();
         return new ReferralUserInsightsResponse(
                 userScore,
                 userView(rating, aggregate.reviewCount()),
@@ -481,13 +519,18 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId,
             @Valid @RequestBody UpdateReferralRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         referral.setContactName(request.contacto());
         referral.setPhone(request.telefono());
         referral.setCity(request.ciudad());
         referral.setLastActivityAt(OffsetDateTime.now());
         referralRepository.save(referral);
-        createActivity(referral.getId(), "actualizacion", "Datos del referido actualizados", referral.getLastActivityAt());
+        createActivity(
+                referral.getId(),
+                "actualizacion",
+                "Datos del referido actualizados",
+                referral.getLastActivityAt());
         return new MessageResponse("Referido actualizado correctamente");
     }
 
@@ -496,11 +539,16 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId,
             @Valid @RequestBody UpdateReferralStatusRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         referral.setStatus(request.estado());
         referral.setLastActivityAt(OffsetDateTime.now());
         AmbassadorReferralJpaEntity saved = referralRepository.save(referral);
-        createActivity(saved.getId(), "estado", "Estado actualizado a " + saved.getStatus(), saved.getLastActivityAt());
+        createActivity(
+                saved.getId(),
+                "estado",
+                "Estado actualizado a " + saved.getStatus(),
+                saved.getLastActivityAt());
         return new ReferralStatusResponse(formatBusinessId(saved.getId()), saved.getStatus());
     }
 
@@ -508,9 +556,11 @@ public class AmbassadorPortalController {
     public MessageResponse deleteReferral(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         if (!"prospecto".equalsIgnoreCase(valueOrDefault(referral.getStatus(), ""))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only prospect referrals can be deleted");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Only prospect referrals can be deleted");
         }
         referralRepository.delete(referral);
         return new MessageResponse("Referido eliminado correctamente");
@@ -520,9 +570,18 @@ public class AmbassadorPortalController {
     public List<ReferralActivityResponse> referralActivity(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return activityRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId()).stream()
-                .map(activity -> new ReferralActivityResponse("ACT-" + activity.getId(), activity.getActivityType(), activity.getDescription(), activity.getCreatedAt()))
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        return activityRepository
+                .findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId())
+                .stream()
+                .map(
+                        activity ->
+                                new ReferralActivityResponse(
+                                        "ACT-" + activity.getId(),
+                                        activity.getActivityType(),
+                                        activity.getDescription(),
+                                        activity.getCreatedAt()))
                 .toList();
     }
 
@@ -532,7 +591,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId,
             @Valid @RequestBody CreateReferralNoteRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorReferralNoteJpaEntity note = new AmbassadorReferralNoteJpaEntity();
         note.setId(UUID.randomUUID());
         note.setAmbassadorReferralId(referral.getId());
@@ -547,9 +607,17 @@ public class AmbassadorPortalController {
     public List<ReferralNoteResponse> referralNotes(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return noteRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId()).stream()
-                .map(note -> new ReferralNoteResponse("NOTE-" + note.getId(), note.getNote(), note.getCreatedAt()))
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        return noteRepository
+                .findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId())
+                .stream()
+                .map(
+                        note ->
+                                new ReferralNoteResponse(
+                                        "NOTE-" + note.getId(),
+                                        note.getNote(),
+                                        note.getCreatedAt()))
                 .toList();
     }
 
@@ -559,14 +627,16 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String referralId,
             @Valid @RequestBody CreateReferralFileRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(referralId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorReferralFileJpaEntity file = new AmbassadorReferralFileJpaEntity();
         file.setId(UUID.randomUUID());
         file.setAmbassadorReferralId(referral.getId());
         file.setUrl(request.url());
         file.setCreatedAt(OffsetDateTime.now());
         AmbassadorReferralFileJpaEntity saved = fileRepository.save(file);
-        createActivity(referral.getId(), "archivo", "Archivo asociado al referido", saved.getCreatedAt());
+        createActivity(
+                referral.getId(), "archivo", "Archivo asociado al referido", saved.getCreatedAt());
         return new ReferralFileResponse("FILE-" + saved.getId(), saved.getUrl());
     }
 
@@ -575,8 +645,18 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         return referralRepository.findByAmbassadorId(ambassador.getId()).stream()
-                .filter(referral -> !"activo".equalsIgnoreCase(valueOrDefault(referral.getStatus(), "")))
-                .map(referral -> new OnboardingSummaryResponse(formatOnboardingId(referral.getId()), formatBusinessId(referral.getId()), referralName(referral), onboardingProgress(referral.getId()), valueOrDefault(referral.getStatus(), "en_proceso")))
+                .filter(
+                        referral ->
+                                !"activo"
+                                        .equalsIgnoreCase(valueOrDefault(referral.getStatus(), "")))
+                .map(
+                        referral ->
+                                new OnboardingSummaryResponse(
+                                        formatOnboardingId(referral.getId()),
+                                        formatBusinessId(referral.getId()),
+                                        referralName(referral),
+                                        onboardingProgress(referral.getId()),
+                                        valueOrDefault(referral.getStatus(), "en_proceso")))
                 .toList();
     }
 
@@ -584,8 +664,15 @@ public class AmbassadorPortalController {
     public OnboardingDetailResponse onboardingDetail(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId) {
-        AmbassadorReferralJpaEntity referral = findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return new OnboardingDetailResponse(formatOnboardingId(referral.getId()), referralName(referral), valueOrDefault(referral.getStatus(), "en_proceso"), onboardingProgress(referral.getId()), defaultOnboardingSteps(referral.getId()));
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        return new OnboardingDetailResponse(
+                formatOnboardingId(referral.getId()),
+                referralName(referral),
+                valueOrDefault(referral.getStatus(), "en_proceso"),
+                onboardingProgress(referral.getId()),
+                defaultOnboardingSteps(referral.getId()));
     }
 
     @GetMapping("/onboarding/{onboardingId}/snapshot")
@@ -593,7 +680,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId) {
         AmbassadorReferralJpaEntity referral =
-                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         return new OnboardingSnapshotResponse(
                 referralProfile(referral),
                 referralCatalog(referral),
@@ -635,7 +723,9 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId,
             @Valid @RequestBody CreateOnboardingTaskRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorOnboardingTaskJpaEntity task = new AmbassadorOnboardingTaskJpaEntity();
         task.setId(UUID.randomUUID());
         task.setAmbassadorReferralId(referral.getId());
@@ -654,14 +744,19 @@ public class AmbassadorPortalController {
             @PathVariable String onboardingId,
             @Valid @RequestBody CreateReferralNoteRequest request) {
         AmbassadorReferralJpaEntity referral =
-                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorReferralNoteJpaEntity note = new AmbassadorReferralNoteJpaEntity();
         note.setId(UUID.randomUUID());
         note.setAmbassadorReferralId(referral.getId());
         note.setNote(request.nota());
         note.setCreatedAt(OffsetDateTime.now());
         AmbassadorReferralNoteJpaEntity saved = noteRepository.save(note);
-        createActivity(referral.getId(), "nota_onboarding", "Nota de onboarding agregada", saved.getCreatedAt());
+        createActivity(
+                referral.getId(),
+                "nota_onboarding",
+                "Nota de onboarding agregada",
+                saved.getCreatedAt());
         return new CreateReferralNoteResponse("NOTE-" + saved.getId(), "Nota agregada");
     }
 
@@ -672,7 +767,8 @@ public class AmbassadorPortalController {
             @PathVariable String onboardingId,
             @Valid @RequestBody CreateOnboardingActionRequest request) {
         AmbassadorReferralJpaEntity referral =
-                findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorOnboardingTaskJpaEntity task = new AmbassadorOnboardingTaskJpaEntity();
         task.setId(UUID.randomUUID());
         task.setAmbassadorReferralId(referral.getId());
@@ -681,7 +777,8 @@ public class AmbassadorPortalController {
         task.setStatus("pendiente");
         task.setCreatedAt(OffsetDateTime.now());
         AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
-        createActivity(referral.getId(), "accion_onboarding", request.accion(), saved.getCreatedAt());
+        createActivity(
+                referral.getId(), "accion_onboarding", request.accion(), saved.getCreatedAt());
         return new OnboardingActionResponse("TASK-" + saved.getId(), "Acción pendiente creada");
     }
 
@@ -689,9 +786,19 @@ public class AmbassadorPortalController {
     public List<OnboardingTaskResponse> onboardingTasks(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId) {
-        AmbassadorReferralJpaEntity referral = findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return onboardingTaskRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId()).stream()
-                .map(task -> new OnboardingTaskResponse("TASK-" + task.getId(), task.getTitle(), task.getStatus(), task.getDueDate()))
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        return onboardingTaskRepository
+                .findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referral.getId())
+                .stream()
+                .map(
+                        task ->
+                                new OnboardingTaskResponse(
+                                        "TASK-" + task.getId(),
+                                        task.getTitle(),
+                                        task.getStatus(),
+                                        task.getDueDate()))
                 .toList();
     }
 
@@ -702,11 +809,23 @@ public class AmbassadorPortalController {
             @Valid @RequestBody UpdateTaskStatusRequest request) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         UUID taskUuid = parsePrefixedUuid(taskId, "TASK-");
-        AmbassadorOnboardingTaskJpaEntity task = onboardingTaskRepository.findById(taskUuid)
-                .filter(candidate -> referralRepository.findByIdAndAmbassadorId(candidate.getAmbassadorReferralId(), ambassador.getId()).isPresent())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+        AmbassadorOnboardingTaskJpaEntity task =
+                onboardingTaskRepository
+                        .findById(taskUuid)
+                        .filter(
+                                candidate ->
+                                        referralRepository
+                                                .findByIdAndAmbassadorId(
+                                                        candidate.getAmbassadorReferralId(),
+                                                        ambassador.getId())
+                                                .isPresent())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Task not found"));
         task.setStatus(request.estado());
-        task.setCompletedAt("completada".equalsIgnoreCase(request.estado()) ? OffsetDateTime.now() : null);
+        task.setCompletedAt(
+                "completada".equalsIgnoreCase(request.estado()) ? OffsetDateTime.now() : null);
         AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
         return new OnboardingTaskStatusResponse("TASK-" + saved.getId(), saved.getStatus());
     }
@@ -722,8 +841,12 @@ public class AmbassadorPortalController {
                         businessId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         AmbassadorOnboardingTaskJpaEntity task =
                 onboardingTaskRepository
-                        .findByIdAndAmbassadorReferralId(parsePrefixedUuid(taskId, "TASK-"), referral.getId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+                        .findByIdAndAmbassadorReferralId(
+                                parsePrefixedUuid(taskId, "TASK-"), referral.getId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Task not found"));
         if (request.titulo() != null && !request.titulo().isBlank()) {
             task.setTitle(request.titulo());
         }
@@ -736,7 +859,8 @@ public class AmbassadorPortalController {
         }
         AmbassadorOnboardingTaskJpaEntity saved = onboardingTaskRepository.save(task);
         if (request.nota() != null && !request.nota().isBlank()) {
-            createActivity(referral.getId(), "tarea_onboarding", request.nota(), OffsetDateTime.now());
+            createActivity(
+                    referral.getId(), "tarea_onboarding", request.nota(), OffsetDateTime.now());
         }
         return new OnboardingTaskStatusResponse("TASK-" + saved.getId(), saved.getStatus());
     }
@@ -747,8 +871,11 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId,
             @Valid @RequestBody CreateReminderRequest request) {
-        AmbassadorReferralJpaEntity referral = findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        AmbassadorOnboardingReminderJpaEntity reminder = new AmbassadorOnboardingReminderJpaEntity();
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorOnboardingReminderJpaEntity reminder =
+                new AmbassadorOnboardingReminderJpaEntity();
         reminder.setId(UUID.randomUUID());
         reminder.setAmbassadorReferralId(referral.getId());
         reminder.setReminderAt(request.fecha());
@@ -768,15 +895,21 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String onboardingId,
             @PathVariable String milestoneId) {
-        AmbassadorReferralJpaEntity referral = findReferralByOnboarding(onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        AmbassadorOnboardingMilestoneJpaEntity milestone = milestoneRepository.findByAmbassadorReferralIdAndMilestoneCode(referral.getId(), milestoneId)
-                .orElseGet(() -> {
-                    AmbassadorOnboardingMilestoneJpaEntity created = new AmbassadorOnboardingMilestoneJpaEntity();
-                    created.setId(UUID.randomUUID());
-                    created.setAmbassadorReferralId(referral.getId());
-                    created.setMilestoneCode(milestoneId);
-                    return created;
-                });
+        AmbassadorReferralJpaEntity referral =
+                findReferralByOnboarding(
+                        onboardingId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorOnboardingMilestoneJpaEntity milestone =
+                milestoneRepository
+                        .findByAmbassadorReferralIdAndMilestoneCode(referral.getId(), milestoneId)
+                        .orElseGet(
+                                () -> {
+                                    AmbassadorOnboardingMilestoneJpaEntity created =
+                                            new AmbassadorOnboardingMilestoneJpaEntity();
+                                    created.setId(UUID.randomUUID());
+                                    created.setAmbassadorReferralId(referral.getId());
+                                    created.setMilestoneCode(milestoneId);
+                                    return created;
+                                });
         milestone.setCompleted(true);
         milestone.setCompletedAt(OffsetDateTime.now());
         milestoneRepository.save(milestone);
@@ -824,7 +957,8 @@ public class AmbassadorPortalController {
     public LeadDetailResponse lead(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String leadId) {
-        AmbassadorLeadJpaEntity lead = findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorLeadJpaEntity lead =
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         return toLeadDetailResponse(lead);
     }
 
@@ -833,7 +967,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String leadId,
             @Valid @RequestBody UpdateLeadRequest request) {
-        AmbassadorLeadJpaEntity lead = findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorLeadJpaEntity lead =
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         lead.setName(request.nombre());
         lead.setLeadType(request.tipo());
         lead.setContactName(request.contacto());
@@ -893,7 +1028,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String leadId,
             @Valid @RequestBody UpdateLeadStatusRequest request) {
-        AmbassadorLeadJpaEntity lead = findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+        AmbassadorLeadJpaEntity lead =
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         lead.setStatus(request.estado());
         lead.setUpdatedAt(OffsetDateTime.now());
         AmbassadorLeadJpaEntity saved = leadRepository.save(lead);
@@ -928,14 +1064,16 @@ public class AmbassadorPortalController {
         lead.setUpdatedAt(now);
         leadRepository.save(lead);
         createActivity(saved.getId(), "conversion", "Lead convertido en referido", now);
-        return new ConvertLeadResponse(formatBusinessId(saved.getId()), "Lead convertido en referido");
+        return new ConvertLeadResponse(
+                formatBusinessId(saved.getId()), "Lead convertido en referido");
     }
 
     @DeleteMapping("/leads/{leadId}")
     public MessageResponse deleteLead(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String leadId) {
-        leadRepository.delete(findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId()));
+        leadRepository.delete(
+                findLead(leadId, resolveAmbassador(findUser(parseUserId(userId))).getId()));
         return new MessageResponse("Lead eliminado");
     }
 
@@ -970,24 +1108,28 @@ public class AmbassadorPortalController {
                         valueOrDefault(ambassador.getLevel(), "Bronze"));
         List<AmbassadorReferralListResponse> recentReferrals =
                 referralRepository.findByAmbassadorId(ambassador.getId()).stream()
-                        .sorted(Comparator.comparing(
-                                        AmbassadorReferralJpaEntity::getCreatedAt,
-                                        Comparator.nullsLast(Comparator.naturalOrder()))
-                                .reversed())
+                        .sorted(
+                                Comparator.comparing(
+                                                AmbassadorReferralJpaEntity::getCreatedAt,
+                                                Comparator.nullsLast(Comparator.naturalOrder()))
+                                        .reversed())
                         .limit(5)
                         .map(this::toReferralListResponse)
                         .toList();
         List<CommissionResponse> recentCommissions =
                 commissionRepository.findByAmbassadorId(ambassador.getId()).stream()
-                        .sorted(Comparator.comparing(
-                                        AmbassadorCommissionJpaEntity::getGeneratedAt,
-                                        Comparator.nullsLast(Comparator.naturalOrder()))
-                                .reversed())
+                        .sorted(
+                                Comparator.comparing(
+                                                AmbassadorCommissionJpaEntity::getGeneratedAt,
+                                                Comparator.nullsLast(Comparator.naturalOrder()))
+                                        .reversed())
                         .limit(5)
                         .map(this::toCommissionResponse)
                         .toList();
         List<PendingActionResponse> pendingActions =
-                leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+                leadRepository
+                        .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId())
+                        .stream()
                         .filter(lead -> !isFinalLeadStatus(lead.getStatus()))
                         .limit(5)
                         .map(
@@ -995,18 +1137,25 @@ public class AmbassadorPortalController {
                                         new PendingActionResponse(
                                                 formatLeadId(lead.getId()),
                                                 "lead",
-                                                valueOrDefault(lead.getNextAction(), "Seguimiento pendiente"),
+                                                valueOrDefault(
+                                                        lead.getNextAction(),
+                                                        "Seguimiento pendiente"),
                                                 lead.getUpdatedAt()))
                         .toList();
         return new AmbassadorDashboardResponse(
-                toProfileResponse(ambassador, user), stats, recentReferrals, recentCommissions, pendingActions);
+                toProfileResponse(ambassador, user),
+                stats,
+                recentReferrals,
+                recentCommissions,
+                pendingActions);
     }
 
     @GetMapping("/commissions/summary")
     public CommissionSummaryResponse commissionSummary(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        List<AmbassadorCommissionJpaEntity> commissions = commissionRepository.findByAmbassadorId(ambassador.getId());
+        List<AmbassadorCommissionJpaEntity> commissions =
+                commissionRepository.findByAmbassadorId(ambassador.getId());
         return new CommissionSummaryResponse(
                 formatMoney(sumCommissions(commissions, null)),
                 formatMoney(sumCommissions(commissions, "disponible")),
@@ -1019,7 +1168,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @PathVariable String commissionId) {
         AmbassadorCommissionJpaEntity commission =
-                findCommission(commissionId, resolveAmbassador(findUser(parseUserId(userId))).getId());
+                findCommission(
+                        commissionId, resolveAmbassador(findUser(parseUserId(userId))).getId());
         return new CommissionDetailResponse(
                 formatCommissionId(commission.getId()),
                 referralNameById(commission.getAmbassadorReferralId()),
@@ -1054,7 +1204,8 @@ public class AmbassadorPortalController {
     public AmbassadorWalletResponse wallet(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        List<AmbassadorCommissionJpaEntity> commissions = commissionRepository.findByAmbassadorId(ambassador.getId());
+        List<AmbassadorCommissionJpaEntity> commissions =
+                commissionRepository.findByAmbassadorId(ambassador.getId());
         return new AmbassadorWalletResponse(
                 formatMoney(sumCommissions(commissions, "disponible")),
                 formatMoney(sumCommissions(commissions, "pendiente")),
@@ -1076,14 +1227,17 @@ public class AmbassadorPortalController {
         withdrawal.setRequestedAt(OffsetDateTime.now());
         withdrawal.setEstimatedAt(LocalDate.now().plusDays(4));
         AmbassadorWithdrawalJpaEntity saved = withdrawalRepository.save(withdrawal);
-        return new WithdrawalResponse("WDR-" + saved.getId(), saved.getStatus(), saved.getEstimatedAt());
+        return new WithdrawalResponse(
+                "WDR-" + saved.getId(), saved.getStatus(), saved.getEstimatedAt());
     }
 
     @GetMapping("/payouts")
     public List<PayoutResponse> payouts(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        return withdrawalRepository.findAllByAmbassadorIdOrderByRequestedAtDesc(ambassador.getId()).stream()
+        return withdrawalRepository
+                .findAllByAmbassadorIdOrderByRequestedAtDesc(ambassador.getId())
+                .stream()
                 .map(
                         withdrawal ->
                                 new PayoutResponse(
@@ -1092,7 +1246,10 @@ public class AmbassadorPortalController {
                                         withdrawal.getStatus(),
                                         withdrawal.getRequestedAt() == null
                                                 ? null
-                                                : withdrawal.getRequestedAt().toLocalDate().toString()))
+                                                : withdrawal
+                                                        .getRequestedAt()
+                                                        .toLocalDate()
+                                                        .toString()))
                 .toList();
     }
 
@@ -1100,7 +1257,9 @@ public class AmbassadorPortalController {
     public List<PayoutMethodResponse> payoutMethods(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        return payoutMethodRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+        return payoutMethodRepository
+                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId())
+                .stream()
                 .map(
                         method ->
                                 new PayoutMethodResponse(
@@ -1129,7 +1288,8 @@ public class AmbassadorPortalController {
         method.setDefaultMethod(!payoutMethodRepository.existsByAmbassadorId(ambassador.getId()));
         method.setCreatedAt(OffsetDateTime.now());
         AmbassadorPayoutMethodJpaEntity saved = payoutMethodRepository.save(method);
-        return new CreatePayoutMethodResponse(formatPayoutMethodId(saved.getId()), "Método de pago agregado");
+        return new CreatePayoutMethodResponse(
+                formatPayoutMethodId(saved.getId()), "Método de pago agregado");
     }
 
     @DeleteMapping("/payout-methods/{methodId}")
@@ -1139,9 +1299,12 @@ public class AmbassadorPortalController {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         AmbassadorPayoutMethodJpaEntity method =
                 payoutMethodRepository
-                        .findByIdAndAmbassadorId(parsePrefixedUuid(methodId, "PAYM-"), ambassador.getId())
+                        .findByIdAndAmbassadorId(
+                                parsePrefixedUuid(methodId, "PAYM-"), ambassador.getId())
                         .orElseThrow(
-                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payout method not found"));
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Payout method not found"));
         payoutMethodRepository.delete(method);
         return new MessageResponse("Método de pago eliminado");
     }
@@ -1186,14 +1349,17 @@ public class AmbassadorPortalController {
         invitation.setStatus("enviada");
         invitation.setCreatedAt(OffsetDateTime.now());
         AmbassadorInvitationJpaEntity saved = invitationRepository.save(invitation);
-        return new CreateAmbassadorInvitationResponse(formatAmbassadorInvitationId(saved.getId()), saved.getStatus());
+        return new CreateAmbassadorInvitationResponse(
+                formatAmbassadorInvitationId(saved.getId()), saved.getStatus());
     }
 
     @GetMapping("/network/invitations")
     public List<AmbassadorInvitationResponse> invitations(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        return invitationRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+        return invitationRepository
+                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId())
+                .stream()
                 .map(
                         invitation ->
                                 new AmbassadorInvitationResponse(
@@ -1210,9 +1376,12 @@ public class AmbassadorPortalController {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         AmbassadorInvitationJpaEntity invitation =
                 invitationRepository
-                        .findByIdAndAmbassadorId(parsePrefixedUuid(invitationId, "INV-AMB-"), ambassador.getId())
+                        .findByIdAndAmbassadorId(
+                                parsePrefixedUuid(invitationId, "INV-AMB-"), ambassador.getId())
                         .orElseThrow(
-                                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invitation not found"));
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Invitation not found"));
         invitationRepository.delete(invitation);
         return new MessageResponse("Invitación cancelada");
     }
@@ -1221,16 +1390,24 @@ public class AmbassadorPortalController {
     public List<AmbassadorRankingResponse> ranking() {
         int[] position = {0};
         return ambassadorRepository.findAll().stream()
-                .sorted(Comparator.comparing(
-                                (AmbassadorJpaEntity ambassador) ->
-                                        commissionRepository.sumAmountByAmbassadorId(ambassador.getId()))
-                        .reversed())
-                .map(ambassador -> new AmbassadorRankingResponse(
-                        ++position[0],
-                        formatAmbassadorId(ambassador.getId()),
-                        ambassadorUser(ambassador).map(this::fullName).orElse("Embajador"),
-                        countActiveReferrals(ambassador.getId()),
-                        formatMoney(commissionRepository.sumAmountByAmbassadorId(ambassador.getId()))))
+                .sorted(
+                        Comparator.comparing(
+                                        (AmbassadorJpaEntity ambassador) ->
+                                                commissionRepository.sumAmountByAmbassadorId(
+                                                        ambassador.getId()))
+                                .reversed())
+                .map(
+                        ambassador ->
+                                new AmbassadorRankingResponse(
+                                        ++position[0],
+                                        formatAmbassadorId(ambassador.getId()),
+                                        ambassadorUser(ambassador)
+                                                .map(this::fullName)
+                                                .orElse("Embajador"),
+                                        countActiveReferrals(ambassador.getId()),
+                                        formatMoney(
+                                                commissionRepository.sumAmountByAmbassadorId(
+                                                        ambassador.getId()))))
                 .toList();
     }
 
@@ -1240,7 +1417,8 @@ public class AmbassadorPortalController {
         UUID currentUserId = parseUserId(userId);
         resolveAmbassador(findUser(currentUserId));
         return chatRepository
-                .findAllByCustomerUserIdAndTicketTypeOrderByCreatedAtDesc(currentUserId, AMBASSADOR_CHAT_TYPE)
+                .findAllByCustomerUserIdAndTicketTypeOrderByCreatedAtDesc(
+                        currentUserId, AMBASSADOR_CHAT_TYPE)
                 .stream()
                 .map(chat -> toAmbassadorChatSummary(chat, currentUserId))
                 .toList();
@@ -1253,7 +1431,8 @@ public class AmbassadorPortalController {
             @Valid @RequestBody CreateAmbassadorChatRequest request) {
         UserJpaEntity user = findUser(parseUserId(userId));
         AmbassadorJpaEntity ambassador = resolveAmbassador(user);
-        AmbassadorReferralJpaEntity referral = findReferral(request.participanteId(), ambassador.getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(request.participanteId(), ambassador.getId());
         OffsetDateTime now = OffsetDateTime.now();
         ClientChatJpaEntity chat = new ClientChatJpaEntity();
         chat.setId(UUID.randomUUID());
@@ -1277,7 +1456,8 @@ public class AmbassadorPortalController {
         message.setCreatedAt(now);
         chatMessageRepository.save(message);
 
-        return new CreateAmbassadorChatResponse(formatAmbassadorChatId(savedChat.getId()), savedChat.getStatus());
+        return new CreateAmbassadorChatResponse(
+                formatAmbassadorChatId(savedChat.getId()), savedChat.getStatus());
     }
 
     @GetMapping("/chats/{chatId}/messages")
@@ -1322,7 +1502,8 @@ public class AmbassadorPortalController {
                         .findByTicketIdAndUserId(chat.getId(), currentUserId)
                         .orElseGet(
                                 () -> {
-                                    ClientChatReadReceiptJpaEntity created = new ClientChatReadReceiptJpaEntity();
+                                    ClientChatReadReceiptJpaEntity created =
+                                            new ClientChatReadReceiptJpaEntity();
                                     created.setId(UUID.randomUUID());
                                     created.setTicketId(chat.getId());
                                     created.setUserId(currentUserId);
@@ -1338,7 +1519,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         long clicks = totalReferralLinkClicks(ambassador.getId());
-        long leads = leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
+        long leads =
+                leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
         long conversions = countActiveReferrals(ambassador.getId());
         double conversionRate =
                 leads == 0
@@ -1366,10 +1548,19 @@ public class AmbassadorPortalController {
                                         referralName(referral),
                                         valueOrDefault(referral.getReferralType(), "empresa"),
                                         valueOrDefault(referral.getStatus(), "prospecto"),
-                                        commissionRepository.findByAmbassadorId(ambassador.getId()).stream()
-                                                .filter(commission -> referral.getId().equals(commission.getAmbassadorReferralId()))
+                                        commissionRepository
+                                                .findByAmbassadorId(ambassador.getId())
+                                                .stream()
+                                                .filter(
+                                                        commission ->
+                                                                referral.getId()
+                                                                        .equals(
+                                                                                commission
+                                                                                        .getAmbassadorReferralId()))
                                                 .count(),
-                                        formatMoney(sumReferralCommissions(ambassador.getId(), referral.getId()))))
+                                        formatMoney(
+                                                sumReferralCommissions(
+                                                        ambassador.getId(), referral.getId()))))
                 .toList();
     }
 
@@ -1395,7 +1586,9 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
         return new ReportExportResponse(
-                "https://techmarket.bo/reports/" + formatAmbassadorId(ambassador.getId()).toLowerCase(Locale.ROOT) + "-mensual.pdf");
+                "https://techmarket.bo/reports/"
+                        + formatAmbassadorId(ambassador.getId()).toLowerCase(Locale.ROOT)
+                        + "-mensual.pdf");
     }
 
     @PostMapping("/ai/query")
@@ -1403,7 +1596,10 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @Valid @RequestBody AmbassadorAiQueryRequest request) {
         resolveAmbassador(findUser(parseUserId(userId)));
-        String focus = request.consulta().toLowerCase(Locale.ROOT).contains("comision") ? "comisiones" : "conversion";
+        String focus =
+                request.consulta().toLowerCase(Locale.ROOT).contains("comision")
+                        ? "comisiones"
+                        : "conversion";
         return new AmbassadorAiQueryResponse(
                 new AmbassadorAiAnswerResponse(
                         "Prioriza empresas con alta intención y onboarding incompleto.",
@@ -1418,12 +1614,14 @@ public class AmbassadorPortalController {
     public AmbassadorAiInsightsResponse aiInsights(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        long leads = leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
+        long leads =
+                leadRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).size();
         long active = countActiveReferrals(ambassador.getId());
         int conversion = leads == 0 ? 0 : (int) Math.min(100, Math.round(active * 100.0 / leads));
         return new AmbassadorAiInsightsResponse(
                 List.of(
-                        new AmbassadorAiRadarResponse("Calidad de leads", Math.max(60, conversion + 13)),
+                        new AmbassadorAiRadarResponse(
+                                "Calidad de leads", Math.max(60, conversion + 13)),
                         new AmbassadorAiRadarResponse("Velocidad de seguimiento", 74),
                         new AmbassadorAiRadarResponse("Conversión", Math.max(50, conversion)),
                         new AmbassadorAiRadarResponse("Potencial de comisiones", 88)),
@@ -1453,7 +1651,8 @@ public class AmbassadorPortalController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @Valid @RequestBody FollowUpSuggestionRequest request) {
         AmbassadorJpaEntity ambassador = resolveAmbassador(findUser(parseUserId(userId)));
-        AmbassadorReferralJpaEntity referral = findReferral(request.referidoId(), ambassador.getId());
+        AmbassadorReferralJpaEntity referral =
+                findReferral(request.referidoId(), ambassador.getId());
         return new FollowUpSuggestionResponse(
                 "Hola "
                         + valueOrDefault(referral.getContactName(), referralName(referral))
@@ -1477,7 +1676,8 @@ public class AmbassadorPortalController {
                         "30 días"));
     }
 
-    private AmbassadorProfileResponse toProfileResponse(AmbassadorJpaEntity ambassador, UserJpaEntity user) {
+    private AmbassadorProfileResponse toProfileResponse(
+            AmbassadorJpaEntity ambassador, UserJpaEntity user) {
         return new AmbassadorProfileResponse(
                 formatAmbassadorId(ambassador.getId()),
                 fullName(user),
@@ -1488,10 +1688,14 @@ public class AmbassadorPortalController {
                 ambassador.getCity(),
                 ambassador.getReferralCode(),
                 valueOrDefault(ambassador.getLevel(), "Bronze"),
-                ambassador.getActivatedAt() == null ? null : ambassador.getActivatedAt().toLocalDate().toString(),
+                ambassador.getActivatedAt() == null
+                        ? null
+                        : ambassador.getActivatedAt().toLocalDate().toString(),
                 ambassador.getStatus(),
                 ambassador.getAvatarUrl(),
-                defaultReferralLink(ambassador).map(link -> formatReferralLinkId(link.getId())).orElse(null));
+                defaultReferralLink(ambassador)
+                        .map(link -> formatReferralLinkId(link.getId()))
+                        .orElse(null));
     }
 
     private ReferralLinkResponse toReferralLinkResponse(AmbassadorReferralLinkJpaEntity link) {
@@ -1505,7 +1709,8 @@ public class AmbassadorPortalController {
                 link.isActive());
     }
 
-    private ReferralLinkDetailResponse toReferralLinkDetailResponse(AmbassadorReferralLinkJpaEntity link) {
+    private ReferralLinkDetailResponse toReferralLinkDetailResponse(
+            AmbassadorReferralLinkJpaEntity link) {
         double conversionRate =
                 link.getClicks() == 0
                         ? 0
@@ -1523,9 +1728,12 @@ public class AmbassadorPortalController {
                 link.isActive());
     }
 
-    private AmbassadorReferralListResponse toReferralListResponse(AmbassadorReferralJpaEntity referral) {
+    private AmbassadorReferralListResponse toReferralListResponse(
+            AmbassadorReferralJpaEntity referral) {
         TenantJpaEntity tenant =
-                referral.getTenantId() == null ? null : tenantRepository.findById(referral.getTenantId()).orElse(null);
+                referral.getTenantId() == null
+                        ? null
+                        : tenantRepository.findById(referral.getTenantId()).orElse(null);
         BigDecimal commission =
                 commissionRepository.findByAmbassadorId(referral.getAmbassadorId()).stream()
                         .filter(item -> referral.getId().equals(item.getAmbassadorReferralId()))
@@ -1536,12 +1744,16 @@ public class AmbassadorPortalController {
                 referralName(referral),
                 "empresa",
                 referral.getStatus(),
-                referral.getCreatedAt() == null ? null : referral.getCreatedAt().toLocalDate().toString(),
+                referral.getCreatedAt() == null
+                        ? null
+                        : referral.getCreatedAt().toLocalDate().toString(),
                 "Bs " + commission);
     }
 
-    private AmbassadorReferralDetailResponse toReferralDetailResponse(AmbassadorReferralJpaEntity referral) {
-        BigDecimal commission = sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
+    private AmbassadorReferralDetailResponse toReferralDetailResponse(
+            AmbassadorReferralJpaEntity referral) {
+        BigDecimal commission =
+                sumReferralCommissions(referral.getAmbassadorId(), referral.getId());
         return new AmbassadorReferralDetailResponse(
                 formatBusinessId(referral.getId()),
                 referralName(referral),
@@ -1549,12 +1761,17 @@ public class AmbassadorPortalController {
                 valueOrDefault(referral.getCountry(), "Bolivia"),
                 referral.getCity(),
                 valueOrDefault(referral.getReferralType(), "Retail"),
-                referral.getCreatedAt() == null ? null : referral.getCreatedAt().toLocalDate().toString(),
-                referral.getLastActivityAt() == null ? null : referral.getLastActivityAt().toLocalDate().toString(),
+                referral.getCreatedAt() == null
+                        ? null
+                        : referral.getCreatedAt().toLocalDate().toString(),
+                referral.getLastActivityAt() == null
+                        ? null
+                        : referral.getLastActivityAt().toLocalDate().toString(),
                 BigDecimal.ZERO,
                 commission,
                 "Premium",
-                new ReferralContactResponse(referral.getContactName(), referral.getEmail(), referral.getPhone()));
+                new ReferralContactResponse(
+                        referral.getContactName(), referral.getEmail(), referral.getPhone()));
     }
 
     private LeadSummaryResponse toLeadSummaryResponse(AmbassadorLeadJpaEntity lead) {
@@ -1663,7 +1880,12 @@ public class AmbassadorPortalController {
                             }
                         });
         return metrics.entrySet().stream()
-                .map(entry -> new MonthlyReferralMetricResponse(entry.getKey().toString(), entry.getValue()[0], entry.getValue()[1]))
+                .map(
+                        entry ->
+                                new MonthlyReferralMetricResponse(
+                                        entry.getKey().toString(),
+                                        entry.getValue()[0],
+                                        entry.getValue()[1]))
                 .toList();
     }
 
@@ -1690,8 +1912,10 @@ public class AmbassadorPortalController {
     }
 
     private long monthlyReferralSignals(UUID referralId, YearMonth month) {
-        OffsetDateTime start = month.atDay(1).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
-        OffsetDateTime end = month.plusMonths(1).atDay(1).atStartOfDay().atOffset(start.getOffset());
+        OffsetDateTime start =
+                month.atDay(1).atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
+        OffsetDateTime end =
+                month.plusMonths(1).atDay(1).atStartOfDay().atOffset(start.getOffset());
         return queryLong(
                 "SELECT COUNT(*) FROM ambassador_referral_activity "
                         + "WHERE ambassador_referral_id = ? AND created_at >= ? AND created_at < ?",
@@ -1709,18 +1933,38 @@ public class AmbassadorPortalController {
                 .intValue();
     }
 
-    private int valueScore(BigDecimal sales, BigDecimal commissions, BigDecimal rating, int conversionRate) {
-        int salesScore = sales.compareTo(BigDecimal.ZERO) == 0 ? 0 : Math.min(30, sales.divide(BigDecimal.valueOf(500), 0, RoundingMode.DOWN).intValue());
-        int commissionScore = commissions.compareTo(BigDecimal.ZERO) == 0 ? 0 : Math.min(25, commissions.divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN).intValue());
-        int ratingScore = rating.multiply(BigDecimal.valueOf(7)).setScale(0, RoundingMode.HALF_UP).intValue();
-        return Math.min(100, salesScore + commissionScore + ratingScore + Math.min(10, conversionRate / 10));
+    private int valueScore(
+            BigDecimal sales, BigDecimal commissions, BigDecimal rating, int conversionRate) {
+        int salesScore =
+                sales.compareTo(BigDecimal.ZERO) == 0
+                        ? 0
+                        : Math.min(
+                                30,
+                                sales.divide(BigDecimal.valueOf(500), 0, RoundingMode.DOWN)
+                                        .intValue());
+        int commissionScore =
+                commissions.compareTo(BigDecimal.ZERO) == 0
+                        ? 0
+                        : Math.min(
+                                25,
+                                commissions
+                                        .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN)
+                                        .intValue());
+        int ratingScore =
+                rating.multiply(BigDecimal.valueOf(7)).setScale(0, RoundingMode.HALF_UP).intValue();
+        return Math.min(
+                100,
+                salesScore + commissionScore + ratingScore + Math.min(10, conversionRate / 10));
     }
 
     private int reputationContribution(BigDecimal rating, long reviewCount) {
         if (rating.compareTo(BigDecimal.ZERO) == 0) {
             return 0;
         }
-        int ratingScore = rating.multiply(BigDecimal.valueOf(16)).setScale(0, RoundingMode.HALF_UP).intValue();
+        int ratingScore =
+                rating.multiply(BigDecimal.valueOf(16))
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .intValue();
         return Math.min(100, ratingScore + Math.min(20, (int) reviewCount * 2));
     }
 
@@ -1749,7 +1993,8 @@ public class AmbassadorPortalController {
         return rows.isEmpty() ? "" : valueOrDefault((String) rows.get(0).get("comment"), "");
     }
 
-    private List<String> insightStrengths(AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
+    private List<String> insightStrengths(
+            AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
         List<String> strengths = new ArrayList<>();
         if (aggregate.rating().compareTo(BigDecimal.valueOf(4)) >= 0) {
             strengths.add("Alta satisfacción de usuarios");
@@ -1766,7 +2011,8 @@ public class AmbassadorPortalController {
         return strengths;
     }
 
-    private List<String> insightRisks(AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
+    private List<String> insightRisks(
+            AmbassadorReferralJpaEntity referral, ReferralAggregate aggregate) {
         List<String> risks = new ArrayList<>();
         if (!isActiveStatus(referral.getStatus())) {
             risks.add("Onboarding pendiente de activación");
@@ -1790,7 +2036,10 @@ public class AmbassadorPortalController {
         profile.put("tipo", valueOrDefault(referral.getReferralType(), "empresa"));
         profile.put("pais", valueOrDefault(referral.getCountry(), "Bolivia"));
         profile.put("ciudad", referral.getCity());
-        profile.put("contacto", new ReferralContactResponse(referral.getContactName(), referral.getEmail(), referral.getPhone()));
+        profile.put(
+                "contacto",
+                new ReferralContactResponse(
+                        referral.getContactName(), referral.getEmail(), referral.getPhone()));
         return profile;
     }
 
@@ -1802,9 +2051,19 @@ public class AmbassadorPortalController {
             return catalog;
         }
         UUID tenantId = referral.getTenantId();
-        catalog.put("totalProductos", queryLong("SELECT COUNT(*) FROM listings WHERE tenant_id = ?", tenantId));
-        catalog.put("activos", queryLong("SELECT COUNT(*) FROM listings WHERE tenant_id = ? AND LOWER(COALESCE(status, '')) = 'active'", tenantId));
-        catalog.put("precioPromedio", queryBigDecimal("SELECT COALESCE(AVG(base_price), 0) FROM listings WHERE tenant_id = ?", tenantId));
+        catalog.put(
+                "totalProductos",
+                queryLong("SELECT COUNT(*) FROM listings WHERE tenant_id = ?", tenantId));
+        catalog.put(
+                "activos",
+                queryLong(
+                        "SELECT COUNT(*) FROM listings WHERE tenant_id = ? AND LOWER(COALESCE(status, '')) = 'active'",
+                        tenantId));
+        catalog.put(
+                "precioPromedio",
+                queryBigDecimal(
+                        "SELECT COALESCE(AVG(base_price), 0) FROM listings WHERE tenant_id = ?",
+                        tenantId));
         return catalog;
     }
 
@@ -1812,7 +2071,8 @@ public class AmbassadorPortalController {
         if (referral.getTenantId() == null) {
             return List.of();
         }
-        return jdbcTemplate.queryForList(
+        return jdbcTemplate
+                .queryForList(
                         "SELECT id, title, status, base_price, currency, created_at "
                                 + "FROM listings WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 20",
                         referral.getTenantId())
@@ -1835,7 +2095,9 @@ public class AmbassadorPortalController {
     private List<Map<String, Object>> referralEvidence(AmbassadorReferralJpaEntity referral) {
         return fileRepository.findAll().stream()
                 .filter(file -> referral.getId().equals(file.getAmbassadorReferralId()))
-                .sorted(Comparator.comparing(AmbassadorReferralFileJpaEntity::getCreatedAt).reversed())
+                .sorted(
+                        Comparator.comparing(AmbassadorReferralFileJpaEntity::getCreatedAt)
+                                .reversed())
                 .map(
                         file -> {
                             Map<String, Object> evidence = new LinkedHashMap<>();
@@ -1877,14 +2139,27 @@ public class AmbassadorPortalController {
 
     private List<ReferralNoteResponse> referralNotesSnapshot(UUID referralId) {
         return noteRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referralId).stream()
-                .map(note -> new ReferralNoteResponse("NOTE-" + note.getId(), note.getNote(), note.getCreatedAt()))
+                .map(
+                        note ->
+                                new ReferralNoteResponse(
+                                        "NOTE-" + note.getId(),
+                                        note.getNote(),
+                                        note.getCreatedAt()))
                 .toList();
     }
 
     private List<OnboardingTaskResponse> pendingOnboardingActions(UUID referralId) {
-        return onboardingTaskRepository.findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referralId).stream()
+        return onboardingTaskRepository
+                .findAllByAmbassadorReferralIdOrderByCreatedAtDesc(referralId)
+                .stream()
                 .filter(task -> !isCompletedStatus(task.getStatus()))
-                .map(task -> new OnboardingTaskResponse("TASK-" + task.getId(), task.getTitle(), task.getStatus(), task.getDueDate()))
+                .map(
+                        task ->
+                                new OnboardingTaskResponse(
+                                        "TASK-" + task.getId(),
+                                        task.getTitle(),
+                                        task.getStatus(),
+                                        task.getDueDate()))
                 .toList();
     }
 
@@ -1902,35 +2177,48 @@ public class AmbassadorPortalController {
         return referralRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(referralId, "BUS-"), ambassadorId)
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Referral not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Referral not found"));
     }
 
-    private AmbassadorReferralJpaEntity findReferralByOnboarding(String onboardingId, UUID ambassadorId) {
+    private AmbassadorReferralJpaEntity findReferralByOnboarding(
+            String onboardingId, UUID ambassadorId) {
         return referralRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(onboardingId, "ONB-"), ambassadorId)
                 .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Onboarding not found"));
     }
 
-    private AmbassadorReferralJpaEntity findReferralByBusinessOrOnboarding(String value, UUID ambassadorId) {
+    private AmbassadorReferralJpaEntity findReferralByBusinessOrOnboarding(
+            String value, UUID ambassadorId) {
         String normalized = value == null ? "" : value.trim();
         String prefix =
                 normalized.regionMatches(true, 0, "ONB-", 0, "ONB-".length()) ? "ONB-" : "BUS-";
         return referralRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(normalized, prefix), ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Onboarding not found"));
     }
 
     private AmbassadorLeadJpaEntity findLead(String leadId, UUID ambassadorId) {
         return leadRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(leadId, "LEAD-"), ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lead not found"));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lead not found"));
     }
 
     private AmbassadorCommissionJpaEntity findCommission(String commissionId, UUID ambassadorId) {
         return commissionRepository
                 .findByIdAndAmbassadorId(parsePrefixedUuid(commissionId, "COM-"), ambassadorId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Commission not found"));
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Commission not found"));
     }
 
     private AmbassadorNetworkResponse toNetworkResponse(AmbassadorJpaEntity ambassador) {
@@ -1949,7 +2237,8 @@ public class AmbassadorPortalController {
                 valueOrDefault(ambassador.getLevel(), "Bronze"));
     }
 
-    private AmbassadorChatSummaryResponse toAmbassadorChatSummary(ClientChatJpaEntity chat, UUID currentUserId) {
+    private AmbassadorChatSummaryResponse toAmbassadorChatSummary(
+            ClientChatJpaEntity chat, UUID currentUserId) {
         return new AmbassadorChatSummaryResponse(
                 formatAmbassadorChatId(chat.getId()),
                 valueOrDefault(chat.getSubject(), "Conversación"),
@@ -1960,7 +2249,8 @@ public class AmbassadorPortalController {
                 unreadMessages(chat.getId(), currentUserId));
     }
 
-    private AmbassadorChatMessageResponse toAmbassadorMessageResponse(ClientChatMessageJpaEntity message) {
+    private AmbassadorChatMessageResponse toAmbassadorMessageResponse(
+            ClientChatMessageJpaEntity message) {
         return new AmbassadorChatMessageResponse(
                 formatMessageId(message.getId()),
                 "embajador",
@@ -1972,16 +2262,23 @@ public class AmbassadorPortalController {
         return chatRepository
                 .findByIdAndCustomerUserIdAndTicketType(
                         parsePrefixedUuid(chatId, "CHT-AMB-"), userId, AMBASSADOR_CHAT_TYPE)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat not found"));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat not found"));
     }
 
     private int unreadMessages(UUID chatId, UUID currentUserId) {
         return readReceiptRepository
                 .findByTicketIdAndUserId(chatId, currentUserId)
                 .map(ClientChatReadReceiptJpaEntity::getReadAt)
-                .map(readAt -> chatMessageRepository.countByTicketIdAndAuthorUserIdNotAndCreatedAtAfter(
-                        chatId, currentUserId, readAt))
-                .orElseGet(() -> chatMessageRepository.countByTicketIdAndAuthorUserIdNot(chatId, currentUserId))
+                .map(
+                        readAt ->
+                                chatMessageRepository
+                                        .countByTicketIdAndAuthorUserIdNotAndCreatedAtAfter(
+                                                chatId, currentUserId, readAt))
+                .orElseGet(
+                        () ->
+                                chatMessageRepository.countByTicketIdAndAuthorUserIdNot(
+                                        chatId, currentUserId))
                 .intValue();
     }
 
@@ -1992,7 +2289,9 @@ public class AmbassadorPortalController {
                 conceptFor(commission),
                 formatMoney(parseAmount(commission.getAmount())),
                 valueOrDefault(commission.getStatus(), "pendiente"),
-                commission.getGeneratedAt() == null ? null : commission.getGeneratedAt().toLocalDate().toString());
+                commission.getGeneratedAt() == null
+                        ? null
+                        : commission.getGeneratedAt().toLocalDate().toString());
     }
 
     private String referralNameById(UUID referralId) {
@@ -2004,25 +2303,37 @@ public class AmbassadorPortalController {
 
     private String conceptFor(AmbassadorCommissionJpaEntity commission) {
         return valueOrDefault(
-                commission.getEventType(), valueOrDefault(commission.getReferenceType(), "Comisión generada"));
+                commission.getEventType(),
+                valueOrDefault(commission.getReferenceType(), "Comisión generada"));
     }
 
-    private BigDecimal sumCommissions(List<AmbassadorCommissionJpaEntity> commissions, String status) {
+    private BigDecimal sumCommissions(
+            List<AmbassadorCommissionJpaEntity> commissions, String status) {
         return commissions.stream()
-                .filter(commission -> status == null || status.equalsIgnoreCase(valueOrDefault(commission.getStatus(), "")))
+                .filter(
+                        commission ->
+                                status == null
+                                        || status.equalsIgnoreCase(
+                                                valueOrDefault(commission.getStatus(), "")))
                 .map(commission -> parseAmount(commission.getAmount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private BigDecimal sumWithdrawals(UUID ambassadorId, String status) {
         return withdrawalRepository.findAllByAmbassadorId(ambassadorId).stream()
-                .filter(withdrawal -> status == null || status.equalsIgnoreCase(valueOrDefault(withdrawal.getStatus(), "")))
+                .filter(
+                        withdrawal ->
+                                status == null
+                                        || status.equalsIgnoreCase(
+                                                valueOrDefault(withdrawal.getStatus(), "")))
                 .map(withdrawal -> parseAmount(withdrawal.getAmount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private long totalReferralLinkClicks(UUID ambassadorId) {
-        return referralLinkRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassadorId).stream()
+        return referralLinkRepository
+                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassadorId)
+                .stream()
                 .mapToLong(AmbassadorReferralLinkJpaEntity::getClicks)
                 .sum();
     }
@@ -2035,20 +2346,29 @@ public class AmbassadorPortalController {
     }
 
     private java.util.Optional<UserJpaEntity> ambassadorUser(AmbassadorJpaEntity ambassador) {
-        return ambassador.getUserId() == null ? java.util.Optional.empty() : userRepository.findById(ambassador.getUserId());
+        return ambassador.getUserId() == null
+                ? java.util.Optional.empty()
+                : userRepository.findById(ambassador.getUserId());
     }
 
     private String fullName(UserJpaEntity user) {
-        String name = (valueOrDefault(user.getFirstName(), "") + " " + valueOrDefault(user.getLastName(), "")).trim();
+        String name =
+                (valueOrDefault(user.getFirstName(), "")
+                                + " "
+                                + valueOrDefault(user.getLastName(), ""))
+                        .trim();
         return name.isBlank() ? valueOrDefault(user.getEmail(), "Usuario") : name;
     }
 
     private String last4(String value) {
         String normalized = value == null ? "" : value.replaceAll("\\D", "");
-        return normalized.length() <= 4 ? normalized : normalized.substring(normalized.length() - 4);
+        return normalized.length() <= 4
+                ? normalized
+                : normalized.substring(normalized.length() - 4);
     }
 
-    private void createActivity(UUID referralId, String type, String description, OffsetDateTime createdAt) {
+    private void createActivity(
+            UUID referralId, String type, String description, OffsetDateTime createdAt) {
         AmbassadorReferralActivityJpaEntity activity = new AmbassadorReferralActivityJpaEntity();
         activity.setId(UUID.randomUUID());
         activity.setAmbassadorReferralId(referralId);
@@ -2063,8 +2383,12 @@ public class AmbassadorPortalController {
             return referral.getName();
         }
         TenantJpaEntity tenant =
-                referral.getTenantId() == null ? null : tenantRepository.findById(referral.getTenantId()).orElse(null);
-        return tenant == null ? valueOrDefault(referral.getUsedCode(), "Referido") : tenant.getBusinessName();
+                referral.getTenantId() == null
+                        ? null
+                        : tenantRepository.findById(referral.getTenantId()).orElse(null);
+        return tenant == null
+                ? valueOrDefault(referral.getUsedCode(), "Referido")
+                : tenant.getBusinessName();
     }
 
     private int onboardingProgress(UUID referralId) {
@@ -2075,7 +2399,9 @@ public class AmbassadorPortalController {
                                         milestoneRepository
                                                 .findByAmbassadorReferralIdAndMilestoneCode(
                                                         referralId, milestone.id())
-                                                .map(AmbassadorOnboardingMilestoneJpaEntity::isCompleted)
+                                                .map(
+                                                        AmbassadorOnboardingMilestoneJpaEntity
+                                                                ::isCompleted)
                                                 .orElse(false))
                         .count();
         return (int) Math.round(completed * 100.0 / defaultMilestones().size());
@@ -2091,7 +2417,9 @@ public class AmbassadorPortalController {
                                         milestoneRepository
                                                 .findByAmbassadorReferralIdAndMilestoneCode(
                                                         referralId, milestone.id())
-                                                .map(AmbassadorOnboardingMilestoneJpaEntity::isCompleted)
+                                                .map(
+                                                        AmbassadorOnboardingMilestoneJpaEntity
+                                                                ::isCompleted)
                                                 .orElse(false)))
                 .toList();
     }
@@ -2106,18 +2434,27 @@ public class AmbassadorPortalController {
     private java.util.Optional<AmbassadorReferralLinkJpaEntity> defaultReferralLink(
             AmbassadorJpaEntity ambassador) {
         List<AmbassadorReferralLinkJpaEntity> activeLinks =
-                referralLinkRepository.findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(ambassador.getId());
+                referralLinkRepository.findAllByAmbassadorIdAndActiveTrueOrderByCreatedAtDesc(
+                        ambassador.getId());
         if (!activeLinks.isEmpty()) {
             return java.util.Optional.of(activeLinks.get(0));
         }
-        return referralLinkRepository.findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId()).stream()
+        return referralLinkRepository
+                .findAllByAmbassadorIdOrderByCreatedAtDesc(ambassador.getId())
+                .stream()
                 .findFirst();
     }
 
-    private AmbassadorReferralLinkJpaEntity createDefaultReferralLink(AmbassadorJpaEntity ambassador) {
-        String code = valueOrDefault(ambassador.getReferralCode(), "AMB-" + ambassador.getId().toString().substring(0, 6));
+    private AmbassadorReferralLinkJpaEntity createDefaultReferralLink(
+            AmbassadorJpaEntity ambassador) {
+        String code =
+                valueOrDefault(
+                        ambassador.getReferralCode(),
+                        "AMB-" + ambassador.getId().toString().substring(0, 6));
         if (referralLinkRepository.findByCode(code).isPresent()) {
-            code = (code + "-" + ambassador.getId().toString().substring(0, 6)).toUpperCase(Locale.ROOT);
+            code =
+                    (code + "-" + ambassador.getId().toString().substring(0, 6))
+                            .toUpperCase(Locale.ROOT);
         }
         AmbassadorReferralLinkJpaEntity link = new AmbassadorReferralLinkJpaEntity();
         link.setId(UUID.randomUUID());
@@ -2163,7 +2500,8 @@ public class AmbassadorPortalController {
     private UserJpaEntity findUser(UUID userId) {
         return userRepository
                 .findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
     private UUID parseUserId(String userId) {
@@ -2252,10 +2590,11 @@ public class AmbassadorPortalController {
     }
 
     private String slug(String value) {
-        String normalized = Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replaceAll("[^A-Za-z0-9]+", "-")
-                .replaceAll("(^-|-$)", "");
+        String normalized =
+                Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
+                        .replaceAll("\\p{M}", "")
+                        .replaceAll("[^A-Za-z0-9]+", "-")
+                        .replaceAll("(^-|-$)", "");
         return normalized.toUpperCase(Locale.ROOT);
     }
 
@@ -2275,7 +2614,8 @@ public class AmbassadorPortalController {
     }
 
     private String formatMoney(BigDecimal amount) {
-        return "Bs " + amount.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+        return "Bs "
+                + amount.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
     private String valueOrDefault(String value, String fallback) {
@@ -2330,7 +2670,8 @@ public class AmbassadorPortalController {
         return "MSG-" + id;
     }
 
-    private record ReferralAggregate(BigDecimal ventasTotales, BigDecimal rating, long reviewCount) {}
+    private record ReferralAggregate(
+            BigDecimal ventasTotales, BigDecimal rating, long reviewCount) {}
 
     public record AmbassadorProfileResponse(
             String id,
@@ -2372,12 +2713,21 @@ public class AmbassadorPortalController {
             String idioma) {}
 
     public record UpdateAmbassadorSettingsRequest(
-            boolean notificacionesEmail, boolean notificacionesPush, boolean mostrarPerfilPublico) {}
+            boolean notificacionesEmail,
+            boolean notificacionesPush,
+            boolean mostrarPerfilPublico) {}
 
     public record ReferralLinkResponse(
-            String id, String nombre, String codigo, String url, int clics, int conversiones, boolean activo) {}
+            String id,
+            String nombre,
+            String codigo,
+            String url,
+            int clics,
+            int conversiones,
+            boolean activo) {}
 
-    public record CreateReferralLinkRequest(@NotBlank String nombre, String segmento, String ciudad) {}
+    public record CreateReferralLinkRequest(
+            @NotBlank String nombre, String segmento, String ciudad) {}
 
     public record CreateReferralLinkResponse(String id, String codigo, String url) {}
 
@@ -2496,7 +2846,11 @@ public class AmbassadorPortalController {
             String id, String referidoId, String nombre, int progreso, String estado) {}
 
     public record OnboardingDetailResponse(
-            String id, String referido, String estado, int progreso, List<OnboardingStepResponse> pasos) {}
+            String id,
+            String referido,
+            String estado,
+            int progreso,
+            List<OnboardingStepResponse> pasos) {}
 
     public record OnboardingSnapshotResponse(
             Map<String, Object> perfil,
@@ -2614,8 +2968,7 @@ public class AmbassadorPortalController {
     public record CreateLeadActivityRequest(
             @NotBlank String tipo, @NotBlank String nota, OffsetDateTime fecha) {}
 
-    public record LeadActivityResponse(
-            String id, String tipo, String nota, OffsetDateTime fecha) {}
+    public record LeadActivityResponse(String id, String tipo, String nota, OffsetDateTime fecha) {}
 
     public record UpdateLeadStatusRequest(@NotBlank String estado) {}
 
@@ -2624,7 +2977,12 @@ public class AmbassadorPortalController {
     public record ConvertLeadResponse(String referidoId, String mensaje) {}
 
     public record CommissionResponse(
-            String id, String referido, String concepto, String monto, String estado, String fecha) {}
+            String id,
+            String referido,
+            String concepto,
+            String monto,
+            String estado,
+            String fecha) {}
 
     public record AmbassadorDashboardResponse(
             AmbassadorProfileResponse profile,
@@ -2636,7 +2994,8 @@ public class AmbassadorPortalController {
     public record PendingActionResponse(
             String id, String tipo, String descripcion, OffsetDateTime fecha) {}
 
-    public record CommissionSummaryResponse(String totalGenerado, String disponible, String pendiente, String pagado) {}
+    public record CommissionSummaryResponse(
+            String totalGenerado, String disponible, String pendiente, String pagado) {}
 
     public record CommissionDetailResponse(
             String id,
@@ -2651,7 +3010,8 @@ public class AmbassadorPortalController {
 
     public record CommissionDisputeResponse(String id, String estado) {}
 
-    public record AmbassadorWalletResponse(String saldoDisponible, String saldoPendiente, String totalRetirado) {}
+    public record AmbassadorWalletResponse(
+            String saldoDisponible, String saldoPendiente, String totalRetirado) {}
 
     public record WithdrawalRequest(@NotBlank String monto, @NotBlank String metodoPagoId) {}
 
@@ -2671,7 +3031,10 @@ public class AmbassadorPortalController {
             String id, String nombre, String nivel, long referidos, String estado) {}
 
     public record AmbassadorNetworkTreeResponse(
-            String id, String nombre, String nivel, List<AmbassadorNetworkNodeResponse> subEmbajadores) {}
+            String id,
+            String nombre,
+            String nivel,
+            List<AmbassadorNetworkNodeResponse> subEmbajadores) {}
 
     public record AmbassadorNetworkNodeResponse(String id, String nombre, String nivel) {}
 
@@ -2701,7 +3064,12 @@ public class AmbassadorPortalController {
     public record CreateAmbassadorChatMessageResponse(String id, String estado) {}
 
     public record AmbassadorPerformanceReportResponse(
-            String periodo, long clics, long leads, long conversiones, double conversionRate, String comisiones) {}
+            String periodo,
+            long clics,
+            long leads,
+            long conversiones,
+            double conversionRate,
+            String comisiones) {}
 
     public record AmbassadorReferralReportResponse(
             String referido, String tipo, String estado, long ventasGeneradas, String comision) {}
@@ -2716,7 +3084,8 @@ public class AmbassadorPortalController {
 
     public record AmbassadorAiAnswerResponse(String resumen, List<String> acciones, String foco) {}
 
-    public record AmbassadorAiInsightsResponse(List<AmbassadorAiRadarResponse> radar, String recomendacion) {}
+    public record AmbassadorAiInsightsResponse(
+            List<AmbassadorAiRadarResponse> radar, String recomendacion) {}
 
     public record AmbassadorAiRadarResponse(String etiqueta, int valor) {}
 

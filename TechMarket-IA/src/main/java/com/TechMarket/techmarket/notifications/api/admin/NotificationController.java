@@ -66,11 +66,13 @@ public class NotificationController {
     public MessageResponse readAll(
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         UUID currentUserId = parseUserId(userId);
-        notificationRepository.findAllByUserIdAndReadFalse(currentUserId).forEach(
-                notification -> {
-                    notification.setRead(true);
-                    notificationRepository.save(notification);
-                });
+        notificationRepository
+                .findAllByUserIdAndReadFalse(currentUserId)
+                .forEach(
+                        notification -> {
+                            notification.setRead(true);
+                            notificationRepository.save(notification);
+                        });
         return new MessageResponse("Todas las notificaciones marcadas como leidas");
     }
 
