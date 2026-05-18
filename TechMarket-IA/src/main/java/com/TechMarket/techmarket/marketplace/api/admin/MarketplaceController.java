@@ -11,6 +11,8 @@ import com.techmarket.techmarket.marketplace.api.admin.response.ProductPageRespo
 import com.techmarket.techmarket.marketplace.api.admin.response.ProductSummaryResponse;
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.entity.CatalogCategoryJpaEntity;
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.repository.CatalogCategorySpringDataRepository;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceJpaEntity;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceSpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
@@ -38,18 +40,21 @@ public class MarketplaceController {
     private final CatalogCategorySpringDataRepository categoryRepository;
     private final TenantSpringDataRepository tenantRepository;
     private final ClientReviewSpringDataRepository reviewRepository;
+    private final SpecialistServiceSpringDataRepository specialistServiceRepository;
 
     public MarketplaceController(
             ListingSpringDataRepository listingRepository,
             ListingImageSpringDataRepository listingImageRepository,
             CatalogCategorySpringDataRepository categoryRepository,
             TenantSpringDataRepository tenantRepository,
-            ClientReviewSpringDataRepository reviewRepository) {
+            ClientReviewSpringDataRepository reviewRepository,
+            SpecialistServiceSpringDataRepository specialistServiceRepository) {
         this.listingRepository = listingRepository;
         this.listingImageRepository = listingImageRepository;
         this.categoryRepository = categoryRepository;
         this.tenantRepository = tenantRepository;
         this.reviewRepository = reviewRepository;
+        this.specialistServiceRepository = specialistServiceRepository;
     }
 
     @GetMapping("/products")
@@ -59,6 +64,7 @@ public class MarketplaceController {
             @RequestParam(value = "pagina", defaultValue = "1") int pagina) {
         List<ListingJpaEntity> listings =
                 listingRepository.findAll().stream()
+                        .filter(this::isProductOrOffer)
                         .filter(listing -> matchesSearch(listing, search))
                         .filter(listing -> matchesCategory(listing, category))
                         .sorted(
@@ -67,6 +73,33 @@ public class MarketplaceController {
                                         Comparator.nullsLast(Comparator.reverseOrder())))
                         .toList();
         return toPage(listings, pagina);
+    }
+
+    @GetMapping("/specialist-services")
+    public ProductPageResponse specialistServices(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "pagina", defaultValue = "1") int pagina) {
+        List<SpecialistServiceJpaEntity> services =
+                specialistServiceRepository.findAll().stream()
+                        .filter(service -> matchesSpecialistServiceSearch(service, search))
+                        .sorted(
+                                Comparator.comparing(
+                                        SpecialistServiceJpaEntity::getCreatedAt,
+                                        Comparator.nullsLast(Comparator.reverseOrder())))
+                        .toList();
+        int safePage = Math.max(1, pagina);
+        List<ProductSummaryResponse> summaries =
+                services.stream()
+                        .map(
+                                service ->
+                                        new ProductSummaryResponse(
+                                                "SERV-" + service.getId(),
+                                                service.getName(),
+                                                service.getPrice(),
+                                                null,
+                                                0.0))
+                        .toList();
+        return new ProductPageResponse(services.size(), safePage, summaries);
     }
 
     @GetMapping("/services")
@@ -156,7 +189,11 @@ public class MarketplaceController {
             item.put("title", l.getTitle() != null ? l.getTitle() : "");
             item.put("body", l.getDescription() != null ? l.getDescription() : "");
             item.put("type", type);
-            item.put("createdAt", l.getCreatedAt() != null ? l.getCreatedAt().toString() : "");
+            item.put(
+                    "createdAt",
+                    l.getCreatedAt() != null
+                            ? l.getCreatedAt().toString()
+                            : java.time.OffsetDateTime.now().toString());
             item.put("companyId", companyId);
             item.put("companyName", tenantName);
 
@@ -250,6 +287,27 @@ public class MarketplaceController {
                         () ->
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND, "Company not found"));
+    }
+
+    private boolean isProductOrOffer(ListingJpaEntity listing) {
+        String type =
+                listing.getListingType() == null
+                        ? ""
+                        : listing.getListingType().toUpperCase(Locale.ROOT);
+        return type.isEmpty() || "PRODUCT".equals(type) || "OFFER".equals(type);
+    }
+
+    private boolean matchesSpecialistServiceSearch(
+            SpecialistServiceJpaEntity service, String search) {
+        if (search == null || search.isBlank()) {
+            return true;
+        }
+        String term = search.trim().toLowerCase(Locale.ROOT);
+        String name = (service.getName() == null ? "" : service.getName()).toLowerCase(Locale.ROOT);
+        String desc =
+                (service.getDescription() == null ? "" : service.getDescription())
+                        .toLowerCase(Locale.ROOT);
+        return name.contains(term) || desc.contains(term);
     }
 
     private boolean matchesSearch(ListingJpaEntity listing, String search) {
