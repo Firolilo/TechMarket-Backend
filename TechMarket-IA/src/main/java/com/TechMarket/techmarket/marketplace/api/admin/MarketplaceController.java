@@ -14,9 +14,12 @@ import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.repo
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -135,6 +138,41 @@ public class MarketplaceController {
                 tenant.getDescription(),
                 tenant.getCreatedAt() == null ? null : tenant.getCreatedAt().toLocalDate(),
                 0);
+    }
+
+    @GetMapping("/companies/{companyId}/publications")
+    public List<Map<String, Object>> companyPublications(@PathVariable String companyId) {
+        UUID tenantId = parsePrefixedUuid(companyId, "EMP-");
+        TenantJpaEntity tenant = findTenant(tenantId);
+        String tenantName = tenant.getBusinessName() != null ? tenant.getBusinessName() : "Empresa";
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ListingJpaEntity l : listingRepository.findAllByTenantId(tenantId)) {
+            String type = l.getListingType() != null ? l.getListingType().toUpperCase() : "";
+            if (!"POST".equals(type) && !"TEXT".equals(type)) continue;
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", "PROD-" + l.getId());
+            item.put("title", l.getTitle() != null ? l.getTitle() : "");
+            item.put("body", l.getDescription() != null ? l.getDescription() : "");
+            item.put("type", type);
+            item.put("createdAt", l.getCreatedAt() != null ? l.getCreatedAt().toString() : "");
+            item.put("companyId", companyId);
+            item.put("companyName", tenantName);
+
+            listingImageRepository
+                    .findFirstByListingIdAndIsPrimaryTrue(l.getId())
+                    .ifPresent(img -> item.put("image", img.getImageUrl()));
+
+            result.add(item);
+        }
+
+        result.sort(
+                Comparator.comparing(
+                        m -> m.getOrDefault("createdAt", "").toString(),
+                        Comparator.reverseOrder()));
+
+        return result;
     }
 
     @GetMapping("/companies/{companyId}/products")
