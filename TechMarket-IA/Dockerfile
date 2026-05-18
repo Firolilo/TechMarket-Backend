@@ -1,13 +1,29 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS builder
 WORKDIR /workspace
 
+# --- Capa de dependencias (se cachea mientras los pom.xml no cambien) ---
 COPY TechMarket-Core/pom.xml pom.xml
+COPY TechMarket-Core/core-platform/pom.xml core-platform/pom.xml
+COPY TechMarket-IA/pom.xml TechMarket-IA/pom.xml
+
+RUN mvn -q dependency:go-offline \
+        -f pom.xml \
+        -DskipTests -DskipQuality \
+    ; mvn -q dependency:go-offline \
+        -f core-platform/pom.xml \
+        -DskipTests -DskipQuality \
+    ; mvn -q dependency:go-offline \
+        -f TechMarket-IA/pom.xml \
+        -DskipTests -DskipQuality \
+    ; true
+
+# --- Build (solo se re-ejecuta si cambia el código fuente) ---
 COPY TechMarket-Core/core-platform core-platform
 COPY TechMarket-IA TechMarket-IA
 
-RUN mvn -q -f pom.xml -DskipTests -DskipQuality install
-RUN mvn -q -f core-platform/pom.xml -DskipTests -DskipQuality install
-RUN mvn -q -f TechMarket-IA/pom.xml -DskipTests -DskipQuality clean package
+RUN mvn -q -f pom.xml          -DskipTests -DskipQuality install && \
+    mvn -q -f core-platform/pom.xml -DskipTests -DskipQuality install && \
+    mvn -q -f TechMarket-IA/pom.xml -DskipTests -DskipQuality clean package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /opt/techmarket-ia
