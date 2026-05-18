@@ -11,11 +11,15 @@ import com.techmarket.techmarket.marketplace.api.admin.response.ProductPageRespo
 import com.techmarket.techmarket.marketplace.api.admin.response.ProductSummaryResponse;
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.entity.CatalogCategoryJpaEntity;
 import com.techmarket.techmarket.marketplace.infrastructure.persistence.jpa.repository.CatalogCategorySpringDataRepository;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistProfileJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceJpaEntity;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistProfileSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceSpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -41,6 +45,8 @@ public class MarketplaceController {
     private final TenantSpringDataRepository tenantRepository;
     private final ClientReviewSpringDataRepository reviewRepository;
     private final SpecialistServiceSpringDataRepository specialistServiceRepository;
+    private final SpecialistProfileSpringDataRepository specialistProfileRepository;
+    private final UserSpringDataRepository userRepository;
 
     public MarketplaceController(
             ListingSpringDataRepository listingRepository,
@@ -48,13 +54,17 @@ public class MarketplaceController {
             CatalogCategorySpringDataRepository categoryRepository,
             TenantSpringDataRepository tenantRepository,
             ClientReviewSpringDataRepository reviewRepository,
-            SpecialistServiceSpringDataRepository specialistServiceRepository) {
+            SpecialistServiceSpringDataRepository specialistServiceRepository,
+            SpecialistProfileSpringDataRepository specialistProfileRepository,
+            UserSpringDataRepository userRepository) {
         this.listingRepository = listingRepository;
         this.listingImageRepository = listingImageRepository;
         this.categoryRepository = categoryRepository;
         this.tenantRepository = tenantRepository;
         this.reviewRepository = reviewRepository;
         this.specialistServiceRepository = specialistServiceRepository;
+        this.specialistProfileRepository = specialistProfileRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/products")
@@ -100,6 +110,46 @@ public class MarketplaceController {
                                                 0.0))
                         .toList();
         return new ProductPageResponse(services.size(), safePage, summaries);
+    }
+
+    @GetMapping("/specialist-services/{serviceId}")
+    public Map<String, Object> specialistServiceDetail(@PathVariable String serviceId) {
+        String normalized = serviceId.trim();
+        if (normalized.regionMatches(true, 0, "SERV-", 0, 5)) {
+            normalized = normalized.substring(5);
+        }
+        UUID id;
+        try {
+            id = UUID.fromString(normalized);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Identifier is invalid");
+        }
+        SpecialistServiceJpaEntity service =
+                specialistServiceRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Service not found"));
+        UserJpaEntity user = userRepository.findById(service.getUserId()).orElse(null);
+        SpecialistProfileJpaEntity profile =
+                specialistProfileRepository.findByUserId(service.getUserId()).orElse(null);
+        String firstName = user != null && user.getFirstName() != null ? user.getFirstName() : "";
+        String lastName = user != null && user.getLastName() != null ? user.getLastName() : "";
+        String fullName = (firstName + " " + lastName).trim();
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", "SERV-" + service.getId());
+        result.put("nombre", service.getName() != null ? service.getName() : "");
+        result.put("descripcion", service.getDescription());
+        result.put("precio", service.getPrice());
+        result.put("moneda", service.getCurrency() != null ? service.getCurrency() : "Bs");
+        result.put("tipo", service.getServiceType());
+        result.put("destacado", service.isFeatured());
+        result.put("especialistaId", service.getUserId().toString());
+        result.put("especialistaNombre", fullName.isEmpty() ? "Especialista" : fullName);
+        result.put("especialistaEspecialidad", profile != null ? profile.getSpecialty() : null);
+        result.put("especialistaUbicacion", profile != null ? profile.getLocation() : null);
+        return result;
     }
 
     @GetMapping("/services")
