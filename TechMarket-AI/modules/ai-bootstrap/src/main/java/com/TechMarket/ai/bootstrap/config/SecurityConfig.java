@@ -21,6 +21,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, Environment env)
             throws Exception {
         boolean dev = Arrays.asList(env.getActiveProfiles()).contains("dev");
+        boolean jwtEnabled = env.getProperty("security.jwt.enabled", Boolean.class, false);
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -39,13 +40,21 @@ public class SecurityConfig {
 
                             a.anyRequest().authenticated();
                         })
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .formLogin(AbstractHttpConfigurer::disable)
-                .exceptionHandling(
-                        e ->
-                                e.authenticationEntryPoint(
-                                                new BearerTokenAuthenticationEntryPoint())
-                                        .accessDeniedHandler(new BearerTokenAccessDeniedHandler()));
+                .formLogin(AbstractHttpConfigurer::disable);
+
+        if (jwtEnabled) {
+            // JWT Resource Server: requires a configured issuer-uri / jwk-set-uri.
+            http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                    .exceptionHandling(
+                            e ->
+                                    e.authenticationEntryPoint(
+                                                    new BearerTokenAuthenticationEntryPoint())
+                                            .accessDeniedHandler(
+                                                    new BearerTokenAccessDeniedHandler()));
+        } else {
+            // Default: HTTP Basic until the security step enables JWT.
+            http.httpBasic(Customizer.withDefaults());
+        }
 
         return http.build();
     }

@@ -5,6 +5,7 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
@@ -14,10 +15,16 @@ import org.junit.jupiter.api.Test;
  * <p>Enforces: - Domain is pure (no framework dependencies) - Application depends only on domain -
  * Infrastructure depends on domain and application - API depends on application (not
  * infrastructure) - Bootstrap wires everything together
+ *
+ * <p>Lives in ai-bootstrap because it is the only module whose classpath contains every layer
+ * (domain, application, infrastructure, api, bootstrap); the rules need all of them present.
  */
 public class AiArchitectureTest {
 
-    private final JavaClasses classes = new ClassFileImporter().importPackages("com.techmarket.ai");
+    private final JavaClasses classes =
+            new ClassFileImporter()
+                    .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                    .importPackages("com.techmarket.ai");
 
     @Test
     void layeredArchitecture_shouldBeRespected() {
