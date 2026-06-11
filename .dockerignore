@@ -1,0 +1,13 @@
+# Build context is the repo root for all service images. Keep it lean and avoid
+# copying stale build output into the images.
+**/target/
+**/.runtime/
+**/.runtime*
+**/*.log
+.git/
+.gitignore
+**/.idea/
+**/.vscode/
+**/*.iml
+**/node_modules/
+*.pdf

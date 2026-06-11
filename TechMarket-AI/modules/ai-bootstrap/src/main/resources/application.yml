@@ -29,8 +29,24 @@ spring:
         format_sql: false
 
   ai:
+    # Default LLM provider: Google Gemini (free tier) via its OpenAI-compatible
+    # endpoint, so the Spring AI OpenAI client is reused. Requires GEMINI_API_KEY.
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      api-key: ${GEMINI_API_KEY:}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      chat:
+        completions-path: /chat/completions
+        options:
+          model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
+          temperature: 0.2
+    model:
+      chat: openai
+      embedding: none
+      audio:
+        speech: none
+        transcription: none
+      image: none
+      moderation: none
     vectorstore:
       pgvector:
         initialize-schema: ${PGVECTOR_INIT_SCHEMA:true}

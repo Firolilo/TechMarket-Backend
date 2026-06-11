@@ -1,0 +1,199 @@
+ Image techmarket-ia:1.0.0-SNAPSHOT Building 
+ Image techmarket-ai:1.0.0-SNAPSHOT Building 
+ Image techmarket-iam:1.0.0-SNAPSHOT Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.66kB 0.0s done
+#1 DONE 0.0s
+
+#2 [ai-service internal] load build definition from Dockerfile
+#2 transferring dockerfile: 673B 0.0s done
+#2 DONE 0.0s
+
+#3 [ia-service internal] load build definition from Dockerfile
+#3 transferring dockerfile: 1.27kB 0.0s done
+#3 DONE 0.0s
+
+#4 [iam-service internal] load build definition from Dockerfile
+#4 transferring dockerfile: 610B done
+#4 DONE 0.0s
+
+#5 [iam-service internal] load metadata for docker.io/library/maven:3.9.9-eclipse-temurin-21
+#5 ...
+
+#6 [auth] library/eclipse-temurin:pull token for registry-1.docker.io
+#6 DONE 0.0s
+
+#7 [auth] library/maven:pull token for registry-1.docker.io
+#7 DONE 0.0s
+
+#8 [iam-service internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#8 ...
+
+#5 [ai-service internal] load metadata for docker.io/library/maven:3.9.9-eclipse-temurin-21
+#5 DONE 1.9s
+
+#8 [iam-service internal] load metadata for docker.io/library/eclipse-temurin:21-jre
+#8 DONE 2.1s
+
+#9 [ai-service internal] load .dockerignore
+#9 transferring context: 285B done
+#9 DONE 0.0s
+
+#10 [ia-service builder 1/6] FROM docker.io/library/maven:3.9.9-eclipse-temurin-21@sha256:3a4ab3276a087bf276f79cae96b1af04f53731bec53fb2e651aca79e4b10211e
+#10 resolve docker.io/library/maven:3.9.9-eclipse-temurin-21@sha256:3a4ab3276a087bf276f79cae96b1af04f53731bec53fb2e651aca79e4b10211e 0.0s done
+#10 DONE 0.0s
+
+#11 [iam-service builder 2/6] WORKDIR /workspace
+#11 CACHED
+
+#12 [iam-service stage-1 1/3] FROM docker.io/library/eclipse-temurin:21-jre@sha256:194b590649efee5555de080c634905a30c2885190210e37ada26370ed2a9c781
+#12 resolve docker.io/library/eclipse-temurin:21-jre@sha256:194b590649efee5555de080c634905a30c2885190210e37ada26370ed2a9c781 0.0s done
+#12 CACHED
+
+#13 [iam-service internal] load build context
+#13 ...
+
+#14 [ai-service stage-1 2/3] WORKDIR /opt/ai-service
+#14 DONE 0.1s
+
+#13 [iam-service internal] load build context
+#13 transferring context: 890.31kB 0.2s done
+#13 DONE 0.2s
+
+#15 [ai-service internal] load build context
+#15 transferring context: 220.82kB 0.2s done
+#15 DONE 0.2s
+
+#16 [ai-service builder 3/4] COPY TechMarket-AI TechMarket-AI
+#16 DONE 0.1s
+
+#17 [ia-service internal] load build context
+#17 transferring context: 113.35kB 0.3s done
+#17 DONE 0.3s
+
+#18 [iam-service builder 3/6] COPY TechMarket-Core TechMarket-Core
+#18 DONE 0.1s
+
+#19 [ia-service builder 5/9] COPY TechMarket-IA/pom.xml TechMarket-IA/pom.xml
+#19 CACHED
+
+#20 [ia-service builder 6/9] RUN mvn -q dependency:go-offline         -f pom.xml         -DskipTests -DskipQuality     ; mvn -q dependency:go-offline         -f core-platform/pom.xml         -DskipTests -DskipQuality     ; mvn -q dependency:go-offline         -f TechMarket-IA/pom.xml         -DskipTests -DskipQuality     ; true
+#20 CACHED
+
+#21 [ia-service builder 4/9] COPY TechMarket-Core/core-platform/pom.xml core-platform/pom.xml
+#21 CACHED
+
+#22 [ia-service builder 3/9] COPY TechMarket-Core/pom.xml pom.xml
+#22 CACHED
+
+#23 [ia-service builder 7/9] COPY TechMarket-Core/core-platform core-platform
+#23 CACHED
+
+#24 [iam-service builder 4/6] COPY TechMarket-IAM TechMarket-IAM
+#24 DONE 0.1s
+
+#25 [iam-service builder 5/6] RUN mvn -q -f TechMarket-Core/pom.xml -DskipTests -Dspotless.check.skip=true install
+#25 ...
+
+#26 [ia-service builder 8/9] COPY TechMarket-IA TechMarket-IA
+#26 DONE 0.3s
+
+#27 [ia-service builder 9/9] RUN mvn -q -f pom.xml          -DskipTests -DskipQuality install &&     mvn -q -f core-platform/pom.xml -DskipTests -DskipQuality install &&     mvn -q -f TechMarket-IA/pom.xml -DskipTests -DskipQuality clean package
+#27 ...
+
+#28 [ai-service builder 4/4] RUN mvn -q -f TechMarket-AI/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#28 ...
+
+#27 [ia-service builder 9/9] RUN mvn -q -f pom.xml          -DskipTests -DskipQuality install &&     mvn -q -f core-platform/pom.xml -DskipTests -DskipQuality install &&     mvn -q -f TechMarket-IA/pom.xml -DskipTests -DskipQuality clean package
+#27 DONE 96.1s
+
+#25 [iam-service builder 5/6] RUN mvn -q -f TechMarket-Core/pom.xml -DskipTests -Dspotless.check.skip=true install
+#25 ...
+
+#29 [ia-service stage-1 2/3] WORKDIR /opt/techmarket-ia
+#29 CACHED
+
+#30 [ia-service stage-1 3/3] COPY --from=builder /workspace/TechMarket-IA/target/TECHMARKET-ia-*.jar app.jar
+#30 DONE 0.4s
+
+#25 [iam-service builder 5/6] RUN mvn -q -f TechMarket-Core/pom.xml -DskipTests -Dspotless.check.skip=true install
+#25 ...
+
+#31 [ia-service] exporting to image
+#31 exporting layers
+#31 exporting layers 6.6s done
+#31 exporting manifest sha256:30ab0affeb92948b19a92a7adf32950bcd3dd6494f129d2307b93bf735cf3993 0.0s done
+#31 exporting config sha256:959bb7f02d2475b5d6255df4b9c593bff8846a225be26162afb7e622ef117c01 0.0s done
+#31 exporting attestation manifest sha256:21f4bf121a40c89b81aadf17c2ea8700fced2fe67b52d7daa8723c0b9a6136d6 0.0s done
+#31 exporting manifest list sha256:83d12f82b9a1408c3d834f888019522f0439cc0212197f455004cac715242ea8 0.0s done
+#31 naming to docker.io/library/techmarket-ia:1.0.0-SNAPSHOT
+#31 naming to docker.io/library/techmarket-ia:1.0.0-SNAPSHOT done
+#31 unpacking to docker.io/library/techmarket-ia:1.0.0-SNAPSHOT
+#31 unpacking to docker.io/library/techmarket-ia:1.0.0-SNAPSHOT 0.9s done
+#31 DONE 7.7s
+
+#25 [iam-service builder 5/6] RUN mvn -q -f TechMarket-Core/pom.xml -DskipTests -Dspotless.check.skip=true install
+#25 ...
+
+#32 [ia-service] resolving provenance for metadata file
+#32 DONE 0.0s
+
+#25 [iam-service builder 5/6] RUN mvn -q -f TechMarket-Core/pom.xml -DskipTests -Dspotless.check.skip=true install
+#25 DONE 115.8s
+
+#28 [ai-service builder 4/4] RUN mvn -q -f TechMarket-AI/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#28 ...
+
+#33 [iam-service builder 6/6] RUN mvn -q -f TechMarket-IAM/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#33 ...
+
+#28 [ai-service builder 4/4] RUN mvn -q -f TechMarket-AI/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#28 DONE 160.4s
+
+#33 [iam-service builder 6/6] RUN mvn -q -f TechMarket-IAM/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#33 ...
+
+#34 [ai-service stage-1 3/3] COPY --from=builder /workspace/TechMarket-AI/modules/ai-bootstrap/target/ai-bootstrap-*.jar app.jar
+#34 DONE 0.1s
+
+#35 [ai-service] exporting to image
+#35 exporting layers
+#35 exporting layers 1.6s done
+#35 exporting manifest sha256:ad6f41ddaf2a06285e915fa2abff0a1860432e66cd8af043a8e019d739a47109 0.0s done
+#35 exporting config sha256:916166882fddaf63e57ce9ca7d68a3ca6c23968de67a6ca1013b323ef403a13e 0.0s done
+#35 exporting attestation manifest sha256:62cd4881dac34c3a9945b8d24399e30a31308b3ce4815d648422420a59398d09 0.0s done
+#35 exporting manifest list sha256:c4ecf9aebecd905dd0dc431339679fa4169a93807aa2476e739616cb4fca9088 0.0s done
+#35 naming to docker.io/library/techmarket-ai:1.0.0-SNAPSHOT done
+#35 unpacking to docker.io/library/techmarket-ai:1.0.0-SNAPSHOT
+#35 unpacking to docker.io/library/techmarket-ai:1.0.0-SNAPSHOT 0.3s done
+#35 DONE 2.0s
+
+#36 [ai-service] resolving provenance for metadata file
+#36 DONE 0.0s
+
+#33 [iam-service builder 6/6] RUN mvn -q -f TechMarket-IAM/pom.xml -DskipTests -Dspotless.check.skip=true clean package
+#33 DONE 76.3s
+
+#37 [iam-service stage-1 2/3] WORKDIR /opt/iam-service
+#37 CACHED
+
+#38 [iam-service stage-1 3/3] COPY --from=builder /workspace/TechMarket-IAM/target/iam-service-*.jar app.jar
+#38 DONE 0.2s
+
+#39 [iam-service] exporting to image
+#39 exporting layers
+#39 exporting layers 2.7s done
+#39 exporting manifest sha256:55f940096a3a77b4391a40d63ca845675ab685720c1405504d2bb22da8fda429 0.0s done
+#39 exporting config sha256:0dd3029e9b943f813cec589569170b5a546a547be68cdb2bdf0f093cb3c9166d 0.0s done
+#39 exporting attestation manifest sha256:8fe27d50ddd5be895f9018fb873e97f056fbc35fe68dccf18fd0ec61eb1c913c 0.0s done
+#39 exporting manifest list sha256:231d5e8f867d74c0e441fe04c8295d11941c8c8d9c63bed6d89fe426402a9933 0.0s done
+#39 naming to docker.io/library/techmarket-iam:1.0.0-SNAPSHOT done
+#39 unpacking to docker.io/library/techmarket-iam:1.0.0-SNAPSHOT
+#39 unpacking to docker.io/library/techmarket-iam:1.0.0-SNAPSHOT 0.5s done
+#39 DONE 3.2s
+
+#40 [iam-service] resolving provenance for metadata file
+#40 DONE 0.0s
+ Image techmarket-iam:1.0.0-SNAPSHOT Built 
+ Image techmarket-ai:1.0.0-SNAPSHOT Built 
+ Image techmarket-ia:1.0.0-SNAPSHOT Built 

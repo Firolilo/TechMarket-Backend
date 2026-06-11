@@ -26,7 +26,7 @@ public class DevTestStubsConfig {
      * 1.1.2: methods return float[] / List<float[]>.
      */
     @Bean
-    @Profile({"dev", "test"})
+    @Profile({"dev", "test", "docker"})
     @ConditionalOnMissingBean(EmbeddingModel.class)
     public EmbeddingModel stubEmbeddingModel(Environment env) {
         int dimension = env.getProperty("ai.embedding.dim", Integer.class, 1536);

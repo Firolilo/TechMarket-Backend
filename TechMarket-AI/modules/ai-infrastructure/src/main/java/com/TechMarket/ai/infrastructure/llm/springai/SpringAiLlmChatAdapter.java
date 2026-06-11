@@ -5,19 +5,16 @@ import com.techmarket.ai.application.port.out.LlmChatPort;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * LLM chat adapter via Spring AI ChatClient. Returns answer + usage. Only created when OpenAI API
- * key is configured and ChatClient.Builder is available.
+ * LLM chat adapter via Spring AI ChatClient. Returns answer + usage. Active on every profile except
+ * "test" (the real LLM). By default the OpenAI client points at Google's OpenAI-compatible endpoint
+ * (Gemini); Spring AI autoconfigures the ChatClient.Builder from the configured API key.
  */
 @Component
 @Profile("!test")
-@ConditionalOnBean(ChatClient.Builder.class)
-@ConditionalOnProperty(prefix = "spring.ai.openai", name = "api-key")
 public class SpringAiLlmChatAdapter implements LlmChatPort {
 
     private final ChatClient chatClient;
@@ -28,7 +25,12 @@ public class SpringAiLlmChatAdapter implements LlmChatPort {
 
     @Override
     public ChatResultDto chat(String prompt) {
-        ChatResponse response = chatClient.prompt().user(prompt).call().chatResponse();
+        ChatResponse response;
+        try {
+            response = chatClient.prompt().user(prompt).call().chatResponse();
+        } catch (RuntimeException ex) {
+            throw LlmErrors.translate(ex);
+        }
         String answer =
                 response.getResult() != null && response.getResult().getOutput() != null
                         ? response.getResult().getOutput().getText()

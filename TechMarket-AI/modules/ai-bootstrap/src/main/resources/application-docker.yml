@@ -1,0 +1,31 @@
+# Docker profile for the AI service. No SQL database (DataSource excluded); the LLM is
+# Gemini (inherited from application.yml), so only GEMINI_API_KEY is required. The vector
+# store still uses an in-memory stub until real pgvector RAG is wired.
+server:
+  port: ${AI_SERVICE_PORT:8091}
+
+spring:
+  autoconfigure:
+    exclude:
+      # No datasource needed -> keeps health green without a database.
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+  # LLM provider (Gemini) is inherited from application.yml; requires GEMINI_API_KEY.
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true

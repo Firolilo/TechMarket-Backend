@@ -1,5 +1,6 @@
 package com.techmarket.ai.bootstrap.config;
 
+import jakarta.servlet.DispatcherType;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,21 +21,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, Environment env)
             throws Exception {
-        boolean dev = Arrays.asList(env.getActiveProfiles()).contains("dev");
+        var profiles = Arrays.asList(env.getActiveProfiles());
+        boolean devOrDocker = profiles.contains("dev") || profiles.contains("docker");
         boolean jwtEnabled = env.getProperty("security.jwt.enabled", Boolean.class, false);
 
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         a -> {
+                            // Let the container render error responses instead of the security
+                            // layer masking unhandled exceptions as 401 on the /error dispatch.
+                            a.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+
                             a.requestMatchers("/actuator/health/**", "/actuator/info/**")
                                     .permitAll();
 
-                            if (dev) {
+                            if (devOrDocker) {
                                 a.requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",
                                                 "/swagger-ui.html")
+                                        .permitAll();
+                                // dev/docker: let the AI endpoints be tried directly from Swagger.
+                                a.requestMatchers(
+                                                "/api/v1/ai/**",
+                                                "/api/empresa/ia/**",
+                                                "/api/ambassadors/ai/**",
+                                                "/api/specialists/ai/**")
                                         .permitAll();
                             }
 

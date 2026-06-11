@@ -1,5 +1,6 @@
 package com.techmarket.ai.api.error;
 
+import com.techmarket.ai.application.exception.LlmUnavailableException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,6 +13,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /** Global REST exception handler. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(LlmUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleLlmUnavailable(LlmUnavailableException ex) {
+        var status = ex.isRateLimited() ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.BAD_GATEWAY;
+        var code = ex.isRateLimited() ? "LLM_RATE_LIMITED" : "LLM_UNAVAILABLE";
+        var body = new ApiErrorResponse(code, ex.getMessage(), null, Instant.now(), List.of());
+        return ResponseEntity.status(status).body(body);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
