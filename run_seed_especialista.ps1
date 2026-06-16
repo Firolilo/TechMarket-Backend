@@ -6,7 +6,7 @@ $IAM_USER      = "iam_user"
 $IAM_DB        = "iam_service"
 $IAM_SEED      = "$PSScriptRoot\TechMarket-IAM\seed_especialista_test.sql"
 
-$IA_CONTAINER  = "TECHMARKET-ia-postgres"
+$IA_CONTAINER  = "ia-postgres"
 $IA_USER       = "TECHMARKET_ia_user"
 $IA_DB         = "TECHMARKET_ia"
 $IA_SEED       = "$PSScriptRoot\TechMarket-IA\seed_especialista_test.sql"

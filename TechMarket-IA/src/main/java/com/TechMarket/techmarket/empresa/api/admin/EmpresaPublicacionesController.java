@@ -36,14 +36,17 @@ public class EmpresaPublicacionesController {
     private final TenantSpringDataRepository tenantRepository;
     private final ListingSpringDataRepository listingRepository;
     private final ListingImageSpringDataRepository imageRepository;
+    private final EmpresaTenantProvisioner tenantProvisioner;
 
     public EmpresaPublicacionesController(
             TenantSpringDataRepository tenantRepository,
             ListingSpringDataRepository listingRepository,
-            ListingImageSpringDataRepository imageRepository) {
+            ListingImageSpringDataRepository imageRepository,
+            EmpresaTenantProvisioner tenantProvisioner) {
         this.tenantRepository = tenantRepository;
         this.listingRepository = listingRepository;
         this.imageRepository = imageRepository;
+        this.tenantProvisioner = tenantProvisioner;
     }
 
     @GetMapping("/publicaciones")
@@ -409,13 +412,7 @@ public class EmpresaPublicacionesController {
     }
 
     private TenantJpaEntity requireTenant(UUID userId) {
-        return tenantRepository
-                .findFirstByMemberUserId(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No se encontro empresa para este usuario"));
+        return tenantProvisioner.resolveOrCreate(userId);
     }
 
     private UUID resolveAuthenticatedUserId() {

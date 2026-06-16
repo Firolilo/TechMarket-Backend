@@ -105,7 +105,7 @@ public class AmbassadorPortalController {
     private final TenantSpringDataRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    @Value("${techmarket.frontend.base-url:https://techmarket.bo}")
+    @Value("${techmarket.frontend.base-url:http://localhost:3000}")
     private String frontendBaseUrl;
 
     public AmbassadorPortalController(
@@ -344,8 +344,7 @@ public class AmbassadorPortalController {
             @PathVariable String linkId) {
         AmbassadorReferralLinkJpaEntity link =
                 findReferralLink(linkId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return new ReferralLinkQrResponse(
-                "https://cdn.techmarket.bo/qr/" + link.getCode() + ".png");
+        return new ReferralLinkQrResponse(qrDataUri(referralUrl(link.getCode())));
     }
 
     @GetMapping("/referral-links/{linkId}/stats")
@@ -1794,7 +1793,7 @@ public class AmbassadorPortalController {
                 formatReferralLinkId(link.getId()),
                 link.getName(),
                 link.getCode(),
-                link.getUrl(),
+                referralUrl(link.getCode()),
                 link.getClicks(),
                 link.getConversions(),
                 link.isActive());
@@ -1812,7 +1811,7 @@ public class AmbassadorPortalController {
                 formatReferralLinkId(link.getId()),
                 link.getName(),
                 link.getCode(),
-                link.getUrl(),
+                referralUrl(link.getCode()),
                 link.getClicks(),
                 link.getConversions(),
                 conversionRate,
@@ -2715,6 +2714,22 @@ public class AmbassadorPortalController {
 
     private String referralUrl(String code) {
         return frontendBaseUrl + "/auth?mode=register&type=empresa&ref=" + code;
+    }
+
+    /** Generates a QR for the given content and returns it as a PNG data URI (works offline). */
+    private String qrDataUri(String content) {
+        try {
+            com.google.zxing.common.BitMatrix matrix =
+                    new com.google.zxing.qrcode.QRCodeWriter()
+                            .encode(content, com.google.zxing.BarcodeFormat.QR_CODE, 240, 240);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            com.google.zxing.client.j2se.MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+            return "data:image/png;base64,"
+                    + java.util.Base64.getEncoder().encodeToString(out.toByteArray());
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el QR del link");
+        }
     }
 
     private String formatAmbassadorId(UUID id) {

@@ -33,16 +33,19 @@ public class EmpresaResenasController {
     private final ClientReviewSpringDataRepository reviewRepository;
     private final UserSpringDataRepository userRepository;
     private final ListingSpringDataRepository listingRepository;
+    private final EmpresaTenantProvisioner tenantProvisioner;
 
     public EmpresaResenasController(
             TenantSpringDataRepository tenantRepository,
             ClientReviewSpringDataRepository reviewRepository,
             UserSpringDataRepository userRepository,
-            ListingSpringDataRepository listingRepository) {
+            ListingSpringDataRepository listingRepository,
+            EmpresaTenantProvisioner tenantProvisioner) {
         this.tenantRepository = tenantRepository;
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.listingRepository = listingRepository;
+        this.tenantProvisioner = tenantProvisioner;
     }
 
     @GetMapping("/resenas")
@@ -316,13 +319,7 @@ public class EmpresaResenasController {
     }
 
     private TenantJpaEntity requireTenant(UUID userId) {
-        return tenantRepository
-                .findFirstByMemberUserId(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No se encontro empresa para este usuario"));
+        return tenantProvisioner.resolveOrCreate(userId);
     }
 
     private UUID resolveAuthenticatedUserId() {

@@ -33,16 +33,19 @@ public class EmpresaDashboardController {
     private final ListingSpringDataRepository listingRepository;
     private final ClientReviewSpringDataRepository reviewRepository;
     private final ClientChatSpringDataRepository chatRepository;
+    private final EmpresaTenantProvisioner tenantProvisioner;
 
     public EmpresaDashboardController(
             TenantSpringDataRepository tenantRepository,
             ListingSpringDataRepository listingRepository,
             ClientReviewSpringDataRepository reviewRepository,
-            ClientChatSpringDataRepository chatRepository) {
+            ClientChatSpringDataRepository chatRepository,
+            EmpresaTenantProvisioner tenantProvisioner) {
         this.tenantRepository = tenantRepository;
         this.listingRepository = listingRepository;
         this.reviewRepository = reviewRepository;
         this.chatRepository = chatRepository;
+        this.tenantProvisioner = tenantProvisioner;
     }
 
     @GetMapping("/resumen")
@@ -139,13 +142,7 @@ public class EmpresaDashboardController {
     }
 
     private TenantJpaEntity requireTenant(UUID userId) {
-        return tenantRepository
-                .findFirstByMemberUserId(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No se encontro empresa para este usuario"));
+        return tenantProvisioner.resolveOrCreate(userId);
     }
 
     private String logoText(String businessName) {

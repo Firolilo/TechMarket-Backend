@@ -105,6 +105,8 @@ services:
       # defaults) would otherwise force the aggregate health to DOWN.
       MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
       MANAGEMENT_HEALTH_MONGO_ENABLED: "false"
+      # Base URL del frontend para construir los links de referido del embajador (sin dominio: localhost).
+      TECHMARKET_FRONTEND_BASE_URL: "http://localhost:3000"
     ports:
       - "8082:8082"
 

@@ -35,16 +35,19 @@ public class EmpresaChatController {
     private final ClientChatSpringDataRepository chatRepository;
     private final ClientChatMessageSpringDataRepository messageRepository;
     private final UserSpringDataRepository userRepository;
+    private final EmpresaTenantProvisioner tenantProvisioner;
 
     public EmpresaChatController(
             TenantSpringDataRepository tenantRepository,
             ClientChatSpringDataRepository chatRepository,
             ClientChatMessageSpringDataRepository messageRepository,
-            UserSpringDataRepository userRepository) {
+            UserSpringDataRepository userRepository,
+            EmpresaTenantProvisioner tenantProvisioner) {
         this.tenantRepository = tenantRepository;
         this.chatRepository = chatRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.tenantProvisioner = tenantProvisioner;
     }
 
     @GetMapping("/conversaciones")
@@ -197,13 +200,7 @@ public class EmpresaChatController {
     }
 
     private TenantJpaEntity requireTenant(UUID userId) {
-        return tenantRepository
-                .findFirstByMemberUserId(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No se encontro empresa para este usuario"));
+        return tenantProvisioner.resolveOrCreate(userId);
     }
 
     private String resolveUserName(UUID userId) {

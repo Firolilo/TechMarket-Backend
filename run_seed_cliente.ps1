@@ -6,7 +6,7 @@ $IAM_CONTAINER  = "iam-postgres"
 $IAM_DB         = "iam_service"
 $IAM_USER       = "iam_user"
 
-$IA_CONTAINER   = "TECHMARKET-ia-postgres"
+$IA_CONTAINER   = "ia-postgres"
 $IA_DB          = "TECHMARKET_ia"
 $IA_USER        = "TECHMARKET_ia_user"
 
