@@ -6,9 +6,11 @@ import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.Use
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Resolves the company (tenant) for an authenticated user, creating it on the fly the first time an
@@ -40,7 +42,17 @@ public class EmpresaTenantProvisioner {
     }
 
     private TenantJpaEntity createForUser(UUID userId) {
-        UserJpaEntity user = userRepository.findById(userId).orElse(null);
+        // tenant_members.user_id tiene FK a users: solo se puede crear la empresa si el usuario
+        // existe en TechMarket-IA. Si no (p. ej. registrado solo en IAM), 404 en vez de un 500 por
+        // violacion de FK.
+        UserJpaEntity user =
+                userRepository
+                        .findById(userId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se encontro empresa para este usuario"));
         OffsetDateTime now = OffsetDateTime.now();
 
         TenantJpaEntity tenant = new TenantJpaEntity();
