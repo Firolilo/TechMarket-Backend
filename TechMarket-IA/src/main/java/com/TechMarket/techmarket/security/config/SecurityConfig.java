@@ -43,7 +43,8 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, "/api/auth/register")
                                         .permitAll()
-                                        // Atribución de referidos desde el registro público de empresas
+                                        // Atribución de referidos desde el registro público de
+                                        // empresas
                                         .requestMatchers(
                                                 HttpMethod.POST, "/api/ambassadors/referrals/claim")
                                         .permitAll()

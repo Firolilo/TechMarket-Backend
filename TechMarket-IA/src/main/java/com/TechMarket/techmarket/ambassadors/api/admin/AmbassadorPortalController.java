@@ -497,7 +497,9 @@ public class AmbassadorPortalController {
         if (request.email() != null && !request.email().isBlank()) {
             AmbassadorReferralJpaEntity existing =
                     referralRepository.findByAmbassadorId(ambassadorId).stream()
-                            .filter(referral -> request.email().equalsIgnoreCase(referral.getEmail()))
+                            .filter(
+                                    referral ->
+                                            request.email().equalsIgnoreCase(referral.getEmail()))
                             .findFirst()
                             .orElse(null);
             if (existing != null) {
