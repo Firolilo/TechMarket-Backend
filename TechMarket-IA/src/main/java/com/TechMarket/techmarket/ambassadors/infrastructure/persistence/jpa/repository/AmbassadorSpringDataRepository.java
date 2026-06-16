@@ -10,6 +10,8 @@ public interface AmbassadorSpringDataRepository extends JpaRepository<Ambassador
 
     Optional<AmbassadorJpaEntity> findByUserId(UUID userId);
 
+    Optional<AmbassadorJpaEntity> findByReferralCode(String referralCode);
+
     List<AmbassadorJpaEntity> findAllBySponsorAmbassadorId(UUID sponsorAmbassadorId);
 
     long countBySponsorAmbassadorId(UUID sponsorAmbassadorId);

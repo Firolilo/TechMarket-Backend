@@ -43,6 +43,14 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, "/api/auth/register")
                                         .permitAll()
+                                        // Atribución de referidos desde el registro público de empresas
+                                        .requestMatchers(
+                                                HttpMethod.POST, "/api/ambassadors/referrals/claim")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/ambassadors/referral-links/*/track-click")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",

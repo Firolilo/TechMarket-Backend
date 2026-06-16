@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
@@ -103,6 +104,9 @@ public class AmbassadorPortalController {
     private final UserSpringDataRepository userRepository;
     private final TenantSpringDataRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    @Value("${techmarket.frontend.base-url:https://techmarket.bo}")
+    private String frontendBaseUrl;
 
     public AmbassadorPortalController(
             AmbassadorSpringDataRepository ambassadorRepository,
@@ -458,6 +462,91 @@ public class AmbassadorPortalController {
                 saved.getStatus(),
                 "Prospecto registrado correctamente");
     }
+
+    /**
+     * Endpoint público: atribuye una empresa recién registrada al embajador dueño del código de
+     * referido (link de referido o código propio del embajador). La empresa pasa a formar parte de
+     * los referidos activos del embajador. Se invoca desde el frontend tras un registro exitoso.
+     */
+    @PostMapping("/referrals/claim")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
+    public CreateReferralResponse claimReferral(@Valid @RequestBody ClaimReferralRequest request) {
+        String code = request.code().trim().toUpperCase(Locale.ROOT);
+
+        AmbassadorReferralLinkJpaEntity link = referralLinkRepository.findByCode(code).orElse(null);
+        UUID ambassadorId;
+        if (link != null) {
+            ambassadorId = link.getAmbassadorId();
+        } else {
+            ambassadorId =
+                    ambassadorRepository
+                            .findByReferralCode(code)
+                            .map(AmbassadorJpaEntity::getId)
+                            .orElseThrow(
+                                    () ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.NOT_FOUND,
+                                                    "Referral code not found"));
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // Idempotencia: si ese embajador ya tiene un referido con el mismo email, no se duplica
+        // (protege ante doble envío del registro).
+        if (request.email() != null && !request.email().isBlank()) {
+            AmbassadorReferralJpaEntity existing =
+                    referralRepository.findByAmbassadorId(ambassadorId).stream()
+                            .filter(referral -> request.email().equalsIgnoreCase(referral.getEmail()))
+                            .findFirst()
+                            .orElse(null);
+            if (existing != null) {
+                return new CreateReferralResponse(
+                        formatBusinessId(existing.getId()),
+                        existing.getStatus(),
+                        "Referido ya registrado previamente");
+            }
+        }
+
+        AmbassadorReferralJpaEntity referral = new AmbassadorReferralJpaEntity();
+        referral.setId(UUID.randomUUID());
+        referral.setAmbassadorId(ambassadorId);
+        referral.setName(request.nombre());
+        referral.setReferralType(valueOrDefault(request.tipo(), "empresa"));
+        referral.setContactName(valueOrDefault(request.contacto(), request.nombre()));
+        referral.setPhone(request.telefono());
+        referral.setEmail(request.email());
+        referral.setCity(request.ciudad());
+        referral.setCountry(request.pais());
+        referral.setAttributionChannel("referral_link");
+        referral.setUsedCode(code);
+        referral.setStatus("activo");
+        referral.setCreatedAt(now);
+        referral.setLastActivityAt(now);
+        AmbassadorReferralJpaEntity saved = referralRepository.save(referral);
+
+        createActivity(
+                saved.getId(), "registro", "Empresa registrada mediante link de referido", now);
+
+        if (link != null) {
+            link.setConversions(link.getConversions() + 1);
+            link.setUpdatedAt(now);
+            referralLinkRepository.save(link);
+        }
+
+        return new CreateReferralResponse(
+                formatBusinessId(saved.getId()), saved.getStatus(), "Empresa referida registrada");
+    }
+
+    public record ClaimReferralRequest(
+            @NotBlank String code,
+            @NotBlank String nombre,
+            String contacto,
+            String email,
+            String telefono,
+            String ciudad,
+            String pais,
+            String tipo) {}
 
     @GetMapping("/referrals/{referralId}")
     public AmbassadorReferralDetailResponse referral(
@@ -2623,7 +2712,7 @@ public class AmbassadorPortalController {
     }
 
     private String referralUrl(String code) {
-        return "https://techmarket.bo/register?ref=" + code;
+        return frontendBaseUrl + "/auth?mode=register&type=empresa&ref=" + code;
     }
 
     private String formatAmbassadorId(UUID id) {
