@@ -4,7 +4,10 @@
       "Bash(git -C \"c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend\" ls-files)",
       "Bash(sed -E 's/=.{6}.*/=****REDACTED****/')",
       "Bash(git -C \"c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend\" show HEAD:.env.local)",
-      "Bash(.\\\\mvnw.cmd -q test \"-Dtest=ListingControllerTest\" \"-DfailIfNoTests=false\")"
+      "Bash(.\\\\mvnw.cmd -q test \"-Dtest=ListingControllerTest\" \"-DfailIfNoTests=false\")",
+      "Bash(grep -iE \"fetch|http|url|api|'/|\\\\\"/|\\\\`/\")",
+      "Bash(grep -nA15 'function useApiFetch' c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend/app/embajador/useAmbassadorApi.ts)",
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; $out = npx tsc --noEmit 2>&1; \"TOTAL errores: \" + \\($out | Measure-Object -Line\\).Lines; \"\"; \"--- Errores en archivos que TOQUE ---\"; $out | Select-String -Pattern \"specialistAiApi|SpecialistAiAssistant|useAmbassadorApi|vision-usuarios|specialists/ai/proxy\" ; \"--- \\(fin\\) ---\")"
     ]
   }
 }
