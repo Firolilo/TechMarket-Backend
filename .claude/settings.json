@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend\" ls-files)",
+      "Bash(sed -E 's/=.{6}.*/=****REDACTED****/')",
+      "Bash(git -C \"c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend\" show HEAD:.env.local)",
+      "Bash(.\\\\mvnw.cmd -q test \"-Dtest=ListingControllerTest\" \"-DfailIfNoTests=false\")"
+    ]
+  }
+}
