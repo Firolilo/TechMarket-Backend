@@ -7,7 +7,14 @@
       "Bash(.\\\\mvnw.cmd -q test \"-Dtest=ListingControllerTest\" \"-DfailIfNoTests=false\")",
       "Bash(grep -iE \"fetch|http|url|api|'/|\\\\\"/|\\\\`/\")",
       "Bash(grep -nA15 'function useApiFetch' c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front/frontend/app/embajador/useAmbassadorApi.ts)",
-      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; $out = npx tsc --noEmit 2>&1; \"TOTAL errores: \" + \\($out | Measure-Object -Line\\).Lines; \"\"; \"--- Errores en archivos que TOQUE ---\"; $out | Select-String -Pattern \"specialistAiApi|SpecialistAiAssistant|useAmbassadorApi|vision-usuarios|specialists/ai/proxy\" ; \"--- \\(fin\\) ---\")"
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; $out = npx tsc --noEmit 2>&1; \"TOTAL errores: \" + \\($out | Measure-Object -Line\\).Lines; \"\"; \"--- Errores en archivos que TOQUE ---\"; $out | Select-String -Pattern \"specialistAiApi|SpecialistAiAssistant|useAmbassadorApi|vision-usuarios|specialists/ai/proxy\" ; \"--- \\(fin\\) ---\")",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front checkout -b demo-sin-ai-service)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front rev-parse --abbrev-ref HEAD)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front revert --no-edit 6e62e75)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front log --oneline -3)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front add frontend/app/api/empresa/ia/consulta/route.ts)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front commit -m ' *)",
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front status --short)"
     ]
   }
 }
