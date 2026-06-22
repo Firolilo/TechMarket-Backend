@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Real-data context that grounds the specialist AI assistant. TechMarket-AI is stateless (no DB),
  * so this exposes the specialist's actual reputation, catalog of services and activity so the
- * Next.js proxy can forward it as the AI {@code context}. See the AI service's EspecialistaAiService.
+ * Next.js proxy can forward it as the AI {@code context}. See the AI service's
+ * EspecialistaAiService.
  */
 @RestController
 @RequestMapping("/api/specialists/ia-contexto")
@@ -96,13 +97,17 @@ public class SpecialistIaContextController {
     }
 
     public record SpecialistIaContexto(
-            Perfil perfil, Reputacion reputacion, Actividad actividad, List<ServicioItem> servicios) {}
+            Perfil perfil,
+            Reputacion reputacion,
+            Actividad actividad,
+            List<ServicioItem> servicios) {}
 
     public record Perfil(String especialidad, String ubicacion) {}
 
     public record Reputacion(double calificacionPromedio, long totalResenas) {}
 
-    public record Actividad(long serviciosPublicados, long trabajosCompletados, long solicitudesPendientes) {}
+    public record Actividad(
+            long serviciosPublicados, long trabajosCompletados, long solicitudesPendientes) {}
 
     public record ServicioItem(String nombre, String tipo, BigDecimal precio, boolean destacado) {}
 }

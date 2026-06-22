@@ -6,23 +6,32 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
 import com.techmarket.techmarket.tenants.application.service.TenantApplicationService;
 import com.techmarket.techmarket.tenants.domain.model.Tenant;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TenantController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class TenantControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
     @MockBean private TenantApplicationService service;
+
+    // Requeridos para construir los filtros servlet que @WebMvcTest registra.
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean private UserSpringDataRepository userRepository;
 
     @Test
     void create_shouldReturnCreated() throws Exception {

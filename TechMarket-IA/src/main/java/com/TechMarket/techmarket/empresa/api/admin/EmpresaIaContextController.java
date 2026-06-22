@@ -70,9 +70,7 @@ public class EmpresaIaContextController {
                         .map(
                                 l ->
                                         new CatalogoItem(
-                                                l.getTitle(),
-                                                l.getListingType(),
-                                                l.getBasePrice()))
+                                                l.getTitle(), l.getListingType(), l.getBasePrice()))
                         .toList();
         long activeListings =
                 listings.stream().filter(l -> "ACTIVE".equalsIgnoreCase(l.getStatus())).count();

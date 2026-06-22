@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
 import com.techmarket.techmarket.specialists.application.service.SpecialistIdentitySupport;
 import com.techmarket.techmarket.specialists.application.service.SpecialistJsonListMapper;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistCalendarBlockJpaEntity;
@@ -51,6 +52,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -71,6 +73,7 @@ import org.springframework.test.web.servlet.MockMvc;
     SpecialistCertificationController.class,
     SpecialistAiController.class
 })
+@AutoConfigureMockMvc(addFilters = false)
 @Import({SpecialistIdentitySupport.class, SpecialistJsonListMapper.class})
 class SpecialistControllerTest {
 
@@ -81,6 +84,9 @@ class SpecialistControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockBean private UserSpringDataRepository userRepository;
+
+    // Requerido para construir los filtros servlet que @WebMvcTest registra.
+    @MockBean private JwtTokenProvider jwtTokenProvider;
 
     @MockBean private SpecialistProfileSpringDataRepository profileRepository;
 

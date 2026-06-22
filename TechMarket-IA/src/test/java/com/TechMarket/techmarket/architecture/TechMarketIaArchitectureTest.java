@@ -13,13 +13,17 @@ public class TechMarketIaArchitectureTest {
             new ClassFileImporter().importPackages("com.techmarket.techmarket");
 
     @Test
-    void controllers_shouldResideInApiAdminPackage() {
+    void controllers_shouldResideInApiPackage() {
+        // IA expone varias superficies de API (api.admin para back-office, api.mobile para apps de
+        // embajador, auth.api para login/registro). Todas son capas de entrada y deben vivir bajo
+        // un
+        // paquete ..api.. para mantener la separacion contra dominio/aplicacion.
         ArchRule rule =
                 classes()
                         .that()
                         .haveSimpleNameEndingWith("Controller")
                         .should()
-                        .resideInAPackage("..api.admin..");
+                        .resideInAPackage("..api..");
 
         rule.check(classes);
     }
@@ -38,7 +42,7 @@ public class TechMarketIaArchitectureTest {
                         .that()
                         .haveSimpleNameEndingWith("Config")
                         .should()
-                        .resideInAPackage("..globalparameters.bootstrap..");
+                        .resideInAPackage("..config..");
 
         rule.check(classes);
     }

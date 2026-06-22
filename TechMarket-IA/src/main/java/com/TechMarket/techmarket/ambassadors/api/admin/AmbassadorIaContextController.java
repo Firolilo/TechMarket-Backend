@@ -43,7 +43,8 @@ public class AmbassadorIaContextController {
         long activos =
                 referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassadorId, "activo");
         long prospectos =
-                referralRepository.countByAmbassadorIdAndStatusIgnoreCase(ambassadorId, "prospecto");
+                referralRepository.countByAmbassadorIdAndStatusIgnoreCase(
+                        ambassadorId, "prospecto");
 
         BigDecimal totalComisiones = commissionRepository.sumAmountByAmbassadorId(ambassadorId);
         long cantidadComisiones = commissionRepository.findByAmbassadorId(ambassadorId).size();
@@ -59,8 +60,7 @@ public class AmbassadorIaContextController {
                 new Comisiones(totalComisiones, cantidadComisiones));
     }
 
-    public record AmbassadorIaContexto(
-            Perfil perfil, Referidos referidos, Comisiones comisiones) {}
+    public record AmbassadorIaContexto(Perfil perfil, Referidos referidos, Comisiones comisiones) {}
 
     public record Perfil(
             String nivel, String codigoReferido, String estado, String ciudad, String pais) {}

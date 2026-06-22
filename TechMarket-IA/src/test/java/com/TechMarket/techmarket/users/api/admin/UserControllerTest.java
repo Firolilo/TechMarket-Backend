@@ -7,18 +7,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
 import com.techmarket.techmarket.users.application.service.UserApplicationService;
 import com.techmarket.techmarket.users.domain.model.User;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -26,6 +30,11 @@ class UserControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockBean private UserApplicationService service;
+
+    // Requeridos para construir los filtros servlet que @WebMvcTest registra.
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean private UserSpringDataRepository userRepository;
 
     @Test
     void create_shouldReturnCreated() throws Exception {

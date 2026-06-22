@@ -55,7 +55,8 @@ public class SecurityConfig {
                                         // Feed read-only del catálogo público para la ingesta del
                                         // índice semántico (marketplace RAG) en TechMarket-AI.
                                         .requestMatchers(
-                                                HttpMethod.GET, "/api/marketplace/catalogo-indexable")
+                                                HttpMethod.GET,
+                                                "/api/marketplace/catalogo-indexable")
                                         .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
