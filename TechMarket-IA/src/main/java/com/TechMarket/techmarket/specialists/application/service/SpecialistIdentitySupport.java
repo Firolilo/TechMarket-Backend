@@ -76,10 +76,6 @@ public class SpecialistIdentitySupport {
         return "FILE-" + id;
     }
 
-    public String formatTransactionId(UUID id) {
-        return "TX-" + id;
-    }
-
     public String formatCertificationId(UUID id) {
         return "CERT-" + id;
     }

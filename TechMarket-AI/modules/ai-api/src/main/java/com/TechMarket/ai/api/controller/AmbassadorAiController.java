@@ -5,8 +5,8 @@ import com.techmarket.ai.application.port.in.AmbassadorAiUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,10 +31,11 @@ public class AmbassadorAiController {
         return ResponseEntity.ok(useCase.query(request));
     }
 
-    @GetMapping("/insights")
+    @PostMapping("/insights")
     @Operation(summary = "Proactive AI insights for the ambassador")
-    public ResponseEntity<List<AmbassadorAiDtos.Insight>> insights() {
-        return ResponseEntity.ok(useCase.insights());
+    public ResponseEntity<List<AmbassadorAiDtos.Insight>> insights(
+            @RequestBody(required = false) Map<String, Object> context) {
+        return ResponseEntity.ok(useCase.insights(context));
     }
 
     @PostMapping("/prospect-score")

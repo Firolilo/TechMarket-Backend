@@ -20,7 +20,6 @@ import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.enti
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistPortfolioItemJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceAppointmentJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceJpaEntity;
-import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistTransactionJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAiQuerySpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAppointmentSummaryProjection;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistAvailabilitySpringDataRepository;
@@ -34,8 +33,6 @@ import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repo
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistReviewStatsSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceAppointmentSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceSpringDataRepository;
-import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistTransactionSpringDataRepository;
-import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistWithdrawalSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatAttachmentJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatMessageJpaEntity;
@@ -70,7 +67,6 @@ import org.springframework.test.web.servlet.MockMvc;
     SpecialistProjectController.class,
     SpecialistChatController.class,
     SpecialistFileController.class,
-    SpecialistWalletController.class,
     SpecialistReviewController.class,
     SpecialistCertificationController.class,
     SpecialistAiController.class
@@ -109,10 +105,6 @@ class SpecialistControllerTest {
     @MockBean private ClientChatReadReceiptSpringDataRepository chatReadReceiptRepository;
 
     @MockBean private SpecialistFileSpringDataRepository specialistFileRepository;
-
-    @MockBean private SpecialistTransactionSpringDataRepository transactionRepository;
-
-    @MockBean private SpecialistWithdrawalSpringDataRepository withdrawalRepository;
 
     @MockBean private SpecialistReviewSpringDataRepository specialistReviewRepository;
 
@@ -464,44 +456,6 @@ class SpecialistControllerTest {
     }
 
     @Test
-    void wallet_shouldReturnAggregatedAmounts() throws Exception {
-        mockUser();
-        when(transactionRepository.sumAvailableByUserId(USER_ID))
-                .thenReturn(new BigDecimal("108.00"));
-        when(transactionRepository.sumCompletedGrossByUserId(USER_ID))
-                .thenReturn(new BigDecimal("120.00"));
-        when(transactionRepository.sumInProcessByUserId(USER_ID))
-                .thenReturn(new BigDecimal("50.00"));
-
-        mockMvc.perform(get("/api/specialists/wallet").header("X-User-Id", USER_ID))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.saldoDisponible").value("Bs 108.00"))
-                .andExpect(jsonPath("$.ingresosTotales").value("Bs 120.00"))
-                .andExpect(jsonPath("$.enProceso").value("Bs 50.00"));
-    }
-
-    @Test
-    void withdraw_shouldPersistRequest() throws Exception {
-        mockUser();
-        when(withdrawalRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        mockMvc.perform(
-                        post("/api/specialists/wallet/withdraw")
-                                .header("X-User-Id", USER_ID)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(
-                                        json(
-                                                new LinkedHashMap<>() {
-                                                    {
-                                                        put("monto", new BigDecimal("500.00"));
-                                                    }
-                                                })))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.monto").value("Bs 500.00"))
-                .andExpect(jsonPath("$.mensaje").value("Solicitud de retiro enviada"));
-    }
-
-    @Test
     void aiQuery_shouldReturnActionPlan() throws Exception {
         mockUser();
         when(aiQueryRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -617,20 +571,6 @@ class SpecialistControllerTest {
         file.setFileSize("1.1 MB");
         file.setCreatedAt(OffsetDateTime.parse("2026-03-15T10:00:00Z"));
         return file;
-    }
-
-    private SpecialistTransactionJpaEntity transaction(UUID id) {
-        SpecialistTransactionJpaEntity transaction = new SpecialistTransactionJpaEntity();
-        transaction.setId(id);
-        transaction.setUserId(USER_ID);
-        transaction.setServiceName("Reparacion de laptops");
-        transaction.setClientName("Laura Paredes");
-        transaction.setAmount(new BigDecimal("120.00"));
-        transaction.setPlatformCommission(new BigDecimal("12.00"));
-        transaction.setCurrency("Bs");
-        transaction.setStatus("completado");
-        transaction.setTransactionDate(OffsetDateTime.parse("2026-04-08T10:00:00Z"));
-        return transaction;
     }
 
     private UserJpaEntity client(UUID id) {

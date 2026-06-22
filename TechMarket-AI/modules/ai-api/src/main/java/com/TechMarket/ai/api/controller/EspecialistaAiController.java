@@ -5,8 +5,8 @@ import com.techmarket.ai.application.dto.EspecialistaAiDtos;
 import com.techmarket.ai.application.port.in.EspecialistaAiUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,10 +24,11 @@ public class EspecialistaAiController {
         this.useCase = useCase;
     }
 
-    @GetMapping("/insights")
+    @PostMapping("/insights")
     @Operation(summary = "AI dashboard insights for the specialist")
-    public ResponseEntity<EspecialistaAiDtos.SpecialistInsights> insights() {
-        return ResponseEntity.ok(useCase.insights());
+    public ResponseEntity<EspecialistaAiDtos.SpecialistInsights> insights(
+            @RequestBody(required = false) Map<String, Object> context) {
+        return ResponseEntity.ok(useCase.insights(context));
     }
 
     @PostMapping("/query")
@@ -44,7 +45,7 @@ public class EspecialistaAiController {
         EspecialistaAiDtos.PricingSuggestionCommand command =
                 request != null
                         ? request
-                        : new EspecialistaAiDtos.PricingSuggestionCommand(null, null);
+                        : new EspecialistaAiDtos.PricingSuggestionCommand(null, null, null);
         return ResponseEntity.ok(useCase.pricingSuggestion(command));
     }
 
@@ -53,13 +54,14 @@ public class EspecialistaAiController {
     public ResponseEntity<BusinessInsight> improvementPlan(
             @RequestBody(required = false) EspecialistaAiDtos.ImprovementCommand request) {
         EspecialistaAiDtos.ImprovementCommand command =
-                request != null ? request : new EspecialistaAiDtos.ImprovementCommand(null);
+                request != null ? request : new EspecialistaAiDtos.ImprovementCommand(null, null);
         return ResponseEntity.ok(useCase.improvementPlan(command));
     }
 
     @PostMapping("/schedule-optimization")
     @Operation(summary = "Optimize availability and schedule")
-    public ResponseEntity<BusinessInsight> scheduleOptimization() {
-        return ResponseEntity.ok(useCase.scheduleOptimization());
+    public ResponseEntity<BusinessInsight> scheduleOptimization(
+            @RequestBody(required = false) Map<String, Object> context) {
+        return ResponseEntity.ok(useCase.scheduleOptimization(context));
     }
 }

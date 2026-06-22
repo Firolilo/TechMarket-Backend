@@ -30,15 +30,18 @@ public class EspecialistaAiService implements EspecialistaAiUseCase {
     }
 
     @Override
-    public EspecialistaAiDtos.SpecialistInsights insights() {
+    public EspecialistaAiDtos.SpecialistInsights insights(Map<String, Object> context) {
         String system =
                 PERSONA
                         + " Genera el panel de IA: 'recommendedQuestions' (3-5 preguntas útiles),"
                         + " 'scenarioPrompts' (2-3 con title/prompt/impact) y 'radarBars' (3-5"
-                        + " métricas con label y value entre 0 y 100).";
+                        + " métricas con label y value entre 0 y 100). Las métricas y preguntas"
+                        + " deben reflejar el contexto real del especialista.";
         String user =
-                "Genera el panel inicial de asistencia para un especialista que quiere ganar más"
-                        + " clientes y optimizar sus servicios.";
+                withContext(
+                        "Genera el panel inicial de asistencia para un especialista que quiere ganar"
+                                + " más clientes y optimizar sus servicios.",
+                        context);
         EspecialistaAiDtos.SpecialistInsights result =
                 llm.generate(system, user, EspecialistaAiDtos.SpecialistInsights.class);
         audit.audit("especialista.ai.insights", Map.of());
@@ -47,7 +50,8 @@ public class EspecialistaAiService implements EspecialistaAiUseCase {
 
     @Override
     public BusinessInsight query(EspecialistaAiDtos.SpecialistQuery command) {
-        String user = "Consulta del especialista: " + command.consulta();
+        String user =
+                withContext("Consulta del especialista: " + command.consulta(), command.context());
         BusinessInsight result = llm.generate(PERSONA + INSIGHT_RULES, user, BusinessInsight.class);
         audit.audit(
                 "especialista.ai.query", Map.of("consulta", String.valueOf(command.consulta())));
@@ -62,9 +66,9 @@ public class EspecialistaAiService implements EspecialistaAiUseCase {
                         + " posicionamiento, valor y demanda)."
                         + INSIGHT_RULES;
         String user =
-                "Servicio: "
-                        + AiPrompts.context(
-                                "id=" + command.serviceId() + ", nombre=" + command.serviceName());
+                withContext(
+                        "Servicio: id=" + command.serviceId() + ", nombre=" + command.serviceName(),
+                        command.context());
         BusinessInsight result = llm.generate(system, user, BusinessInsight.class);
         audit.audit(
                 "especialista.ai.pricing-suggestion",
@@ -78,7 +82,8 @@ public class EspecialistaAiService implements EspecialistaAiUseCase {
                 command.focus() == null || command.focus().isBlank()
                         ? "reputación y captación de clientes"
                         : command.focus();
-        String user = "Crea un plan de mejora enfocado en: " + focus;
+        String user =
+                withContext("Crea un plan de mejora enfocado en: " + focus, command.context());
         BusinessInsight result =
                 llm.generate(
                         PERSONA + " Estructura el plan en 'actionPlan'." + INSIGHT_RULES,
@@ -89,16 +94,27 @@ public class EspecialistaAiService implements EspecialistaAiUseCase {
     }
 
     @Override
-    public BusinessInsight scheduleOptimization() {
+    public BusinessInsight scheduleOptimization(Map<String, Object> context) {
         String system =
                 PERSONA
                         + " Recomienda cómo optimizar la disponibilidad y agenda para maximizar"
                         + " proyectos sin saturarse."
                         + INSIGHT_RULES;
         String user =
-                "Sugiere optimizaciones de agenda y disponibilidad para un especialista activo.";
+                withContext(
+                        "Sugiere optimizaciones de agenda y disponibilidad para un especialista"
+                                + " activo.",
+                        context);
         BusinessInsight result = llm.generate(system, user, BusinessInsight.class);
         audit.audit("especialista.ai.schedule-optimization", Map.of());
         return result;
+    }
+
+    /** Appends the specialist's real data (from TechMarket-IA) to the user prompt when present. */
+    private String withContext(String prompt, Map<String, Object> context) {
+        if (context == null || context.isEmpty()) {
+            return prompt;
+        }
+        return prompt + "\n\nContexto real del especialista:\n" + AiPrompts.context(context);
     }
 }

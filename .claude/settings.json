@@ -31,7 +31,13 @@
       "Bash(rm -f users/api/admin/client/ClientCartOrderController.java)",
       "Bash(rm -f users/infrastructure/persistence/jpa/entity/ClientCartItemJpaEntity.java users/infrastructure/persistence/jpa/entity/ClientOrderItemJpaEntity.java users/infrastructure/persistence/jpa/entity/ClientOrderJpaEntity.java)",
       "Bash(rm -f users/infrastructure/persistence/jpa/repository/ClientCartItemSpringDataRepository.java users/infrastructure/persistence/jpa/repository/ClientOrderItemSpringDataRepository.java users/infrastructure/persistence/jpa/repository/ClientOrderSpringDataRepository.java)",
-      "Bash(rm -f users/api/admin/client/request/AddCartItemRequest.java users/api/admin/client/request/CancelOrderRequest.java users/api/admin/client/request/CheckoutRequest.java users/api/admin/client/request/UpdateCartItemRequest.java)"
+      "Bash(rm -f users/api/admin/client/request/AddCartItemRequest.java users/api/admin/client/request/CancelOrderRequest.java users/api/admin/client/request/CheckoutRequest.java users/api/admin/client/request/UpdateCartItemRequest.java)",
+      "Bash(cd /c/Users/bruno/Documentos/Proyectos/TechMarket-Back/TechMarket-IA/src/main/java/com/TechMarket/techmarket/specialists)",
+      "Bash(rm -f api/admin/SpecialistWalletController.java)",
+      "Bash(rm -f api/admin/request/CreateWithdrawalRequest.java api/admin/response/SpecialistEarningsSummaryResponse.java api/admin/response/SpecialistTransactionDetailResponse.java api/admin/response/SpecialistTransactionResponse.java api/admin/response/SpecialistWalletResponse.java api/admin/response/WithdrawalResponse.java)",
+      "Bash(rm -f infrastructure/persistence/jpa/entity/SpecialistTransactionJpaEntity.java infrastructure/persistence/jpa/entity/SpecialistWithdrawalJpaEntity.java)",
+      "Bash(rm -f infrastructure/persistence/jpa/repository/SpecialistTransactionSpringDataRepository.java infrastructure/persistence/jpa/repository/SpecialistWithdrawalSpringDataRepository.java)",
+      "Bash(xargs grep -iE \"Caused by|NoSuchBean|UnsatisfiedDependency|Error creating bean|expected.*bean|Parameter .* required\")"
     ]
   }
 }

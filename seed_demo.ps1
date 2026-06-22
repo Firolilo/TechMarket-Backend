@@ -262,17 +262,6 @@ SELECT gen_random_uuid(), '$Uuid', t.t, t.sn, t.r, t.wd::date, NOW(), NOW() FROM
   ('Red para 20 equipos','Configuracion de redes','Red estable y segmentada','2025-04-20')
 ) AS t(t,sn,r,wd)
 WHERE NOT EXISTS (SELECT 1 FROM specialist_portfolio_items p WHERE p.user_id='$Uuid');
-
-INSERT INTO specialist_transactions (id, user_id, service_appointment_id, service_name, client_name, amount, platform_commission, currency, status, transaction_date, created_at, updated_at)
-SELECT gen_random_uuid(), '$Uuid', NULL, t.sn, t.cn, t.a, t.c, 'Bs', 'completado', NOW()-t.ago, NOW(), NOW() FROM (VALUES
-  ('Reparacion de laptops','Juan Perez',150.00,22.50, INTERVAL '7 days'),
-  ('Formateo e instalacion','Maria Garcia',80.00,12.00, INTERVAL '3 days')
-) AS t(sn,cn,a,c,ago)
-WHERE NOT EXISTS (SELECT 1 FROM specialist_transactions x WHERE x.user_id='$Uuid');
-
-INSERT INTO specialist_withdrawals (id, user_id, amount, currency, status, requested_at, estimated_at)
-SELECT gen_random_uuid(), '$Uuid', 200.00, 'Bs', 'pendiente', NOW(), (NOW()+INTERVAL '3 days')::date
-WHERE NOT EXISTS (SELECT 1 FROM specialist_withdrawals w WHERE w.user_id='$Uuid');
 "@
 }
 

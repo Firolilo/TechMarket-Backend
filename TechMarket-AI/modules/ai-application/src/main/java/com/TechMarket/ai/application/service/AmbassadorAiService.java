@@ -43,15 +43,20 @@ public class AmbassadorAiService implements AmbassadorAiUseCase {
     }
 
     @Override
-    public List<AmbassadorAiDtos.Insight> insights() {
+    public List<AmbassadorAiDtos.Insight> insights(Map<String, Object> context) {
         String system =
                 PERSONA
                         + " Genera entre 3 y 5 insights accionables. 'type' es una categoría corta"
                         + " (p. ej. \"oportunidad\", \"riesgo\", \"seguimiento\"). 'priority' es"
-                        + " \"alta\", \"media\" o \"baja\".";
+                        + " \"alta\", \"media\" o \"baja\". Los insights deben basarse en el contexto"
+                        + " real del embajador.";
         String user =
                 "Genera insights proactivos para que el embajador mejore sus referidos,"
-                        + " conversiones y comisiones esta semana.";
+                        + " conversiones y comisiones esta semana."
+                        + (context == null || context.isEmpty()
+                                ? ""
+                                : "\n\nContexto real del embajador:\n"
+                                        + AiPrompts.context(context));
         AmbassadorAiDtos.InsightDraftList drafts =
                 llm.generate(system, user, AmbassadorAiDtos.InsightDraftList.class);
         List<AmbassadorAiDtos.InsightDraft> items =
