@@ -14,7 +14,24 @@
       "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front log --oneline -3)",
       "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front add frontend/app/api/empresa/ia/consulta/route.ts)",
       "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front commit -m ' *)",
-      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front status --short)"
+      "Bash(git -C c:/Users/bruno/Documentos/Proyectos/proyecto-techmarket-parte-front status --short)",
+      "Bash(ls *.ps1 *.sql)",
+      "Bash(find . -maxdepth 3 -iname \"*seed*\" -not -path \"*/node_modules/*\" -not -path \"*/target/*\")",
+      "PowerShell(docker exec iam-postgres psql -U iam_user -d iam_service -t -A -c \"SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;\" 2>&1)",
+      "PowerShell(docker exec ia-postgres psql -U TECHMARKET_ia_user -d TECHMARKET_ia -t -A -c \"SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;\" 2>&1)",
+      "PowerShell(docker exec iam-postgres psql -U iam_user -d iam_service -t -A -c \"SELECT name FROM iam_role WHERE tenant_id='00000000-0000-0000-0000-000000000000' ORDER BY name;\" 2>&1)",
+      "PowerShell(docker exec ia-postgres psql -U TECHMARKET_ia_user -d TECHMARKET_ia -t -A -c \"SELECT name FROM roles ORDER BY name;\" 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\"; powershell -ExecutionPolicy Bypass -File .\\\\seed_demo.ps1 2>&1 | Select-Object -Last 80)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\"; powershell -ExecutionPolicy Bypass -File .\\\\seed_demo.ps1 2>&1 | Select-Object -Last 60)",
+      "Bash(grep -rhoE \"/api/[a-zA-Z0-9/_{}\\\\$\\\\.\\\\[\\\\]-]+\" app/cliente app/lib)",
+      "Bash(grep -rhoE \"\\\\`?/api/[a-zA-Z0-9/_-]+\" lib/api)",
+      "Bash(cd /c/Users/bruno/Documentos/Proyectos/TechMarket-Back/TechMarket-IA)",
+      "Bash(grep -rln \"ClientCartOrderController\\\\|EmpresaDashboardController\\\\|EmpresaVentasController\\\\|OrderFulfillmentService\" src/test/java)",
+      "Bash(cd /c/Users/bruno/Documentos/Proyectos/TechMarket-Back/TechMarket-IA/src/main/java/com/TechMarket/techmarket)",
+      "Bash(rm -f users/api/admin/client/ClientCartOrderController.java)",
+      "Bash(rm -f users/infrastructure/persistence/jpa/entity/ClientCartItemJpaEntity.java users/infrastructure/persistence/jpa/entity/ClientOrderItemJpaEntity.java users/infrastructure/persistence/jpa/entity/ClientOrderJpaEntity.java)",
+      "Bash(rm -f users/infrastructure/persistence/jpa/repository/ClientCartItemSpringDataRepository.java users/infrastructure/persistence/jpa/repository/ClientOrderItemSpringDataRepository.java users/infrastructure/persistence/jpa/repository/ClientOrderSpringDataRepository.java)",
+      "Bash(rm -f users/api/admin/client/request/AddCartItemRequest.java users/api/admin/client/request/CancelOrderRequest.java users/api/admin/client/request/CheckoutRequest.java users/api/admin/client/request/UpdateCartItemRequest.java)"
     ]
   }
 }
