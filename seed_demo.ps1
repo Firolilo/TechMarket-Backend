@@ -401,6 +401,23 @@ Write-Host ("  IA  ambassadors  : " + (Scalar-Ia  "SELECT count(*) FROM ambassad
 Write-Host ("  IA  specialists  : " + (Scalar-Ia  "SELECT count(*) FROM specialist_profiles;"))
 Write-Host ("  IA  reviews      : " + (Scalar-Ia  "SELECT count(*) FROM reviews;"))
 
+# ─── INGESTA DEL INDICE SEMANTICO (marketplace RAG) ─────────────────────────
+# Trae el catalogo real de IA (8082) y lo manda al indice vectorial de AI (8091).
+# Requiere IA + AI levantados (start-all.ps1 / docker compose up) y GEMINI_API_KEY en el AI
+# (los embeddings se generan al indexar). Es best-effort: si el AI no esta arriba, se omite.
+$IaBase = $env:IA_BASE_URL; if (-not $IaBase) { $IaBase = "http://localhost:8082" }
+$AiBase = $env:AI_BASE_URL; if (-not $AiBase) { $AiBase = "http://localhost:8091" }
+Write-Host "`n[8] Ingesta del indice semantico del marketplace:" -ForegroundColor Cyan
+try {
+    $catalog = Invoke-RestMethod -Method Get -Uri "$IaBase/api/marketplace/catalogo-indexable" -TimeoutSec 15
+    $payload = @{ documentos = $catalog } | ConvertTo-Json -Depth 6
+    $res = Invoke-RestMethod -Method Post -Uri "$AiBase/api/v1/ai/marketplace/index" -Body $payload -ContentType "application/json" -TimeoutSec 120
+    Write-Host ("  Indexados        : " + $res.indexed + " items del catalogo (empresas + especialistas)") -ForegroundColor Green
+} catch {
+    Write-Host "  (omitido: AI/IA no disponibles o sin GEMINI_API_KEY). Reindexar luego con:" -ForegroundColor Yellow
+    Write-Host "    Invoke-RestMethod GET  $IaBase/api/marketplace/catalogo-indexable | %% { @{documentos=`$_} | ConvertTo-Json -Depth 6 } | Invoke-RestMethod POST $AiBase/api/v1/ai/marketplace/index -ContentType application/json"
+}
+
 Write-Host "`n=====================================================" -ForegroundColor Green
 Write-Host " Seed demo completado. Credenciales (mismo password por rol):" -ForegroundColor Green
 Write-Host "=====================================================" -ForegroundColor Green

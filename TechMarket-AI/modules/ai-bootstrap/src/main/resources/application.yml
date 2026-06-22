@@ -39,9 +39,16 @@ spring:
         options:
           model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
           temperature: 0.2
+      embedding:
+        # Gemini's OpenAI-compatible embeddings, used by the marketplace semantic index.
+        embeddings-path: /embeddings
+        options:
+          model: ${GEMINI_EMBEDDING_MODEL:text-embedding-004}
     model:
       chat: openai
-      embedding: none
+      # "openai" = Gemini via the OpenAI-compatible endpoint above. The `test` profile overrides
+      # this back to `none` so the offline suite keeps using the zero-vector stub embedding.
+      embedding: openai
       audio:
         speech: none
         transcription: none

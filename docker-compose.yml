@@ -67,7 +67,9 @@ services:
 
   # ----------------------------------------------------------------- IA ----
   ia-postgres:
-    image: postgres:16-alpine
+    # pgvector/pgvector:pg16 = Postgres 16 + the `vector` extension, used by the AI service's
+    # marketplace semantic index (Spring AI PgVectorStore creates the extension + table here).
+    image: pgvector/pgvector:pg16
     container_name: ia-postgres
     environment:
       POSTGRES_DB: TECHMARKET_ia
@@ -117,10 +119,18 @@ services:
       dockerfile: TechMarket-AI/Dockerfile
     image: techmarket-ai:1.0.0-SNAPSHOT
     container_name: ai-service
+    depends_on:
+      ia-postgres:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-    # Gemini API key (free tier). Injected from TechMarket-AI/.env.local (git-ignored);
-    # not baked into the image. Without it, AI calls return an auth error.
+      # Marketplace semantic index (pgvector) lives in the IA Postgres.
+      AI_DB_URL: jdbc:postgresql://ia-postgres:5432/TECHMARKET_ia
+      AI_DB_USER: TECHMARKET_ia_user
+      AI_DB_PASSWORD: TECHMARKET_ia_password
+    # Gemini API key (free tier) — also powers embeddings for semantic search. Injected from
+    # TechMarket-AI/.env.local (git-ignored); not baked into the image. Without it, AI calls
+    # (chat + embeddings) return an auth error.
     env_file:
       - path: TechMarket-AI/.env.local
         required: false

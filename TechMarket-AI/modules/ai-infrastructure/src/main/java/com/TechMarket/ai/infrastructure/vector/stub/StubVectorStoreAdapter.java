@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * empty results for development and testing without requiring embeddings.
  */
 @Component
-@Profile({"dev", "test", "docker"})
+@Profile({"dev", "test"})
 public class StubVectorStoreAdapter implements VectorStorePort {
 
     @Override

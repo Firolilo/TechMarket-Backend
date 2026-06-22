@@ -1,17 +1,21 @@
-# Docker profile for the AI service. No SQL database (DataSource excluded); the LLM is
-# Gemini (inherited from application.yml), so only GEMINI_API_KEY is required. The vector
-# store still uses an in-memory stub until real pgvector RAG is wired.
+# Docker profile for the AI service. LLM + embeddings = Gemini (inherited from application.yml;
+# requires GEMINI_API_KEY). The marketplace semantic index uses REAL pgvector, co-located in the
+# TechMarket-IA Postgres (which must run the pgvector extension: the pgvector/pgvector image).
 server:
   port: ${AI_SERVICE_PORT:8091}
 
 spring:
+  datasource:
+    # pgvector index lives in the IA Postgres (data locality). Override via AI_DB_* if needed.
+    url: ${AI_DB_URL:jdbc:postgresql://ia-postgres:5432/TECHMARKET_ia}
+    username: ${AI_DB_USER:postgres}
+    password: ${AI_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
   autoconfigure:
     exclude:
-      # No datasource needed -> keeps health green without a database.
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+      # Audio speech off; DataSource + PgVector are now ENABLED for real semantic search.
       - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
-  # LLM provider (Gemini) is inherited from application.yml; requires GEMINI_API_KEY.
+  # LLM + embeddings provider (Gemini) inherited from application.yml; requires GEMINI_API_KEY.
 
 springdoc:
   api-docs:

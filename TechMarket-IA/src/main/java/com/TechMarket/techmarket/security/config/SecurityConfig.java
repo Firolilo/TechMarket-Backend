@@ -52,6 +52,11 @@ public class SecurityConfig {
                                                 HttpMethod.POST,
                                                 "/api/ambassadors/referral-links/*/track-click")
                                         .permitAll()
+                                        // Feed read-only del catálogo público para la ingesta del
+                                        // índice semántico (marketplace RAG) en TechMarket-AI.
+                                        .requestMatchers(
+                                                HttpMethod.GET, "/api/marketplace/catalogo-indexable")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",

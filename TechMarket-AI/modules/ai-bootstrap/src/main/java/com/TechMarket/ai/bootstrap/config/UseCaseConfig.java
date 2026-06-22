@@ -4,10 +4,12 @@ import com.techmarket.ai.application.port.in.AmbassadorAiUseCase;
 import com.techmarket.ai.application.port.in.CompletePromptUseCase;
 import com.techmarket.ai.application.port.in.EmpresaAiUseCase;
 import com.techmarket.ai.application.port.in.EspecialistaAiUseCase;
+import com.techmarket.ai.application.port.in.MarketplaceSearchUseCase;
 import com.techmarket.ai.application.port.in.RagQaUseCase;
 import com.techmarket.ai.application.port.out.AuditPort;
 import com.techmarket.ai.application.port.out.LlmChatPort;
 import com.techmarket.ai.application.port.out.LlmPort;
+import com.techmarket.ai.application.port.out.MarketplaceIndexPort;
 import com.techmarket.ai.application.port.out.StructuredLlmPort;
 import com.techmarket.ai.application.port.out.TenantContextPort;
 import com.techmarket.ai.application.port.out.VectorStorePort;
@@ -15,6 +17,7 @@ import com.techmarket.ai.application.service.AmbassadorAiService;
 import com.techmarket.ai.application.service.CompletePromptService;
 import com.techmarket.ai.application.service.EmpresaAiService;
 import com.techmarket.ai.application.service.EspecialistaAiService;
+import com.techmarket.ai.application.service.MarketplaceSearchService;
 import com.techmarket.ai.application.service.RagQaService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,5 +52,11 @@ public class UseCaseConfig {
     @Bean
     public EspecialistaAiUseCase especialistaAiUseCase(StructuredLlmPort llm, AuditPort audit) {
         return new EspecialistaAiService(llm, audit);
+    }
+
+    @Bean
+    public MarketplaceSearchUseCase marketplaceSearchUseCase(
+            MarketplaceIndexPort index, AuditPort audit) {
+        return new MarketplaceSearchService(index, audit);
     }
 }
