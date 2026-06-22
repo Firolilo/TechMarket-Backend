@@ -82,6 +82,9 @@ public class AmbassadorPortalController {
 
     private static final String AMBASSADOR_CHAT_TYPE = "AMBASSADOR_CHAT";
 
+    /** Comisión (Bs) que gana el embajador cuando un referido se convierte (empresa registrada). */
+    private static final String CONVERSION_COMMISSION_AMOUNT = "150.00";
+
     private final AmbassadorSpringDataRepository ambassadorRepository;
     private final AmbassadorReferralSpringDataRepository referralRepository;
     private final AmbassadorCommissionSpringDataRepository commissionRepository;
@@ -528,6 +531,22 @@ public class AmbassadorPortalController {
 
         createActivity(
                 saved.getId(), "registro", "Empresa registrada mediante link de referido", now);
+
+        // La conversión real del referido (empresa registrada vía link) genera la comisión del
+        // embajador. Es el único punto donde se crean comisiones: derivan de conversiones reales,
+        // no de datos sembrados.
+        AmbassadorCommissionJpaEntity commission = new AmbassadorCommissionJpaEntity();
+        commission.setId(UUID.randomUUID());
+        commission.setAmbassadorId(ambassadorId);
+        commission.setAmbassadorReferralId(saved.getId());
+        commission.setAttributionType("referral_link");
+        commission.setEventType("conversion");
+        commission.setReferenceType("referral");
+        commission.setReferenceId(saved.getId());
+        commission.setAmount(CONVERSION_COMMISSION_AMOUNT);
+        commission.setStatus("pendiente");
+        commission.setGeneratedAt(now);
+        commissionRepository.save(commission);
 
         if (link != null) {
             link.setConversions(link.getConversions() + 1);
@@ -1984,14 +2003,10 @@ public class AmbassadorPortalController {
             return new ReferralAggregate(BigDecimal.ZERO, BigDecimal.ZERO, 0);
         }
         UUID tenantId = referral.getTenantId();
-        BigDecimal sales =
-                queryBigDecimal(
-                        "SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) "
-                                + "FROM client_order_items oi "
-                                + "JOIN client_orders o ON o.id = oi.order_id "
-                                + "JOIN listings l ON l.id = oi.listing_id "
-                                + "WHERE l.tenant_id = ? AND LOWER(COALESCE(o.status, '')) NOT IN ('cancelado', 'cancelled')",
-                        tenantId);
+        // TechMarket es plataforma de conexión: no procesa ventas (el carrito/órdenes se eliminó en
+        // V99). El valor del referido para el embajador se mide por reputación y comisiones, no por
+        // ventas, así que "ventasTotales" queda en cero.
+        BigDecimal sales = BigDecimal.ZERO;
         BigDecimal rating =
                 queryBigDecimal(
                                 "SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE tenant_id = ?",

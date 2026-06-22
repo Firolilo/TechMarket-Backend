@@ -10,13 +10,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistReviewJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceAppointmentJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.ClientAppointmentSummaryProjection;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistReviewSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceAppointmentSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +44,7 @@ class ClientAppointmentControllerTest {
     @MockBean private ClientChatSpringDataRepository ticketRepository;
     @MockBean private SpecialistServiceAppointmentSpringDataRepository appointmentRepository;
     @MockBean private UserSpringDataRepository userRepository;
+    @MockBean private SpecialistReviewSpringDataRepository reviewRepository;
 
     // Requerido para construir los filtros servlet que @WebMvcTest registra.
     @MockBean private JwtTokenProvider jwtTokenProvider;
@@ -122,6 +127,60 @@ class ClientAppointmentControllerTest {
                 .andExpect(jsonPath("$[0].fecha").value("2026-07-01"))
                 .andExpect(jsonPath("$[0].hora").value("15:30"))
                 .andExpect(jsonPath("$[0].estado").value("aceptada"));
+    }
+
+    @Test
+    void review_shouldPersistRatingLinkedToAppointmentTicket() throws Exception {
+        UUID appointmentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        UUID ticketId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        SpecialistServiceAppointmentJpaEntity appt = new SpecialistServiceAppointmentJpaEntity();
+        appt.setId(appointmentId);
+        appt.setTicketId(ticketId);
+        ClientChatJpaEntity ticket = new ClientChatJpaEntity();
+        ticket.setId(ticketId);
+        ticket.setCustomerUserId(CLIENT_ID);
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(appt));
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+        when(reviewRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(
+                        post("/api/clients/appointments/CITA-" + appointmentId + "/review")
+                                .header("X-User-Id", CLIENT_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"calificacion\":5,\"comentario\":\"Excelente trabajo\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", startsWith("REV-")));
+
+        ArgumentCaptor<SpecialistReviewJpaEntity> captor =
+                ArgumentCaptor.forClass(SpecialistReviewJpaEntity.class);
+        verify(reviewRepository).save(captor.capture());
+        SpecialistReviewJpaEntity saved = captor.getValue();
+        org.junit.jupiter.api.Assertions.assertEquals(ticketId, saved.getTicketId());
+        org.junit.jupiter.api.Assertions.assertEquals(CLIENT_ID, saved.getUserId());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                0, new BigDecimal("5").compareTo(saved.getRating()));
+    }
+
+    @Test
+    void review_shouldRejectAppointmentOfAnotherClient() throws Exception {
+        UUID appointmentId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        UUID ticketId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        SpecialistServiceAppointmentJpaEntity appt = new SpecialistServiceAppointmentJpaEntity();
+        appt.setId(appointmentId);
+        appt.setTicketId(ticketId);
+        ClientChatJpaEntity ticket = new ClientChatJpaEntity();
+        ticket.setId(ticketId);
+        ticket.setCustomerUserId(SPECIALIST_ID); // otro usuario, no el cliente
+        when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(appt));
+        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(ticket));
+
+        mockMvc.perform(
+                        post("/api/clients/appointments/CITA-" + appointmentId + "/review")
+                                .header("X-User-Id", CLIENT_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"calificacion\":4}"))
+                .andExpect(status().isNotFound());
     }
 
     private ClientAppointmentSummaryProjection appointment(String status, String startAt) {

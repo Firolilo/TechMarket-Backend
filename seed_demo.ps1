@@ -355,7 +355,7 @@ VALUES (gen_random_uuid(),NULL,'$Uuid','COMMUNITY','Mi experiencia comprando en 
 ON CONFLICT DO NOTHING;
 
 INSERT INTO notifications (id, user_id, notification_type, title, message, channel, is_read, sent_at, link_url) VALUES
- (gen_random_uuid(),'$Uuid','ORDER_DELIVERED','Pedido entregado','Tu pedido fue entregado. Deja tu resena!','IN_APP',TRUE,NOW()-INTERVAL '15 days','/cliente/pedidos/$oid'),
+ (gen_random_uuid(),'$Uuid','SPECIALIST','Especialistas disponibles','Encontra tecnicos verificados y agenda una cita para tu proxima reparacion.','IN_APP',TRUE,NOW()-INTERVAL '15 days','/cliente/servicios'),
  (gen_random_uuid(),'$Uuid','COMMUNITY','Nueva actividad en tu comunidad','Hay nuevas publicaciones en Hardware Bolivia.','IN_APP',FALSE,NOW()-INTERVAL '2 days','/cliente/comunidades')
 ON CONFLICT DO NOTHING;
 "@

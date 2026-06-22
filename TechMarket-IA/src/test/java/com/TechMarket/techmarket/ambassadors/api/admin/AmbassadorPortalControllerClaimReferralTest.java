@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorCommissionJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorReferralJpaEntity;
 import com.techmarket.techmarket.ambassadors.infrastructure.persistence.jpa.entity.AmbassadorReferralLinkJpaEntity;
@@ -114,6 +115,14 @@ class AmbassadorPortalControllerClaimReferralTest {
         assertThat(captor.getValue().getAmbassadorId()).isEqualTo(ambassadorId);
         assertThat(captor.getValue().getStatus()).isEqualTo("activo");
         verify(referralLinkRepository).save(link);
+
+        // La conversión real del referido genera la comisión del embajador.
+        ArgumentCaptor<AmbassadorCommissionJpaEntity> commissionCaptor =
+                ArgumentCaptor.forClass(AmbassadorCommissionJpaEntity.class);
+        verify(commissionRepository).save(commissionCaptor.capture());
+        assertThat(commissionCaptor.getValue().getAmbassadorId()).isEqualTo(ambassadorId);
+        assertThat(commissionCaptor.getValue().getEventType()).isEqualTo("conversion");
+        assertThat(commissionCaptor.getValue().getAmount()).isEqualTo("150.00");
     }
 
     @Test

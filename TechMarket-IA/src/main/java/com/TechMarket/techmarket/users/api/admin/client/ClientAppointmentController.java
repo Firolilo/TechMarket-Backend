@@ -1,15 +1,20 @@
 package com.techmarket.techmarket.users.api.admin.client;
 
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistReviewJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.entity.SpecialistServiceAppointmentJpaEntity;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.ClientAppointmentSummaryProjection;
+import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistReviewSpringDataRepository;
 import com.techmarket.techmarket.specialists.infrastructure.persistence.jpa.repository.SpecialistServiceAppointmentSpringDataRepository;
 import com.techmarket.techmarket.users.api.admin.client.request.CreateAppointmentRequest;
+import com.techmarket.techmarket.users.api.admin.client.request.UpsertReviewRequest;
 import com.techmarket.techmarket.users.api.admin.client.response.ClientAppointmentResponse;
 import com.techmarket.techmarket.users.api.admin.client.response.CreateAppointmentResponse;
+import com.techmarket.techmarket.users.api.admin.client.response.CreateReviewResponse;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.ClientChatJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientChatSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -21,6 +26,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -46,14 +52,17 @@ public class ClientAppointmentController {
     private final ClientChatSpringDataRepository ticketRepository;
     private final SpecialistServiceAppointmentSpringDataRepository appointmentRepository;
     private final UserSpringDataRepository userRepository;
+    private final SpecialistReviewSpringDataRepository reviewRepository;
 
     public ClientAppointmentController(
             ClientChatSpringDataRepository ticketRepository,
             SpecialistServiceAppointmentSpringDataRepository appointmentRepository,
-            UserSpringDataRepository userRepository) {
+            UserSpringDataRepository userRepository,
+            SpecialistReviewSpringDataRepository reviewRepository) {
         this.ticketRepository = ticketRepository;
         this.appointmentRepository = appointmentRepository;
         this.userRepository = userRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     @GetMapping
@@ -109,6 +118,46 @@ public class ClientAppointmentController {
                 "CITA-" + saved.getId(),
                 PENDING_STATUS,
                 "Cita solicitada, esperando al especialista");
+    }
+
+    /**
+     * El cliente califica al especialista de una cita. La reseña entra en la tabla {@code reviews}
+     * ligada al ticket de la cita, así que el promedio de reputación del especialista (que se
+     * calcula sobre esas reseñas) se actualiza con calificaciones reales.
+     */
+    @PostMapping("/{appointmentId}/review")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
+    public CreateReviewResponse reviewAppointment(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @PathVariable String appointmentId,
+            @Valid @RequestBody UpsertReviewRequest request) {
+        UUID currentUserId = parseUserId(userId);
+        UUID id = parsePrefixedUuid(appointmentId, "CITA-");
+        SpecialistServiceAppointmentJpaEntity appointment =
+                appointmentRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Appointment not found"));
+        UUID ticketId = appointment.getTicketId();
+        ClientChatJpaEntity ticket =
+                ticketId == null ? null : ticketRepository.findById(ticketId).orElse(null);
+        if (ticket == null || !currentUserId.equals(ticket.getCustomerUserId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found");
+        }
+
+        SpecialistReviewJpaEntity review = new SpecialistReviewJpaEntity();
+        review.setId(UUID.randomUUID());
+        review.setTicketId(ticketId);
+        review.setUserId(currentUserId);
+        review.setRating(BigDecimal.valueOf(request.calificacion()));
+        review.setComment(request.comentario());
+        review.setCreatedAt(OffsetDateTime.now());
+        SpecialistReviewJpaEntity saved = reviewRepository.save(review);
+        return new CreateReviewResponse(
+                "REV-" + saved.getId(), "Reseña publicada, gracias por calificar al especialista");
     }
 
     private ClientAppointmentResponse toResponse(ClientAppointmentSummaryProjection projection) {
