@@ -59,6 +59,10 @@ spring:
         initialize-schema: ${PGVECTOR_INIT_SCHEMA:true}
         index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
         distance-type: ${PGVECTOR_DISTANCE:COSINE_DISTANCE}
+        # Fijar la dimensión (Gemini text-embedding-004 = 768) evita que PgVectorStore sondee el
+        # modelo de embeddings en el arranque (lo que fallaría con GEMINI_API_KEY vacío). Así el
+        # servicio levanta aunque la key aún no esté puesta; la ingesta/búsqueda real ya requiere key.
+        dimensions: ${PGVECTOR_DIMENSIONS:768}
 
 server:
   port: ${AI_SERVICE_PORT:8091}

@@ -7,12 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Component;
 
-/** Vector store adapter via Spring AI PgVector. Mandatory metadata filter: tenantId + namespace. */
-@Component
-@ConditionalOnBean(VectorStore.class)
+/**
+ * Vector store adapter via Spring AI PgVector. Mandatory metadata filter: tenantId + namespace.
+ * Wired in {@code VectorStoreConfig} only when a Spring AI {@code VectorStore} bean exists.
+ */
 public class PgVectorStoreAdapter implements VectorStorePort {
 
     private final VectorStore vectorStore;
