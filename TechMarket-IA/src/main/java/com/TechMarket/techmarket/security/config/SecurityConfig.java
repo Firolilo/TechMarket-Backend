@@ -58,6 +58,10 @@ public class SecurityConfig {
                                                 HttpMethod.GET,
                                                 "/api/marketplace/catalogo-indexable")
                                         .permitAll()
+                                        // Imagenes subidas servidas como estaticos (las cargan los
+                                        // <img> del front sin token).
+                                        .requestMatchers(HttpMethod.GET, "/uploads/**")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",

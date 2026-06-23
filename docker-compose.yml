@@ -109,6 +109,12 @@ services:
       MANAGEMENT_HEALTH_MONGO_ENABLED: "false"
       # Base URL del frontend para construir los links de referido del embajador (sin dominio: localhost).
       TECHMARKET_FRONTEND_BASE_URL: "http://localhost:3000"
+      # Imagenes subidas: se guardan en /opt/uploads (volumen persistente) y se sirven en /uploads/**.
+      # La base publica fija la URL absoluta que el navegador usara para cargarlas.
+      APP_UPLOADS_DIR: /opt/uploads
+      APP_UPLOADS_PUBLIC_BASE_URL: "http://localhost:8082"
+    volumes:
+      - ia-uploads-data:/opt/uploads
     ports:
       - "8082:8082"
 
@@ -141,3 +147,4 @@ volumes:
   iam-postgres-data:
   iam-redis-data:
   ia-postgres-data:
+  ia-uploads-data:

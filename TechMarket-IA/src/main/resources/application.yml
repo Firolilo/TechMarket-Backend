@@ -3,6 +3,10 @@ spring:
     name: TECHMARKET-ia
   profiles:
     default: dev
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:10MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:12MB}
 
 server:
   port: 8082
@@ -20,6 +24,13 @@ springdoc:
     path: /swagger-ui.html
 
 app:
+  # Subida de imagenes: se guardan en disco bajo este directorio y se sirven en /uploads/**.
+  # En Docker conviene montar un volumen en esta ruta para que persistan entre reinicios.
+  uploads:
+    dir: ${APP_UPLOADS_DIR:uploads}
+    # Base publica para construir la URL absoluta de la imagen. Si queda vacia, se deriva del
+    # request entrante (correcto cuando el navegador llama directo a localhost:8082).
+    public-base-url: ${APP_UPLOADS_PUBLIC_BASE_URL:}
   jwt:
     secret: ${JWT_SECRET:${IAM_JWT_SECRET:TechMarket2024SecretKeyForJWTMustBe256BitsMinimumLength!!}}
     issuer: ${JWT_ISSUER:TECHMARKET-ia}

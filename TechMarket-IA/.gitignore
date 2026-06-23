@@ -6,3 +6,6 @@ Thumbs.db
 
 # Variables de entorno — nunca commitear
 .env
+
+# Imagenes subidas en runtime (app.uploads.dir por defecto)
+/uploads/

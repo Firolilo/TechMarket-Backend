@@ -193,10 +193,10 @@ INSERT INTO listings (id, tenant_id, category_id, brand_id, listing_type, title,
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO listing_images (id, listing_id, image_url, display_order, is_primary) VALUES
- (gen_random_uuid(),'${L}1','https://cdn.techmarket.local/l/$Idx-1.jpg','1',TRUE),
- (gen_random_uuid(),'${L}2','https://cdn.techmarket.local/l/$Idx-2.jpg','1',TRUE),
- (gen_random_uuid(),'${L}3','https://cdn.techmarket.local/l/$Idx-3.jpg','1',TRUE),
- (gen_random_uuid(),'${L}4','https://cdn.techmarket.local/l/$Idx-4.jpg','1',TRUE)
+ (gen_random_uuid(),'${L}1','/productos/laptop-pro-14.jpg','1',TRUE),
+ (gen_random_uuid(),'${L}2','/productos/teclado-tkl.jpg','1',TRUE),
+ (gen_random_uuid(),'${L}3','/productos/kit-limpieza-pc.jpg','1',TRUE),
+ (gen_random_uuid(),'${L}4','/productos/kit-limpieza-pc.jpg','1',TRUE)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO listing_specifications (id, listing_id, attribute_name, attribute_value, unit, is_normalized) VALUES
@@ -361,6 +361,133 @@ ON CONFLICT DO NOTHING;
 "@
 }
 
+# ─── DEMO SHOWCASE: catalogo amplio + citas + reputacion + vinculos embajador ─
+# Cuelga de los usuarios ya sembrados (empresa1, especialista1, 3 clientes) para que la demo
+# luzca: muchas publicaciones (material para la IA y la busqueda semantica), citas en todos los
+# estados del ciclo, y resenas reales que generan reputacion de empresa y de especialista.
+function New-DemoShowcase {
+    param([string]$Author,[string]$Cli1,[string]$Cli2,[string]$Cli3,[string]$Esp1)
+    $T1   = "5ee00000-0000-0000-0000-000000000001"   # Andes Tech Store (empresa estrella)
+    $T2   = "5ee00000-0000-0000-0000-000000000002"   # ByteLab Store
+    $B1   = "52e00000-0000-0000-0001-000000000001"   # sucursal central empresa 1
+    $CLAP = "30000000-0000-0000-0000-000000000101"   # Laptops
+    $CCMP = "30000000-0000-0000-0000-000000000102"   # Componentes
+    $CPER = "30000000-0000-0000-0000-000000000103"   # Perifericos
+    $CSRV = "30000000-0000-0000-0000-000000000106"   # Servicios
+    $BLEN = "40000000-0000-0000-0000-000000000101"
+    $BASU = "40000000-0000-0000-0000-000000000102"
+    $BLOG = "40000000-0000-0000-0000-000000000103"
+    $BTPL = "40000000-0000-0000-0000-000000000104"
+    $BKIN = "40000000-0000-0000-0000-000000000105"
+
+    Write-Host "  Catalogo ampliado de Andes Tech Store (+10 publicaciones)..."
+    Invoke-Ia @"
+INSERT INTO listings (id, tenant_id, category_id, brand_id, listing_type, title, description, base_price, currency, status, is_visible, internal_sku, created_at, updated_at) VALUES
+ ('6ee00000-0000-0000-0001-000000000005','$T1','$CLAP','$BASU','PRODUCT','Asus ROG Strix G16 (gaming)','Laptop gaming 16 pulgadas 165Hz, Core i7, RTX 4060, 16GB RAM, SSD 1TB. Para juegos exigentes y edicion de video.',12800.00,'BOB','ACTIVE',TRUE,'SKU-1-ROG16',NOW()-INTERVAL '7 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000006','$T1','$CLAP','$BLEN','PRODUCT','Lenovo Yoga Slim 7 (ultrabook)','Ultrabook liviana de 14 pulgadas para oficina y viajes, Core i5, 16GB, SSD 512GB, hasta 12h de bateria.',8200.00,'BOB','ACTIVE',TRUE,'SKU-1-YOGA7',NOW()-INTERVAL '6 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000007','$T1','$CCMP','$BKIN','PRODUCT','Kingston NV2 SSD NVMe 1TB','Disco solido NVMe Gen4 de 1TB, lecturas hasta 3500 MB/s. Acelera el arranque y la carga de programas.',640.00,'BOB','ACTIVE',TRUE,'SKU-1-NV21TB',NOW()-INTERVAL '5 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000008','$T1','$CPER','$BASU','PRODUCT','Monitor Asus 27 4K UHD','Monitor de 27 pulgadas 4K UHD con panel IPS, ideal para diseno, fotografia y multitarea con colores precisos.',2950.00,'BOB','ACTIVE',TRUE,'SKU-1-MON27',NOW()-INTERVAL '4 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000009','$T1','$CPER','$BLOG','PRODUCT','Teclado mecanico Logitech','Teclado mecanico retroiluminado con switches rojos, comodo para escribir y jugar largas jornadas.',520.00,'BOB','ACTIVE',TRUE,'SKU-1-KBMEC',NOW()-INTERVAL '3 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000010','$T1','$CPER','$BTPL','PRODUCT','TP-Link Deco WiFi Mesh','Sistema WiFi mesh de doble banda para cobertura total del hogar u oficina sin zonas muertas.',980.00,'BOB','ACTIVE',TRUE,'SKU-1-MESH',NOW()-INTERVAL '3 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000011','$T1','$CPER',NULL,'PRODUCT','Impresora multifuncional tinta continua','Impresora multifuncional con sistema de tinta continua, bajo costo por pagina, ideal para negocios.',1450.00,'BOB','ACTIVE',TRUE,'SKU-1-IMPMF',NOW()-INTERVAL '2 weeks',NOW()),
+ ('6ee00000-0000-0000-0001-000000000012','$T1','$CCMP',NULL,'PRODUCT','NAS 2 bahias para respaldo','Servidor NAS de 2 bahias para respaldo automatico y acceso remoto a tus archivos en red.',2100.00,'BOB','ACTIVE',TRUE,'SKU-1-NAS2',NOW()-INTERVAL '10 days',NOW()),
+ ('6ee00000-0000-0000-0001-000000000013','$T1','$CSRV',NULL,'SERVICE','Instalacion de camaras de seguridad','Servicio de instalacion de camaras de seguridad y configuracion de acceso remoto desde el celular.',350.00,'BOB','ACTIVE',TRUE,'SKU-1-CAMS',NOW()-INTERVAL '8 days',NOW()),
+ ('6ee00000-0000-0000-0001-000000000014','$T1','$CSRV',NULL,'SERVICE','Recuperacion de datos','Servicio de recuperacion de datos de discos danados, SSD y memorias con diagnostico inicial gratuito.',280.00,'BOB','ACTIVE',TRUE,'SKU-1-RECUP',NOW()-INTERVAL '5 days',NOW())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO listing_images (id, listing_id, image_url, display_order, is_primary)
+SELECT gen_random_uuid(), l.id,
+  CASE
+    WHEN l.listing_type='SERVICE'                            THEN '/productos/kit-limpieza-pc.jpg'
+    WHEN l.category_id='$CLAP'                               THEN '/productos/laptop-pro-14.jpg'
+    WHEN l.id='6ee00000-0000-0000-0001-000000000008'        THEN '/productos/monitor-ultrawide-34.jpg'
+    WHEN l.id='6ee00000-0000-0000-0001-000000000009'        THEN '/productos/teclado-tkl.jpg'
+    WHEN l.category_id='$CCMP'                               THEN '/productos/kit-limpieza-pc.jpg'
+    ELSE '/productos/teclado-tkl.jpg'
+  END,
+  '1', TRUE
+FROM listings l WHERE l.tenant_id='$T1' AND l.id LIKE '6ee00000-0000-0000-0001-0000000000%'
+  AND NOT EXISTS (SELECT 1 FROM listing_images i WHERE i.listing_id=l.id);
+
+INSERT INTO listing_specifications (id, listing_id, attribute_name, attribute_value, unit, is_normalized) VALUES
+ (gen_random_uuid(),'6ee00000-0000-0000-0001-000000000005','Tarjeta grafica','NVIDIA RTX 4060',NULL,TRUE),
+ (gen_random_uuid(),'6ee00000-0000-0000-0001-000000000005','Tasa de refresco','165','Hz',TRUE),
+ (gen_random_uuid(),'6ee00000-0000-0000-0001-000000000007','Capacidad','1','TB',TRUE),
+ (gen_random_uuid(),'6ee00000-0000-0000-0001-000000000008','Resolucion','3840x2160',NULL,TRUE)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO branch_listings (id, branch_id, listing_id, status, is_available, created_at)
+SELECT gen_random_uuid(), '$B1', l.id, 'ACTIVE', TRUE, NOW()
+FROM listings l WHERE l.tenant_id='$T1' AND l.id LIKE '6ee00000-0000-0000-0001-0000000000%'
+  AND NOT EXISTS (SELECT 1 FROM branch_listings bl WHERE bl.branch_id='$B1' AND bl.listing_id=l.id);
+
+INSERT INTO branch_inventory (id, listing_id, branch_id, stock_available, stock_reserved, minimum_stock, updated_at)
+SELECT gen_random_uuid(), l.id, '$B1', 8, 1, 2, NOW()
+FROM listings l WHERE l.tenant_id='$T1' AND l.listing_type='PRODUCT' AND l.id LIKE '6ee00000-0000-0000-0001-0000000000%'
+  AND NOT EXISTS (SELECT 1 FROM branch_inventory bi WHERE bi.listing_id=l.id AND bi.branch_id='$B1');
+
+INSERT INTO service_details (id, listing_id, estimated_duration_minutes, requires_diagnosis, offers_on_site_service, service_area, terms_and_conditions)
+SELECT gen_random_uuid(), l.id, 120, 'true','true','La Paz','Incluye diagnostico inicial. Repuestos aparte.'
+FROM listings l WHERE l.tenant_id='$T1' AND l.id IN ('6ee00000-0000-0000-0001-000000000013','6ee00000-0000-0000-0001-000000000014')
+  AND NOT EXISTS (SELECT 1 FROM service_details sd WHERE sd.listing_id=l.id);
+"@
+
+    Write-Host "  Publicaciones (feed) y resenas de productos..."
+    Invoke-Ia @"
+INSERT INTO feed_posts (id, tenant_id, author_user_id, post_type, title, content, status, created_at) VALUES
+ ('7ee00000-0000-0000-0001-000000000001','$T1','$Author','ANNOUNCEMENT','Llegaron las nuevas laptops gaming','Stock disponible de la linea ROG y de las ultrabooks Yoga. Pasa por la tienda o consulta por chat.','PUBLISHED',NOW()-INTERVAL '6 days'),
+ ('7ee00000-0000-0000-0001-000000000002','$T1','$Author','PROMOTION','Semana del almacenamiento','SSD NVMe y NAS con descuento. Mejora la velocidad de tu equipo y respalda tus datos sin complicaciones.','PUBLISHED',NOW()-INTERVAL '4 days'),
+ ('7ee00000-0000-0000-0001-000000000003','$T1','$Author','TIP','Como elegir un monitor para diseno','Busca panel IPS, buena cobertura de color y resolucion 4K si trabajas con fotografia o video.','PUBLISHED',NOW()-INTERVAL '3 days'),
+ ('7ee00000-0000-0000-0001-000000000004','$T1','$Author','TIP','Cada cuanto hacer mantenimiento','Recomendamos limpieza y cambio de pasta termica una vez al ano para evitar el sobrecalentamiento.','PUBLISHED',NOW()-INTERVAL '2 days'),
+ ('7ee00000-0000-0000-0001-000000000005','$T1','$Author','PROMOTION','Servicio de instalacion de camaras','Asegura tu negocio con camaras y acceso remoto. Agenda una visita tecnica con nuestro equipo.','PUBLISHED',NOW()-INTERVAL '1 day')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO reviews (id, tenant_id, user_id, listing_id, rating, comment, moderation_status, created_at) VALUES
+ ('7dd00000-0000-0000-0001-000000000001','$T1','$Cli1','6ee00000-0000-0000-0001-000000000005',5.00,'Excelente laptop gaming, llego rapido y bien embalada.','APPROVED',NOW()-INTERVAL '10 days'),
+ ('7dd00000-0000-0000-0001-000000000002','$T1','$Cli2','6ee00000-0000-0000-0001-000000000006',5.00,'La ultrabook es liviana y la bateria rinde todo el dia.','APPROVED',NOW()-INTERVAL '9 days'),
+ ('7dd00000-0000-0000-0001-000000000003','$T1','$Cli3','6ee00000-0000-0000-0001-000000000007',4.00,'Buen SSD, noto el equipo mucho mas rapido. Recomendado.','APPROVED',NOW()-INTERVAL '8 days'),
+ ('7dd00000-0000-0000-0001-000000000004','$T1','$Cli1','6ee00000-0000-0000-0001-000000000008',5.00,'El monitor 4K se ve increible para editar fotos.','APPROVED',NOW()-INTERVAL '6 days'),
+ ('7dd00000-0000-0000-0001-000000000005','$T1','$Cli2','6ee00000-0000-0000-0001-000000000010',4.00,'El mesh mejoro la senal de WiFi en toda la casa.','APPROVED',NOW()-INTERVAL '4 days'),
+ ('7dd00000-0000-0000-0001-000000000006','$T1','$Cli3','6ee00000-0000-0000-0001-000000000011',3.00,'La impresora funciona bien pero la instalacion tomo tiempo.','APPROVED',NOW()-INTERVAL '2 days'),
+ ('7dd00000-0000-0000-0002-000000000001','$T2','$Cli2','6ee00000-0000-0000-0002-000000000001',2.00,'El equipo llego con demora y con poca informacion de seguimiento.','APPROVED',NOW()-INTERVAL '12 days'),
+ ('7dd00000-0000-0000-0002-000000000002','$T2','$Cli3','6ee00000-0000-0000-0002-000000000002',3.00,'El producto esta correcto pero la atencion puede mejorar.','APPROVED',NOW()-INTERVAL '7 days')
+ON CONFLICT (id) DO NOTHING;
+"@
+
+    Write-Host "  Citas (pendiente/aceptada/completada) cliente <-> especialista + resenas..."
+    Invoke-Ia @"
+INSERT INTO tickets (id, ticket_code, tenant_id, customer_user_id, assigned_technician_user_id, ticket_type, subject, description, priority, status, opened_at, created_at) VALUES
+ ('7cc00000-0000-0000-0000-000000000001','APT-0001',NULL,'$Cli1','$Esp1','APPOINTMENT','Reparacion de laptop','La laptop se apaga sola y se calienta demasiado.','alta','pendiente',NOW()-INTERVAL '2 days',NOW()-INTERVAL '2 days'),
+ ('7cc00000-0000-0000-0000-000000000002','APT-0002',NULL,'$Cli1','$Esp1','APPOINTMENT','Configuracion de redes','Mejorar la cobertura de WiFi en una oficina pequena.','media','aceptada',NOW()-INTERVAL '5 days',NOW()-INTERVAL '5 days'),
+ ('7cc00000-0000-0000-0000-000000000003','APT-0003',NULL,'$Cli1','$Esp1','APPOINTMENT','Mantenimiento preventivo','Limpieza interna y cambio de pasta termica.','media','completada',NOW()-INTERVAL '20 days',NOW()-INTERVAL '20 days'),
+ ('7cc00000-0000-0000-0000-000000000004','APT-0004',NULL,'$Cli1','$Esp1','APPOINTMENT','Formateo e instalacion','Formateo con Windows y programas esenciales.','baja','completada',NOW()-INTERVAL '30 days',NOW()-INTERVAL '30 days')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO service_appointments (id, ticket_id, assigned_technician_user_id, start_at, end_at, location, status, notes) VALUES
+ ('7aa00000-0000-0000-0000-000000000001','7cc00000-0000-0000-0000-000000000001','$Esp1',NOW()+INTERVAL '2 days',NULL,'Domicilio - La Paz','pendiente','Cliente disponible por la tarde.'),
+ ('7aa00000-0000-0000-0000-000000000002','7cc00000-0000-0000-0000-000000000002','$Esp1',NOW()+INTERVAL '1 day',NULL,'Oficina - La Paz','aceptada','Visita confirmada con el cliente.'),
+ ('7aa00000-0000-0000-0000-000000000003','7cc00000-0000-0000-0000-000000000003','$Esp1',NOW()-INTERVAL '15 days',NULL,'Domicilio - La Paz','completada','Trabajo finalizado y validado por el cliente.'),
+ ('7aa00000-0000-0000-0000-000000000004','7cc00000-0000-0000-0000-000000000004','$Esp1',NOW()-INTERVAL '25 days',NULL,'Remoto','completada','Equipo entregado y funcionando.')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO reviews (id, ticket_id, user_id, rating, comment, moderation_status, created_at) VALUES
+ ('7bb00000-0000-0000-0000-000000000003','7cc00000-0000-0000-0000-000000000003','$Cli1',5.00,'Excelente trabajo, dejo la laptop como nueva y explico todo.','APPROVED',NOW()-INTERVAL '14 days'),
+ ('7bb00000-0000-0000-0000-000000000004','7cc00000-0000-0000-0000-000000000004','$Cli1',4.00,'Buen servicio y muy rapido. Recomendado.','APPROVED',NOW()-INTERVAL '24 days')
+ON CONFLICT (id) DO NOTHING;
+"@
+
+    Write-Host "  Vinculo embajador -> empresa referida (reputacion real) + recalculo de ratings..."
+    Invoke-Ia @"
+UPDATE ambassador_referrals SET tenant_id='$T1' WHERE id='aae00000-0000-0000-0010-000000000001';
+UPDATE ambassador_referrals SET tenant_id='$T2' WHERE id='aae00000-0000-0000-0020-000000000001';
+
+UPDATE tenant_profiles tp SET
+  reviews_count  = (SELECT COUNT(*)            FROM reviews r WHERE r.tenant_id = tp.tenant_id),
+  rating_average = COALESCE((SELECT ROUND(AVG(r.rating),1) FROM reviews r WHERE r.tenant_id = tp.tenant_id), tp.rating_average)
+WHERE EXISTS (SELECT 1 FROM reviews r WHERE r.tenant_id = tp.tenant_id);
+"@
+}
+
 # ─── ORQUESTACION ────────────────────────────────────────────────────────────
 Write-Host "`n[3] Sembrando EMPRESAS..." -ForegroundColor Cyan
 $e1 = New-User -Email "empresa.test@techmarket.com"  -Pass "Empresa123!" -Type "empresa" -Role "empresa" -First "Andes Tech Store" -Last "Bolivia" -Phone "+591 70100201" -City "La Paz"
@@ -388,6 +515,9 @@ New-Cliente -Uuid $c2 -Idx 2 -City "Santa Cruz"
 $c3 = New-User -Email "cliente3.test@techmarket.com" -Pass "Cliente123!" -Type "cliente" -Role "cliente" -First "Camila" -Last "Vargas" -Phone "+59171234569" -City "Cochabamba"
 New-Cliente -Uuid $c3 -Idx 3 -City "Cochabamba"
 
+Write-Host "`n[6.5] Sembrando DEMO SHOWCASE (catalogo amplio, citas y reputacion)..." -ForegroundColor Cyan
+New-DemoShowcase -Author $e1 -Cli1 $c1 -Cli2 $c2 -Cli3 $c3 -Esp1 $s1
+
 # Recalcular contadores de comunidad
 Invoke-Ia "UPDATE communities SET members_count = (SELECT COUNT(*) FROM community_memberships m WHERE m.community_id = communities.id);"
 
@@ -399,7 +529,11 @@ Write-Host ("  IA  tenants      : " + (Scalar-Ia  "SELECT count(*) FROM tenants;
 Write-Host ("  IA  listings     : " + (Scalar-Ia  "SELECT count(*) FROM listings;"))
 Write-Host ("  IA  ambassadors  : " + (Scalar-Ia  "SELECT count(*) FROM ambassadors;"))
 Write-Host ("  IA  specialists  : " + (Scalar-Ia  "SELECT count(*) FROM specialist_profiles;"))
+Write-Host ("  IA  feed_posts   : " + (Scalar-Ia  "SELECT count(*) FROM feed_posts;"))
+Write-Host ("  IA  citas        : " + (Scalar-Ia  "SELECT count(*) FROM service_appointments;"))
 Write-Host ("  IA  reviews      : " + (Scalar-Ia  "SELECT count(*) FROM reviews;"))
+Write-Host ("  Empresa1 catalogo: " + (Scalar-Ia  "SELECT count(*) FROM listings WHERE tenant_id='5ee00000-0000-0000-0000-000000000001';") + " publicaciones")
+Write-Host ("  Empresa1 rating  : " + (Scalar-Ia  "SELECT COALESCE(ROUND(AVG(rating),1),0) FROM reviews WHERE tenant_id='5ee00000-0000-0000-0000-000000000001';"))
 
 # ─── INGESTA DEL INDICE SEMANTICO (marketplace RAG) ─────────────────────────
 # Trae el catalogo real de IA (8082) y lo manda al indice vectorial de AI (8091).
