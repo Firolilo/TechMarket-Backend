@@ -57,7 +57,15 @@
       "Read(//c/resources/db/migration/**)",
       "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\\\\TechMarket-IA\"; .\\\\mvnw.cmd -q -B spotless:apply \"-Dspotless.check.skip=true\" \"-Dtest=AmbassadorPortalControllerClaimReferralTest\" test 2>&1 | Select-String -Pattern \"Tests run|BUILD|ERROR\\\\]   |Caused by\"; \"EXIT=$LASTEXITCODE\")",
       "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\\\\TechMarket-IA\"; .\\\\mvnw.cmd -q -B spotless:check 2>&1 | Select-String -Pattern \"BUILD|ERROR\" | Select-Object -First 5; \"EXIT=$LASTEXITCODE\")",
-      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx next build 2>&1 | Select-String -Pattern \"Compiled successfully|Failed to compile|error|Error:|✓|✗|Type error|Linting\" | Select-Object -First 40; \"EXIT=$LASTEXITCODE\")"
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx next build 2>&1 | Select-String -Pattern \"Compiled successfully|Failed to compile|error|Error:|✓|✗|Type error|Linting\" | Select-Object -First 40; \"EXIT=$LASTEXITCODE\")",
+      "Bash(ls -1 lib/api/)",
+      "Bash(ls -1 app/lib/api/)",
+      "Bash(sed -n '1,40p' app/lib/api/index.ts)",
+      "Bash(grep -rn \"app/lib/api\\\\|lib/api/index\\\\|from \\\\\"\\\\.\\\\./lib/api\\\\|from \\\\\"\\\\./lib/api\\\\|from \\\\\"\\\\.\\\\./\\\\.\\\\./lib/api\" --include=*.ts --include=*.tsx app/)",
+      "Bash(rm -f lib/api/clientApi.ts)",
+      "Bash(rm -rf app/lib/api)",
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx next build 2>&1 | Select-String -Pattern \"Compiled successfully|Failed to compile|Type error|Error:|Generating static|✓ Compiled\" | Select-Object -First 20; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx eslint app/especialista/hooks/useSpecialistRequestsProjectsData.ts app/especialista/hooks/useSpecialistBackendData.ts app/especialista/hooks/useSpecialistProfileData.ts app/especialista/hooks/useSpecialistReviewsCertificationsData.ts app/especialista/hooks/useSpecialistChatFilesData.ts app/especialista/specialistData.ts app/embajador/ambassadorData.ts 2>&1 | Select-String -Pattern \"error|warning|no-unused|Error:\" | Select-Object -First 25; \"EXIT=$LASTEXITCODE\")"
     ]
   }
 }
