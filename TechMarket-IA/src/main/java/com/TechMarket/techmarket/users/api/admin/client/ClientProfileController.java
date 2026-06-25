@@ -21,22 +21,35 @@ import org.springframework.web.server.ResponseStatusException;
 public class ClientProfileController {
 
     private final UserSpringDataRepository repository;
+    private final ClientUserProvisioner provisioner;
 
-    public ClientProfileController(UserSpringDataRepository repository) {
+    public ClientProfileController(
+            UserSpringDataRepository repository, ClientUserProvisioner provisioner) {
         this.repository = repository;
+        this.provisioner = provisioner;
     }
 
     @GetMapping
     public ClientProfileResponse profile(
-            @RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return toResponse(findAuthenticatedUser(userId));
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String email,
+            @RequestHeader(value = "X-User-First-Name", required = false) String firstName,
+            @RequestHeader(value = "X-User-Last-Name", required = false) String lastName,
+            @RequestHeader(value = "X-User-Phone", required = false) String phone) {
+        UUID id = parseUserId(userId);
+        return toResponse(provisioner.resolveOrCreate(id, email, firstName, lastName, phone));
     }
 
     @PutMapping
     public ClientProfileResponse updateProfile(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Email", required = false) String email,
+            @RequestHeader(value = "X-User-First-Name", required = false) String firstName,
+            @RequestHeader(value = "X-User-Last-Name", required = false) String lastName,
+            @RequestHeader(value = "X-User-Phone", required = false) String phone,
             @Valid @RequestBody UpdateClientProfileRequest request) {
-        UserJpaEntity user = findAuthenticatedUser(userId);
+        UUID id = parseUserId(userId);
+        UserJpaEntity user = provisioner.resolveOrCreate(id, email, firstName, lastName, phone);
         if (request.nombre() != null) {
             user.setFirstName(request.nombre());
         }
@@ -50,20 +63,15 @@ public class ClientProfileController {
         return toResponse(repository.save(user));
     }
 
-    private UserJpaEntity findAuthenticatedUser(String userId) {
+    private UUID parseUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "X-User-Id is required");
         }
-        UUID id;
         try {
-            id = UUID.fromString(userId.trim());
+            return UUID.fromString(userId.trim());
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "X-User-Id is invalid");
         }
-        return repository
-                .findById(id)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
     private ClientProfileResponse toResponse(UserJpaEntity user) {

@@ -17,6 +17,9 @@ public class SpecialistReviewJpaEntity {
     @Column(name = "ticket_id")
     private UUID ticketId;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Column(name = "rating")
     private BigDecimal rating;
 
@@ -28,6 +31,9 @@ public class SpecialistReviewJpaEntity {
 
     @Column(name = "technician_response_at")
     private OffsetDateTime technicianResponseAt;
+
+    @Column(name = "created_at")
+    private OffsetDateTime createdAt;
 
     public UUID getId() {
         return id;
@@ -43,6 +49,22 @@ public class SpecialistReviewJpaEntity {
 
     public void setTicketId(UUID ticketId) {
         this.ticketId = ticketId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public BigDecimal getRating() {

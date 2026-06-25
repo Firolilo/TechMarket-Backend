@@ -6,14 +6,20 @@ import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.reposit
 import com.techmarket.techmarket.listings.infrastructure.persistence.jpa.repository.ListingSpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.entity.TenantJpaEntity;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +34,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/empresa")
@@ -36,14 +43,23 @@ public class EmpresaPublicacionesController {
     private final TenantSpringDataRepository tenantRepository;
     private final ListingSpringDataRepository listingRepository;
     private final ListingImageSpringDataRepository imageRepository;
+    private final EmpresaTenantProvisioner tenantProvisioner;
+
+    @Value("${app.uploads.dir:uploads}")
+    private String uploadsDir;
+
+    @Value("${app.uploads.public-base-url:}")
+    private String uploadsPublicBaseUrl;
 
     public EmpresaPublicacionesController(
             TenantSpringDataRepository tenantRepository,
             ListingSpringDataRepository listingRepository,
-            ListingImageSpringDataRepository imageRepository) {
+            ListingImageSpringDataRepository imageRepository,
+            EmpresaTenantProvisioner tenantProvisioner) {
         this.tenantRepository = tenantRepository;
         this.listingRepository = listingRepository;
         this.imageRepository = imageRepository;
+        this.tenantProvisioner = tenantProvisioner;
     }
 
     @GetMapping("/publicaciones")
@@ -305,21 +321,93 @@ public class EmpresaPublicacionesController {
             @RequestParam(value = "folder", required = false, defaultValue = "empresa")
                     String folder) {
         resolveAuthenticatedUserId();
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El archivo esta vacio");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Solo se permiten archivos de imagen");
+        }
+
+        String originalName =
+                file.getOriginalFilename() != null ? file.getOriginalFilename() : "imagen";
+        String safeFolder = sanitizeSegment(folder);
         String uuid = UUID.randomUUID().toString();
-        String fileName =
-                file.getOriginalFilename() != null ? file.getOriginalFilename() : "imagen.jpg";
-        String url = "/uploads/" + folder + "/" + uuid + "/" + fileName;
+        String storedName = uuid + extensionFor(originalName, contentType);
+        String relativePath = safeFolder + "/" + uuid + "/" + storedName;
+
+        try {
+            Path target = Path.of(uploadsDir).toAbsolutePath().normalize().resolve(relativePath);
+            Files.createDirectories(target.getParent());
+            try (var in = file.getInputStream()) {
+                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo guardar la imagen");
+        }
+
+        String url = buildPublicUrl("/uploads/" + relativePath);
         return Map.of(
                 "id",
                 "IMG-" + uuid,
                 "fileName",
-                fileName,
+                originalName,
                 "url",
                 url,
                 "mimeType",
-                file.getContentType() != null ? file.getContentType() : "image/jpeg",
+                contentType,
                 "size",
                 file.getSize());
+    }
+
+    /** Solo letras/numeros/guiones en el segmento de carpeta para evitar path traversal. */
+    private String sanitizeSegment(String value) {
+        String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("[^a-z0-9-]", "");
+        return normalized.isBlank() ? "empresa" : normalized;
+    }
+
+    private String extensionFor(String originalName, String contentType) {
+        int dot = originalName.lastIndexOf('.');
+        if (dot >= 0 && dot < originalName.length() - 1) {
+            String ext = originalName.substring(dot + 1).toLowerCase(Locale.ROOT);
+            if (ext.matches("[a-z0-9]{1,5}")) {
+                return "." + ext;
+            }
+        }
+        return switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            case "image/gif" -> ".gif";
+            case "image/svg+xml" -> ".svg";
+            default -> ".jpg";
+        };
+    }
+
+    /**
+     * Construye la URL publica absoluta de la imagen. Usa {@code app.uploads.public-base-url} si
+     * esta configurada; si no, la deriva del request entrante (correcto cuando el navegador llama
+     * directo al backend).
+     */
+    private String buildPublicUrl(String path) {
+        if (uploadsPublicBaseUrl != null && !uploadsPublicBaseUrl.isBlank()) {
+            String base = uploadsPublicBaseUrl.trim();
+            if (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            return base + path;
+        }
+        try {
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path(path)
+                    .build()
+                    .toUriString();
+        } catch (IllegalStateException ex) {
+            // Sin request context (no deberia pasar en este endpoint): devuelve la ruta relativa.
+            return path;
+        }
     }
 
     // ---- helpers ----
@@ -409,13 +497,7 @@ public class EmpresaPublicacionesController {
     }
 
     private TenantJpaEntity requireTenant(UUID userId) {
-        return tenantRepository
-                .findFirstByMemberUserId(userId)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No se encontro empresa para este usuario"));
+        return tenantProvisioner.resolveOrCreate(userId);
     }
 
     private UUID resolveAuthenticatedUserId() {

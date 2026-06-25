@@ -8,22 +8,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.techmarket.techmarket.listings.application.service.ListingApplicationService;
 import com.techmarket.techmarket.listings.domain.model.Listing;
+import com.techmarket.techmarket.security.jwt.JwtTokenProvider;
+import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ListingController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ListingControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
     @MockBean private ListingApplicationService service;
+
+    // @WebMvcTest registra los filtros servlet (JwtAuthenticationFilter,
+    // UserHeaderConsistencyFilter); estos mocks permiten construirlos. addFilters=false los deja
+    // fuera de la cadena para probar el controller sin seguridad.
+    @MockBean private JwtTokenProvider jwtTokenProvider;
+
+    @MockBean private UserSpringDataRepository userRepository;
 
     @Test
     void create_shouldReturnCreated() throws Exception {

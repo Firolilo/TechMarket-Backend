@@ -29,13 +29,40 @@ spring:
         format_sql: false
 
   ai:
+    # Default LLM provider: Google Gemini (free tier) via its OpenAI-compatible
+    # endpoint, so the Spring AI OpenAI client is reused. Requires GEMINI_API_KEY.
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      api-key: ${GEMINI_API_KEY:}
+      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      chat:
+        completions-path: /chat/completions
+        options:
+          model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
+          temperature: 0.2
+      embedding:
+        # Gemini's OpenAI-compatible embeddings, used by the marketplace semantic index.
+        embeddings-path: /embeddings
+        options:
+          model: ${GEMINI_EMBEDDING_MODEL:text-embedding-004}
+    model:
+      chat: openai
+      # "openai" = Gemini via the OpenAI-compatible endpoint above. The `test` profile overrides
+      # this back to `none` so the offline suite keeps using the zero-vector stub embedding.
+      embedding: openai
+      audio:
+        speech: none
+        transcription: none
+      image: none
+      moderation: none
     vectorstore:
       pgvector:
         initialize-schema: ${PGVECTOR_INIT_SCHEMA:true}
         index-type: ${PGVECTOR_INDEX_TYPE:HNSW}
         distance-type: ${PGVECTOR_DISTANCE:COSINE_DISTANCE}
+        # Fijar la dimensión (Gemini text-embedding-004 = 768) evita que PgVectorStore sondee el
+        # modelo de embeddings en el arranque (lo que fallaría con GEMINI_API_KEY vacío). Así el
+        # servicio levanta aunque la key aún no esté puesta; la ingesta/búsqueda real ya requiere key.
+        dimensions: ${PGVECTOR_DIMENSIONS:768}
 
 server:
   port: ${AI_SERVICE_PORT:8091}

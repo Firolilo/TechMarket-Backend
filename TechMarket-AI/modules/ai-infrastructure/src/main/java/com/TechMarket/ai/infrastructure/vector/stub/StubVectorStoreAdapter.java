@@ -3,15 +3,13 @@ package com.techmarket.ai.infrastructure.vector.stub;
 import com.techmarket.ai.application.dto.RagChunkDto;
 import com.techmarket.ai.application.port.out.VectorStorePort;
 import java.util.List;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 
 /**
- * Stub VectorStorePort for dev and test profiles (when PgVector autoconfig is excluded). Returns
- * empty results for development and testing without requiring embeddings.
+ * Stub VectorStorePort used as a deterministic fallback when no Spring AI {@code VectorStore} is
+ * available (no real embeddings/pgvector). Returns empty results so the AI service still boots and
+ * the RAG endpoints respond. Wired in {@code VectorStoreConfig} via
+ * {@code @ConditionalOnMissingBean}.
  */
-@Component
-@Profile({"dev", "test"})
 public class StubVectorStoreAdapter implements VectorStorePort {
 
     @Override

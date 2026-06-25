@@ -1,0 +1,150 @@
+# Unified local stack for all TechMarket services.
+#
+#   docker compose up --build      # build images and start the whole stack
+#   docker compose down            # stop and remove containers
+#   docker compose down -v         # also drop the database volumes
+#
+# Services (host ports):
+#   IAM -> http://localhost:8080   (Swagger: /swagger-ui.html)        Postgres + Redis
+#   IA  -> http://localhost:8082   (Swagger: /swagger-ui.html)        Postgres
+#   AI  -> http://localhost:8091   (Swagger: /swagger-ui/index.html)  stubs, no DB
+#
+# All services share Compose's default network and resolve each other by service name.
+# TechMarket-Core is a shared library compiled inside the IA/IAM images (not a service).
+name: techmarket
+
+services:
+  # ---------------------------------------------------------------- IAM ----
+  iam-postgres:
+    image: postgres:16-alpine
+    container_name: iam-postgres
+    environment:
+      POSTGRES_DB: iam_service
+      POSTGRES_USER: iam_user
+      POSTGRES_PASSWORD: iam_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - iam-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iam_user -d iam_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  iam-redis:
+    image: redis:7-alpine
+    container_name: iam-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - iam-redis-data:/data
+
+  iam-service:
+    build:
+      context: .
+      dockerfile: TechMarket-IAM/Dockerfile
+    image: techmarket-iam:1.0.0-SNAPSHOT
+    container_name: iam-service
+    depends_on:
+      iam-postgres:
+        condition: service_healthy
+      iam-redis:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      IAM_DB_URL: jdbc:postgresql://iam-postgres:5432/iam_service
+      IAM_DB_USERNAME: iam_user
+      IAM_DB_PASSWORD: iam_password
+      IAM_REDIS_HOST: iam-redis
+      IAM_REDIS_PORT: 6379
+      IAM_JWT_ISSUER: iam-service
+      IAM_JWT_SECRET: replace-with-strong-32-byte-secret-value
+      IAM_ACCESS_TOKEN_MINUTES: 15
+      IAM_REFRESH_TOKEN_DAYS: 7
+      CORS_ALLOWED_ORIGINS: "http://localhost:*,http://127.0.0.1:*"
+    ports:
+      - "8080:8080"
+
+  # ----------------------------------------------------------------- IA ----
+  ia-postgres:
+    # pgvector/pgvector:pg16 = Postgres 16 + the `vector` extension, used by the AI service's
+    # marketplace semantic index (Spring AI PgVectorStore creates the extension + table here).
+    image: pgvector/pgvector:pg16
+    container_name: ia-postgres
+    environment:
+      POSTGRES_DB: TECHMARKET_ia
+      POSTGRES_USER: TECHMARKET_ia_user
+      POSTGRES_PASSWORD: TECHMARKET_ia_password
+    ports:
+      - "5435:5432"
+    volumes:
+      - ia-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U TECHMARKET_ia_user -d TECHMARKET_ia"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ia-service:
+    build:
+      context: .
+      dockerfile: TechMarket-IA/Dockerfile
+    image: techmarket-ia:1.0.0-SNAPSHOT
+    container_name: ia-service
+    depends_on:
+      ia-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      TECHMARKET_IA_DB_URL: jdbc:postgresql://ia-postgres:5432/TECHMARKET_ia
+      TECHMARKET_IA_DB_USERNAME: TECHMARKET_ia_user
+      TECHMARKET_IA_DB_PASSWORD: TECHMARKET_ia_password
+      # Shared HS256 secret + trusted issuers so IA accepts tokens minted by IAM.
+      IAM_JWT_ISSUER: iam-service
+      IAM_JWT_SECRET: replace-with-strong-32-byte-secret-value
+      JWT_TRUSTED_ISSUERS: iam-service,TECHMARKET-ia
+      # IA does not use Redis/Mongo in this stack; their health probes (localhost
+      # defaults) would otherwise force the aggregate health to DOWN.
+      MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+      MANAGEMENT_HEALTH_MONGO_ENABLED: "false"
+      # Base URL del frontend para construir los links de referido del embajador (sin dominio: localhost).
+      TECHMARKET_FRONTEND_BASE_URL: "http://localhost:3000"
+      # Imagenes subidas: se guardan en /opt/uploads (volumen persistente) y se sirven en /uploads/**.
+      # La base publica fija la URL absoluta que el navegador usara para cargarlas.
+      APP_UPLOADS_DIR: /opt/uploads
+      APP_UPLOADS_PUBLIC_BASE_URL: "http://localhost:8082"
+    volumes:
+      - ia-uploads-data:/opt/uploads
+    ports:
+      - "8082:8082"
+
+  # ----------------------------------------------------------------- AI ----
+  ai-service:
+    build:
+      context: .
+      dockerfile: TechMarket-AI/Dockerfile
+    image: techmarket-ai:1.0.0-SNAPSHOT
+    container_name: ai-service
+    depends_on:
+      ia-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # Marketplace semantic index (pgvector) lives in the IA Postgres.
+      AI_DB_URL: jdbc:postgresql://ia-postgres:5432/TECHMARKET_ia
+      AI_DB_USER: TECHMARKET_ia_user
+      AI_DB_PASSWORD: TECHMARKET_ia_password
+    # Gemini API key (free tier) — also powers embeddings for semantic search. Injected from
+    # TechMarket-AI/.env.local (git-ignored); not baked into the image. Without it, AI calls
+    # (chat + embeddings) return an auth error.
+    env_file:
+      - path: TechMarket-AI/.env.local
+        required: false
+    ports:
+      - "8091:8091"
+
+volumes:
+  iam-postgres-data:
+  iam-redis-data:
+  ia-postgres-data:
+  ia-uploads-data:

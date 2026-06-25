@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
@@ -81,6 +82,9 @@ public class AmbassadorPortalController {
 
     private static final String AMBASSADOR_CHAT_TYPE = "AMBASSADOR_CHAT";
 
+    /** Comisión (Bs) que gana el embajador cuando un referido se convierte (empresa registrada). */
+    private static final String CONVERSION_COMMISSION_AMOUNT = "150.00";
+
     private final AmbassadorSpringDataRepository ambassadorRepository;
     private final AmbassadorReferralSpringDataRepository referralRepository;
     private final AmbassadorCommissionSpringDataRepository commissionRepository;
@@ -103,6 +107,9 @@ public class AmbassadorPortalController {
     private final UserSpringDataRepository userRepository;
     private final TenantSpringDataRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    @Value("${techmarket.frontend.base-url:http://localhost:3000}")
+    private String frontendBaseUrl;
 
     public AmbassadorPortalController(
             AmbassadorSpringDataRepository ambassadorRepository,
@@ -340,8 +347,7 @@ public class AmbassadorPortalController {
             @PathVariable String linkId) {
         AmbassadorReferralLinkJpaEntity link =
                 findReferralLink(linkId, resolveAmbassador(findUser(parseUserId(userId))).getId());
-        return new ReferralLinkQrResponse(
-                "https://cdn.techmarket.bo/qr/" + link.getCode() + ".png");
+        return new ReferralLinkQrResponse(qrDataUri(referralUrl(link.getCode())));
     }
 
     @GetMapping("/referral-links/{linkId}/stats")
@@ -458,6 +464,109 @@ public class AmbassadorPortalController {
                 saved.getStatus(),
                 "Prospecto registrado correctamente");
     }
+
+    /**
+     * Endpoint público: atribuye una empresa recién registrada al embajador dueño del código de
+     * referido (link de referido o código propio del embajador). La empresa pasa a formar parte de
+     * los referidos activos del embajador. Se invoca desde el frontend tras un registro exitoso.
+     */
+    @PostMapping("/referrals/claim")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
+    public CreateReferralResponse claimReferral(@Valid @RequestBody ClaimReferralRequest request) {
+        String code = request.code().trim().toUpperCase(Locale.ROOT);
+
+        AmbassadorReferralLinkJpaEntity link = referralLinkRepository.findByCode(code).orElse(null);
+        UUID ambassadorId;
+        if (link != null) {
+            ambassadorId = link.getAmbassadorId();
+        } else {
+            ambassadorId =
+                    ambassadorRepository
+                            .findByReferralCode(code)
+                            .map(AmbassadorJpaEntity::getId)
+                            .orElseThrow(
+                                    () ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.NOT_FOUND,
+                                                    "Referral code not found"));
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // Idempotencia: si ese embajador ya tiene un referido con el mismo email, no se duplica
+        // (protege ante doble envío del registro).
+        if (request.email() != null && !request.email().isBlank()) {
+            AmbassadorReferralJpaEntity existing =
+                    referralRepository.findByAmbassadorId(ambassadorId).stream()
+                            .filter(
+                                    referral ->
+                                            request.email().equalsIgnoreCase(referral.getEmail()))
+                            .findFirst()
+                            .orElse(null);
+            if (existing != null) {
+                return new CreateReferralResponse(
+                        formatBusinessId(existing.getId()),
+                        existing.getStatus(),
+                        "Referido ya registrado previamente");
+            }
+        }
+
+        AmbassadorReferralJpaEntity referral = new AmbassadorReferralJpaEntity();
+        referral.setId(UUID.randomUUID());
+        referral.setAmbassadorId(ambassadorId);
+        referral.setName(request.nombre());
+        referral.setReferralType(valueOrDefault(request.tipo(), "empresa"));
+        referral.setContactName(valueOrDefault(request.contacto(), request.nombre()));
+        referral.setPhone(request.telefono());
+        referral.setEmail(request.email());
+        referral.setCity(request.ciudad());
+        referral.setCountry(request.pais());
+        referral.setAttributionChannel("referral_link");
+        referral.setUsedCode(code);
+        referral.setStatus("activo");
+        referral.setCreatedAt(now);
+        referral.setLastActivityAt(now);
+        AmbassadorReferralJpaEntity saved = referralRepository.save(referral);
+
+        createActivity(
+                saved.getId(), "registro", "Empresa registrada mediante link de referido", now);
+
+        // La conversión real del referido (empresa registrada vía link) genera la comisión del
+        // embajador. Es el único punto donde se crean comisiones: derivan de conversiones reales,
+        // no de datos sembrados.
+        AmbassadorCommissionJpaEntity commission = new AmbassadorCommissionJpaEntity();
+        commission.setId(UUID.randomUUID());
+        commission.setAmbassadorId(ambassadorId);
+        commission.setAmbassadorReferralId(saved.getId());
+        commission.setAttributionType("referral_link");
+        commission.setEventType("conversion");
+        commission.setReferenceType("referral");
+        commission.setReferenceId(saved.getId());
+        commission.setAmount(CONVERSION_COMMISSION_AMOUNT);
+        commission.setStatus("pendiente");
+        commission.setGeneratedAt(now);
+        commissionRepository.save(commission);
+
+        if (link != null) {
+            link.setConversions(link.getConversions() + 1);
+            link.setUpdatedAt(now);
+            referralLinkRepository.save(link);
+        }
+
+        return new CreateReferralResponse(
+                formatBusinessId(saved.getId()), saved.getStatus(), "Empresa referida registrada");
+    }
+
+    public record ClaimReferralRequest(
+            @NotBlank String code,
+            @NotBlank String nombre,
+            String contacto,
+            String email,
+            String telefono,
+            String ciudad,
+            String pais,
+            String tipo) {}
 
     @GetMapping("/referrals/{referralId}")
     public AmbassadorReferralDetailResponse referral(
@@ -1703,7 +1812,7 @@ public class AmbassadorPortalController {
                 formatReferralLinkId(link.getId()),
                 link.getName(),
                 link.getCode(),
-                link.getUrl(),
+                referralUrl(link.getCode()),
                 link.getClicks(),
                 link.getConversions(),
                 link.isActive());
@@ -1721,7 +1830,7 @@ public class AmbassadorPortalController {
                 formatReferralLinkId(link.getId()),
                 link.getName(),
                 link.getCode(),
-                link.getUrl(),
+                referralUrl(link.getCode()),
                 link.getClicks(),
                 link.getConversions(),
                 conversionRate,
@@ -1894,14 +2003,10 @@ public class AmbassadorPortalController {
             return new ReferralAggregate(BigDecimal.ZERO, BigDecimal.ZERO, 0);
         }
         UUID tenantId = referral.getTenantId();
-        BigDecimal sales =
-                queryBigDecimal(
-                        "SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) "
-                                + "FROM client_order_items oi "
-                                + "JOIN client_orders o ON o.id = oi.order_id "
-                                + "JOIN listings l ON l.id = oi.listing_id "
-                                + "WHERE l.tenant_id = ? AND LOWER(COALESCE(o.status, '')) NOT IN ('cancelado', 'cancelled')",
-                        tenantId);
+        // TechMarket es plataforma de conexión: no procesa ventas (el carrito/órdenes se eliminó en
+        // V99). El valor del referido para el embajador se mide por reputación y comisiones, no por
+        // ventas, así que "ventasTotales" queda en cero.
+        BigDecimal sales = BigDecimal.ZERO;
         BigDecimal rating =
                 queryBigDecimal(
                                 "SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE tenant_id = ?",
@@ -2623,7 +2728,23 @@ public class AmbassadorPortalController {
     }
 
     private String referralUrl(String code) {
-        return "https://techmarket.bo/register?ref=" + code;
+        return frontendBaseUrl + "/auth?mode=register&type=empresa&ref=" + code;
+    }
+
+    /** Generates a QR for the given content and returns it as a PNG data URI (works offline). */
+    private String qrDataUri(String content) {
+        try {
+            com.google.zxing.common.BitMatrix matrix =
+                    new com.google.zxing.qrcode.QRCodeWriter()
+                            .encode(content, com.google.zxing.BarcodeFormat.QR_CODE, 240, 240);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            com.google.zxing.client.j2se.MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+            return "data:image/png;base64,"
+                    + java.util.Base64.getEncoder().encodeToString(out.toByteArray());
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el QR del link");
+        }
     }
 
     private String formatAmbassadorId(UUID id) {

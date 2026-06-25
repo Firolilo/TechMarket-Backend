@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Profile;
 public class TenantContextConfig {
 
     @Bean
-    @Profile("dev")
+    @Profile({"dev", "docker"})
     public TenantContextPort devTenantContextPort(
             @Value("${ai.tenant.dev.tenant-id:dev-tenant}") String tenantId,
             @Value("${ai.tenant.dev.principal:dev-user}") String principal) {

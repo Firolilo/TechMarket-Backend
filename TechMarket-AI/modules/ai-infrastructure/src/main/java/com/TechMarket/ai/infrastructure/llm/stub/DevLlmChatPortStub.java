@@ -4,18 +4,16 @@ import com.techmarket.ai.application.dto.ChatResultDto;
 import com.techmarket.ai.application.port.out.LlmChatPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * Stub LlmChatPort implementation for dev and test profiles. Provides fallback implementation when
- * no real LLM provider is configured. Marked as @Primary to ensure it takes precedence over other
- * implementations in dev/test.
+ * Stub LlmChatPort for the "test" profile only, so the test suite runs offline without calling a
+ * real LLM. Every other profile uses the real {@link
+ * com.techmarket.ai.infrastructure.llm.springai.SpringAiLlmChatAdapter} (Gemini).
  */
 @Component
-@Primary
-@Profile({"dev", "test"})
+@Profile("test")
 public class DevLlmChatPortStub implements LlmChatPort {
 
     private static final Logger log = LoggerFactory.getLogger(DevLlmChatPortStub.class);

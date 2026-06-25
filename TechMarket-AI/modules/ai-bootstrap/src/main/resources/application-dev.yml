@@ -18,16 +18,7 @@ spring:
       initialization-fail-timeout: ${AI_DB_INIT_FAIL_TIMEOUT_MS:0}
       maximum-pool-size: ${AI_DB_POOL_MAX:5}
 
-  ai:
-    model:
-      chat: none
-      embedding: none
-      audio:
-        speech: none
-        transcription: none
-      image: none
-      moderation: none
-
+  # LLM provider (Gemini via OpenAI-compatible endpoint) is inherited from application.yml.
   autoconfigure:
     exclude:
       - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration

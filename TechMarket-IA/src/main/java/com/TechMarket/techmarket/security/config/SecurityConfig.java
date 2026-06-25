@@ -43,6 +43,25 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.POST, "/api/auth/register")
                                         .permitAll()
+                                        // Atribución de referidos desde el registro público de
+                                        // empresas
+                                        .requestMatchers(
+                                                HttpMethod.POST, "/api/ambassadors/referrals/claim")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.POST,
+                                                "/api/ambassadors/referral-links/*/track-click")
+                                        .permitAll()
+                                        // Feed read-only del catálogo público para la ingesta del
+                                        // índice semántico (marketplace RAG) en TechMarket-AI.
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/marketplace/catalogo-indexable")
+                                        .permitAll()
+                                        // Imagenes subidas servidas como estaticos (las cargan los
+                                        // <img> del front sin token).
+                                        .requestMatchers(HttpMethod.GET, "/uploads/**")
+                                        .permitAll()
                                         .requestMatchers(
                                                 "/v3/api-docs/**",
                                                 "/swagger-ui/**",

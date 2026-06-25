@@ -1,12 +1,12 @@
 # =============================================================================
 # Ejecuta los seeders de empresa via docker exec (no requiere psql local)
-# Contenedores: TECHMARKET-ia-postgres  /  iam-postgres
+# Contenedores: ia-postgres  /  iam-postgres
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
 
 # ── Contenedores y conexiones ─────────────────────────────────
-$IA_CONTAINER  = "TECHMARKET-ia-postgres"
+$IA_CONTAINER  = "ia-postgres"
 $IA_DB         = "TECHMARKET_ia"
 $IA_USER       = "TECHMARKET_ia_user"
 

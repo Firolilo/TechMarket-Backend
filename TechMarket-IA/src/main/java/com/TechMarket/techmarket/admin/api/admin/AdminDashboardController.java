@@ -4,7 +4,6 @@ import com.techmarket.techmarket.admin.infrastructure.persistence.jpa.entity.Adm
 import com.techmarket.techmarket.admin.infrastructure.persistence.jpa.entity.AdminModerationActionJpaEntity;
 import com.techmarket.techmarket.admin.infrastructure.persistence.jpa.repository.AdminAuditLogSpringDataRepository;
 import com.techmarket.techmarket.admin.infrastructure.persistence.jpa.repository.AdminModerationActionSpringDataRepository;
-import com.techmarket.techmarket.payments.infrastructure.persistence.jpa.repository.UserTransactionSpringDataRepository;
 import com.techmarket.techmarket.reports.infrastructure.persistence.jpa.entity.UserReportJpaEntity;
 import com.techmarket.techmarket.reports.infrastructure.persistence.jpa.repository.UserReportSpringDataRepository;
 import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.repository.TenantSpringDataRepository;
@@ -14,7 +13,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -36,7 +34,6 @@ public class AdminDashboardController {
     private final UserSpringDataRepository userRepository;
     private final TenantSpringDataRepository tenantRepository;
     private final UserReportSpringDataRepository reportRepository;
-    private final UserTransactionSpringDataRepository transactionRepository;
     private final AdminModerationActionSpringDataRepository moderationActionRepository;
     private final AdminAuditLogSpringDataRepository auditLogRepository;
 
@@ -44,29 +41,23 @@ public class AdminDashboardController {
             UserSpringDataRepository userRepository,
             TenantSpringDataRepository tenantRepository,
             UserReportSpringDataRepository reportRepository,
-            UserTransactionSpringDataRepository transactionRepository,
             AdminModerationActionSpringDataRepository moderationActionRepository,
             AdminAuditLogSpringDataRepository auditLogRepository) {
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
         this.reportRepository = reportRepository;
-        this.transactionRepository = transactionRepository;
         this.moderationActionRepository = moderationActionRepository;
         this.auditLogRepository = auditLogRepository;
     }
 
     @GetMapping("/dashboard")
     public AdminDashboardResponse dashboard() {
-        OffsetDateTime todayStart =
-                OffsetDateTime.now(ZoneOffset.UTC)
-                        .toLocalDate()
-                        .atStartOfDay()
-                        .atOffset(ZoneOffset.UTC);
+        // TechMarket es plataforma de conexion: no procesa transacciones de venta.
         return new AdminDashboardResponse(
                 userRepository.count(),
                 tenantRepository.count(),
                 reportRepository.countByStatus("pendiente_revision"),
-                transactionRepository.countByCreatedAtAfter(todayStart));
+                0L);
     }
 
     @GetMapping("/users")

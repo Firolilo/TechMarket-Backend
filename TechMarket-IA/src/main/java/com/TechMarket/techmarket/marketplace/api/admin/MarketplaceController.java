@@ -20,16 +20,21 @@ import com.techmarket.techmarket.tenants.infrastructure.persistence.jpa.reposito
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.entity.UserJpaEntity;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.ClientReviewSpringDataRepository;
 import com.techmarket.techmarket.users.infrastructure.persistence.jpa.repository.UserSpringDataRepository;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +43,27 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/marketplace")
 public class MarketplaceController {
+
+    /** Sinonimos tecnicos (claves sin acentos) para una busqueda de catalogo tolerante, sin RAG. */
+    private static final Map<String, List<String>> SEARCH_SYNONYMS =
+            Map.ofEntries(
+                    Map.entry("notebook", List.of("laptop", "portatil", "ultrabook")),
+                    Map.entry("laptop", List.of("notebook", "portatil", "ultrabook")),
+                    Map.entry("portatil", List.of("laptop", "notebook", "ultrabook")),
+                    Map.entry("pc", List.of("computadora", "ordenador", "desktop", "torre", "cpu")),
+                    Map.entry("computadora", List.of("pc", "ordenador", "desktop", "computador")),
+                    Map.entry("monitor", List.of("pantalla", "display")),
+                    Map.entry("pantalla", List.of("monitor", "display")),
+                    Map.entry("teclado", List.of("keyboard")),
+                    Map.entry("mouse", List.of("raton")),
+                    Map.entry("raton", List.of("mouse")),
+                    Map.entry(
+                            "audifonos", List.of("auriculares", "headset", "headphones", "cascos")),
+                    Map.entry(
+                            "auriculares", List.of("audifonos", "headset", "headphones", "cascos")),
+                    Map.entry("impresora", List.of("printer")),
+                    Map.entry("router", List.of("red", "redes", "wifi")),
+                    Map.entry("red", List.of("redes", "router", "wifi", "network")));
 
     private final ListingSpringDataRepository listingRepository;
     private final ListingImageSpringDataRepository listingImageRepository;
@@ -189,6 +215,70 @@ public class MarketplaceController {
                 List.of(),
                 toCompanySummary(tenant),
                 0);
+    }
+
+    /**
+     * Real-data grounding for the AI "Versus" comparator: given the product ids the client picked,
+     * returns each listing enriched with price, description, average rating + review count and the
+     * seller's reputation. The AI service (TechMarket-AI) is stateless, so this is what makes its
+     * verdict reflect actual marketplace data instead of guesses. Missing values are returned as
+     * {@code null} so the AI can treat them as uncertainty rather than invent them.
+     */
+    @PostMapping("/versus-contexto")
+    public Map<String, Object> versusContext(@RequestBody VersusContextRequest request) {
+        List<String> ids =
+                request == null || request.productIds() == null ? List.of() : request.productIds();
+        List<Map<String, Object>> productos = new ArrayList<>();
+        for (String rawId : ids) {
+            UUID listingId;
+            try {
+                listingId = parsePrefixedUuid(rawId, "PROD-");
+            } catch (ResponseStatusException ex) {
+                continue;
+            }
+            listingRepository
+                    .findById(listingId)
+                    .map(this::toVersusProduct)
+                    .ifPresent(productos::add);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("productos", productos);
+        return result;
+    }
+
+    private Map<String, Object> toVersusProduct(ListingJpaEntity listing) {
+        List<Double> ratings =
+                reviewRepository.findAllByListingIdOrderByCreatedAtDesc(listing.getId()).stream()
+                        .filter(r -> r.getRating() != null)
+                        .map(r -> r.getRating().doubleValue())
+                        .toList();
+        Double calificacion =
+                ratings.isEmpty()
+                        ? null
+                        : ratings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+        TenantJpaEntity tenant =
+                listing.getTenantId() == null
+                        ? null
+                        : tenantRepository.findById(listing.getTenantId()).orElse(null);
+        String empresa = tenant == null ? null : tenant.getBusinessName();
+        Double reputacionVendedor = null;
+        if (tenant != null) {
+            double rep = averageRatingForTenant(tenant.getId());
+            reputacionVendedor = rep > 0 ? rep : null;
+        }
+
+        Map<String, Object> p = new HashMap<>();
+        p.put("id", formatProductId(listing.getId()));
+        p.put("nombre", listing.getTitle());
+        p.put("precio", listing.getBasePrice());
+        p.put("descripcion", listing.getDescription());
+        p.put("calificacion", calificacion);
+        p.put("totalResenas", ratings.size());
+        p.put("reputacionVendedor", reputacionVendedor);
+        p.put("stock", null);
+        p.put("empresa", empresa);
+        return p;
     }
 
     @GetMapping("/categories")
@@ -360,13 +450,49 @@ public class MarketplaceController {
         return name.contains(term) || desc.contains(term);
     }
 
+    /**
+     * Busqueda de catalogo (sin RAG): empareja la consulta contra titulo + descripcion, ignorando
+     * acentos, y la amplia con sinonimos tecnicos para que terminos como "notebook" encuentren
+     * laptops. Coincide si CUALQUIER termino expandido aparece en el texto del producto.
+     */
     private boolean matchesSearch(ListingJpaEntity listing, String search) {
         if (search == null || search.isBlank()) {
             return true;
         }
-        String text =
-                (listing.getTitle() == null ? "" : listing.getTitle()).toLowerCase(Locale.ROOT);
-        return text.contains(search.trim().toLowerCase(Locale.ROOT));
+        String haystack =
+                normalizeText(
+                        (listing.getTitle() == null ? "" : listing.getTitle())
+                                + " "
+                                + (listing.getDescription() == null
+                                        ? ""
+                                        : listing.getDescription()));
+        for (String term : expandSearchTerms(search)) {
+            if (haystack.contains(term)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<String> expandSearchTerms(String search) {
+        Set<String> terms = new LinkedHashSet<>();
+        for (String token : normalizeText(search).split("\\s+")) {
+            if (token.isBlank()) {
+                continue;
+            }
+            terms.add(token);
+            List<String> synonyms = SEARCH_SYNONYMS.get(token);
+            if (synonyms != null) {
+                terms.addAll(synonyms);
+            }
+        }
+        return new ArrayList<>(terms);
+    }
+
+    /** minusculas + sin acentos, para comparar de forma tolerante. */
+    private String normalizeText(String value) {
+        String lowered = value.toLowerCase(Locale.ROOT);
+        return Normalizer.normalize(lowered, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
     }
 
     private boolean matchesCategory(ListingJpaEntity listing, String category) {
@@ -400,4 +526,7 @@ public class MarketplaceController {
     private String formatCompanyId(UUID id) {
         return "EMP-" + id;
     }
+
+    /** Request body for {@link #versusContext}: the marketplace product ids to compare. */
+    public record VersusContextRequest(List<String> productIds) {}
 }

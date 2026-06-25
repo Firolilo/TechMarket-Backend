@@ -126,4 +126,21 @@ public interface SpecialistServiceAppointmentSpringDataRepository
 
     Optional<SpecialistServiceAppointmentJpaEntity> findByIdAndAssignedTechnicianUserId(
             UUID id, UUID assignedTechnicianUserId);
+
+    @Query(
+            value =
+                    "SELECT sa.id AS id, t.subject AS \"serviceName\", sa.status AS status, "
+                            + "to_char(sa.start_at AT TIME ZONE 'UTC', "
+                            + "'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS \"startAt\", "
+                            + "sa.location AS location, sa.notes AS notes, "
+                            + "u.first_name AS \"technicianFirstName\", "
+                            + "u.last_name AS \"technicianLastName\" "
+                            + "FROM service_appointments sa "
+                            + "LEFT JOIN tickets t ON t.id = sa.ticket_id "
+                            + "LEFT JOIN users u ON u.id = sa.assigned_technician_user_id "
+                            + "WHERE t.customer_user_id = :customerId "
+                            + "ORDER BY sa.start_at DESC NULLS LAST",
+            nativeQuery = true)
+    List<ClientAppointmentSummaryProjection> findAppointmentsByCustomerUserId(
+            @Param("customerId") UUID customerId);
 }
