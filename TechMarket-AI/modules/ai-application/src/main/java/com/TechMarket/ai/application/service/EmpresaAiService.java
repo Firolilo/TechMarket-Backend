@@ -21,6 +21,11 @@ public class EmpresaAiService implements EmpresaAiUseCase {
             la pregunta concreta del usuario (no des respuestas genéricas).
             - Básate en el contexto provisto; si falta información, asume supuestos razonables y \
             menciónalos en 'dataPoints'.
+            - El contexto incluye datos REALES del negocio (perfil, métricas, alertas, \
+            publicaciones, reseñas y analíticas). Usa cifras, nombres de productos/servicios, \
+            calificaciones y porcentajes CONCRETOS del contexto en tu respuesta; cita esos datos \
+            específicos en 'dataPoints' y referencia publicaciones o reseñas reales cuando \
+            apliquen, en lugar de hablar en términos vagos.
             - Si la pregunta NO trata sobre la gestión del negocio en TechMarket (ventas, \
             publicaciones, chats, reseñas, analíticas, precios, clientes, marketing, reputación), \
             NO la respondas literalmente: en 'summary' indica con amabilidad que está fuera de tu \
