@@ -15,7 +15,3 @@
 *.log
 logs/
 
-# local secrets / env overrides (never commit API keys)
-.env.local
-*.local
-
