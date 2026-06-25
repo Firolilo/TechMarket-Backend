@@ -47,7 +47,8 @@ public class SecurityConfig {
                                                 "/api/v1/ai/**",
                                                 "/api/empresa/ia/**",
                                                 "/api/ambassadors/ai/**",
-                                                "/api/specialists/ai/**")
+                                                "/api/specialists/ai/**",
+                                                "/api/marketplace/**")
                                         .permitAll();
                             }
 

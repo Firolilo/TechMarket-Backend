@@ -30,6 +30,8 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -189,6 +191,70 @@ public class MarketplaceController {
                 List.of(),
                 toCompanySummary(tenant),
                 0);
+    }
+
+    /**
+     * Real-data grounding for the AI "Versus" comparator: given the product ids the client picked,
+     * returns each listing enriched with price, description, average rating + review count and the
+     * seller's reputation. The AI service (TechMarket-AI) is stateless, so this is what makes its
+     * verdict reflect actual marketplace data instead of guesses. Missing values are returned as
+     * {@code null} so the AI can treat them as uncertainty rather than invent them.
+     */
+    @PostMapping("/versus-contexto")
+    public Map<String, Object> versusContext(@RequestBody VersusContextRequest request) {
+        List<String> ids =
+                request == null || request.productIds() == null ? List.of() : request.productIds();
+        List<Map<String, Object>> productos = new ArrayList<>();
+        for (String rawId : ids) {
+            UUID listingId;
+            try {
+                listingId = parsePrefixedUuid(rawId, "PROD-");
+            } catch (ResponseStatusException ex) {
+                continue;
+            }
+            listingRepository
+                    .findById(listingId)
+                    .map(this::toVersusProduct)
+                    .ifPresent(productos::add);
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("productos", productos);
+        return result;
+    }
+
+    private Map<String, Object> toVersusProduct(ListingJpaEntity listing) {
+        List<Double> ratings =
+                reviewRepository.findAllByListingIdOrderByCreatedAtDesc(listing.getId()).stream()
+                        .filter(r -> r.getRating() != null)
+                        .map(r -> r.getRating().doubleValue())
+                        .toList();
+        Double calificacion =
+                ratings.isEmpty()
+                        ? null
+                        : ratings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+        TenantJpaEntity tenant =
+                listing.getTenantId() == null
+                        ? null
+                        : tenantRepository.findById(listing.getTenantId()).orElse(null);
+        String empresa = tenant == null ? null : tenant.getBusinessName();
+        Double reputacionVendedor = null;
+        if (tenant != null) {
+            double rep = averageRatingForTenant(tenant.getId());
+            reputacionVendedor = rep > 0 ? rep : null;
+        }
+
+        Map<String, Object> p = new HashMap<>();
+        p.put("id", formatProductId(listing.getId()));
+        p.put("nombre", listing.getTitle());
+        p.put("precio", listing.getBasePrice());
+        p.put("descripcion", listing.getDescription());
+        p.put("calificacion", calificacion);
+        p.put("totalResenas", ratings.size());
+        p.put("reputacionVendedor", reputacionVendedor);
+        p.put("stock", null);
+        p.put("empresa", empresa);
+        return p;
     }
 
     @GetMapping("/categories")
@@ -400,4 +466,7 @@ public class MarketplaceController {
     private String formatCompanyId(UUID id) {
         return "EMP-" + id;
     }
+
+    /** Request body for {@link #versusContext}: the marketplace product ids to compare. */
+    public record VersusContextRequest(List<String> productIds) {}
 }

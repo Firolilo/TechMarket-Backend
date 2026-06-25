@@ -79,7 +79,25 @@
       "Bash(tail -8 TechMarket-IA/.gitignore)",
       "Bash(grep -n \"uploads\" .gitignore TechMarket-IA/.gitignore)",
       "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx tsc --noEmit 2>&1 | Select-String -Pattern \"error TS\" | Select-Object -First 20; \"TSC_EXIT=$LASTEXITCODE\"; npx eslint app/empresa/publicaciones/page.tsx 2>&1 | Select-String -Pattern \"error|warning|communityTag|no-unused\" | Select-Object -First 15; \"ESLINT_EXIT=$LASTEXITCODE\")",
-      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx next build 2>&1 | Select-String -Pattern \"Compiled successfully|Failed to compile|Type error|Error:|Generating static\" | Select-Object -First 10; \"EXIT=$LASTEXITCODE\")"
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\proyecto-techmarket-parte-front\\\\frontend\"; npx next build 2>&1 | Select-String -Pattern \"Compiled successfully|Failed to compile|Type error|Error:|Generating static\" | Select-Object -First 10; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell($env:Path; Write-Output \"---FLUTTER---\"; $f = \\(Get-Command flutter -ErrorAction SilentlyContinue\\); if \\($f\\) { $f.Source } else { \"flutter not on PATH\" })",
+      "PowerShell($cands = @\\(\"$env:USERPROFILE\\\\flutter\\\\bin\\\\flutter.bat\",\"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\\\\flutter.bat\",\"C:\\\\flutter\\\\bin\\\\flutter.bat\",\"C:\\\\src\\\\flutter\\\\bin\\\\flutter.bat\",\"C:\\\\tools\\\\flutter\\\\bin\\\\flutter.bat\",\"$env:LOCALAPPDATA\\\\flutter\\\\bin\\\\flutter.bat\",\"$env:USERPROFILE\\\\AppData\\\\Local\\\\Pub\\\\Cache\\\\bin\\\\flutter.bat\"\\); foreach \\($c in $cands\\) { if \\(Test-Path $c\\) { Write-Output \"FOUND: $c\" } }; Write-Output \"---scan drives---\"; Get-ChildItem -Path C:\\\\ -Filter flutter.bat -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object -First 5 -ExpandProperty FullName)",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\bruno\\\\flutter\\\\bin;\" + $env:Path; Set-Location \"C:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Movil\\\\techmarket_embajadores\"; flutter analyze 2>&1 | Select-Object -Last 60)",
+      "Bash(rm -f services/ambassador_service.dart)",
+      "Bash(rmdir services *)",
+      "Bash(rmdir .)",
+      "Bash(ls -la)",
+      "Bash(rmdir ambassadors *)",
+      "Bash(ls ambassadors *)",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\bruno\\\\flutter\\\\bin;\" + $env:Path; Set-Location \"C:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Movil\\\\techmarket_embajadores\"; flutter analyze 2>&1 | Select-Object -Last 40)",
+      "PowerShell(Write-Output \"=== Docker containers ===\"; docker ps --format \"{{.Names}} -> {{.Ports}}\" 2>$null; Write-Output \"=== Port checks \\(8080 IAM, 8082 IA\\) ===\"; foreach \\($p in 8080,8082,8091\\) { $r = Test-NetConnection -ComputerName localhost -Port $p -WarningAction SilentlyContinue; \"{0}: {1}\" -f $p, $r.TcpTestSucceeded })",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\bruno\\\\flutter\\\\bin;\" + $env:Path; Set-Location \"C:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Movil\\\\techmarket_embajadores\"; flutter build web --no-tree-shake-icons 2>&1 | Select-Object -Last 25)",
+      "Read(//c/Users/bruno/.claude/**)",
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\\\\TechMarket-AI\"; .\\\\mvnw.cmd -B test 2>&1 | Select-String -Pattern \"BUILD SUCCESS|BUILD FAILURE|Tests run:|Reactor Summary|FAIL\" | Select-Object -Last 40; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(cd \"c:\\\\Users\\\\bruno\\\\Documentos\\\\Proyectos\\\\TechMarket-Back\\\\TechMarket-IA\"; .\\\\mvnw.cmd -q -B spotless:apply 2>&1 | Select-Object -Last 5; .\\\\mvnw.cmd -B \"-Dtest=VersusContextControllerTest\" test 2>&1 | Select-String -Pattern \"BUILD SUCCESS|BUILD FAILURE|Tests run:|ERROR\\\\]\" | Select-Object -Last 30; \"EXIT=$LASTEXITCODE\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\bruno\\Documentos\\Proyectos\\TechMarket-Movil\\techmarket_embajadores"
     ]
   }
 }

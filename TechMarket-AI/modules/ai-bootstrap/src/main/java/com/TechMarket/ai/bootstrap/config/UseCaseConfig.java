@@ -6,6 +6,7 @@ import com.techmarket.ai.application.port.in.EmpresaAiUseCase;
 import com.techmarket.ai.application.port.in.EspecialistaAiUseCase;
 import com.techmarket.ai.application.port.in.MarketplaceSearchUseCase;
 import com.techmarket.ai.application.port.in.RagQaUseCase;
+import com.techmarket.ai.application.port.in.VersusAiUseCase;
 import com.techmarket.ai.application.port.out.AuditPort;
 import com.techmarket.ai.application.port.out.LlmChatPort;
 import com.techmarket.ai.application.port.out.LlmPort;
@@ -19,6 +20,7 @@ import com.techmarket.ai.application.service.EmpresaAiService;
 import com.techmarket.ai.application.service.EspecialistaAiService;
 import com.techmarket.ai.application.service.MarketplaceSearchService;
 import com.techmarket.ai.application.service.RagQaService;
+import com.techmarket.ai.application.service.VersusAiService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -58,5 +60,10 @@ public class UseCaseConfig {
     public MarketplaceSearchUseCase marketplaceSearchUseCase(
             MarketplaceIndexPort index, AuditPort audit) {
         return new MarketplaceSearchService(index, audit);
+    }
+
+    @Bean
+    public VersusAiUseCase versusAiUseCase(StructuredLlmPort llm, AuditPort audit) {
+        return new VersusAiService(llm, audit);
     }
 }
